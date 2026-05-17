@@ -6,17 +6,18 @@ on:
   pull_request:
     branches: [main, master]
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  ci:
-    name: Typecheck, Lint & Build
+  web:
+    name: Web — typecheck, lint, test, build
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
@@ -30,8 +31,70 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Test
+        run: npm test
+
       - name: Build
         run: npm run build
         env:
-          # Provide a dummy DATABASE_URL so Prisma doesn't fail at build time
           DATABASE_URL: file:./dev.db
+          JWT_SECRET: ci-build-only-secret-32-chars-aaaa
+
+  audit:
+    name: Web — npm audit (high)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Audit (fail on high or critical)
+        run: npm audit --audit-level=high
+
+  judge:
+    name: Judge — go vet, build, test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: judge-service
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+          cache-dependency-path: judge-service/go.sum
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Build
+        run: go build ./...
+
+      - name: Test (race detector)
+        run: go test -race -count=1 ./...
+
+  docker:
+    name: Docker — image builds
+    runs-on: ubuntu-latest
+    needs: [web, judge]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build app image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          tags: leetrank-app:ci
+
+      - name: Build judge image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./judge-service
+          push: false
+          tags: leetrank-judge:ci
