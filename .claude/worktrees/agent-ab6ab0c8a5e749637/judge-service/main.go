@@ -90,6 +90,11 @@ var dangerousPatterns = map[string][]string{
 		`"os"`, `"io/ioutil"`, `"bufio"`,
 		"os.Remove", "os.Exit", "syscall.",
 	},
+	"php": {
+		"exec(", "shell_exec(", "system(", "passthru(", "popen(",
+		"proc_open(", "pcntl_exec(", "file_get_contents(", "file_put_contents(",
+		"fopen(", "unlink(", "rmdir(", "mkdir(",
+	},
 }
 
 func isSafe(code, language string) bool {
@@ -240,7 +245,7 @@ func (s *server) executeHandler(w http.ResponseWriter, r *http.Request) {
 	req.Language = strings.ToLower(strings.TrimSpace(req.Language))
 	supportedLanguages := map[string]bool{
 		"python": true, "javascript": true, "ruby": true, "go": true,
-		"typescript": true,
+		"typescript": true, "php": true,
 	}
 	if !supportedLanguages[req.Language] {
 		writeJSON(w, http.StatusBadRequest, ExecuteResponse{
@@ -364,6 +369,9 @@ func (s *server) executeTestCase(code, language string, tc TestCase, timeLimitMs
 		return s.executeGo(ctx, code, tc, timeLimitMs, start)
 	case "typescript":
 		runner := filepath.Join(s.runnersDir, "typescript_runner.sh")
+		cmd = exec.CommandContext(ctx, "bash", runner, tmpPath)
+	case "php":
+		runner := filepath.Join(s.runnersDir, "php_runner.sh")
 		cmd = exec.CommandContext(ctx, "bash", runner, tmpPath)
 	default:
 		return errorResult(tc, "Unsupported language: "+language, start)
@@ -515,6 +523,8 @@ func extensionFor(language string) string {
 		return ".go"
 	case "typescript":
 		return ".ts"
+	case "php":
+		return ".php"
 	default:
 		return ".txt"
 	}

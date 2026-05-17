@@ -20,6 +20,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     curl \
     golang-go \
+    php \
     python3 \
     python3-pip \
     ruby \
@@ -43,7 +44,8 @@ COPY runners/ ./runners/
 RUN chmod +x ./runners/python_runner.py \
               ./runners/ruby_runner.rb \
               ./runners/js_runner.js \
-              ./runners/typescript_runner.sh
+              ./runners/typescript_runner.sh \
+              ./runners/php_runner.sh
 
 # Non-root user for security.
 RUN useradd -m -u 1001 judge
