@@ -1,4 +1,36 @@
 services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-leetrank}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-leetrank-dev}
+      POSTGRES_DB: ${POSTGRES_DB:-leetrank}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-leetrank} -d ${POSTGRES_DB:-leetrank}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-leetrank-dev}
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-leetrank-dev}", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
   app:
     build:
       context: .
@@ -7,12 +39,16 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=file:/app/data/dev.db
+      - DATABASE_URL=${DATABASE_URL:-postgresql://leetrank:leetrank-dev@postgres:5432/leetrank?schema=public}
       - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set; copy .env.example to .env first}
       - JUDGE_SERVICE_URL=http://judge:9090
-    volumes:
-      - db_data:/app/data
+      - REDIS_URL=${REDIS_URL:-redis://:leetrank-dev@redis:6379/0}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
     depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
       judge:
         condition: service_healthy
     restart: unless-stopped
@@ -30,7 +66,10 @@ services:
     ports:
       - "9090:9090"
     environment:
-      - RUNNER_TIMEOUT=5
+      - RUNNER_TIMEOUT=${RUNNER_TIMEOUT:-5}
+      - JUDGE_GLOBAL_MAX=${JUDGE_GLOBAL_MAX:-16}
+      - JUDGE_PER_IP_MAX=${JUDGE_PER_IP_MAX:-4}
+      - JUDGE_QUEUE_WAIT_MS=${JUDGE_QUEUE_WAIT_MS:-10000}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9090/health"]
@@ -40,4 +79,5 @@ services:
       start_period: 10s
 
 volumes:
-  db_data:
+  postgres_data:
+  redis_data:
