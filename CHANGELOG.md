@@ -8,6 +8,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Postgres + Redis services in `docker-compose.yml` so dev runs on the
+  same engines as production. Compose now also bundles Caddy 2 (TLS,
+  rate-limit, security headers), Prometheus, Grafana with auto-provisioned
+  Prometheus datasource, plus postgres/redis exporters. Single
+  `docker compose up` boots the full stack.
+- `infra/caddy/Caddyfile`, `infra/prometheus/prometheus.yml`,
+  `infra/grafana/provisioning/*` for the new stack.
+- `.env.production.example` with every knob the production stack expects.
+- Docker Hub publish workflow: matrix build of app + judge images, multi-arch
+  amd64+arm64, GHA-cached layers, SBOM and provenance attestations.
+- Language manifest (`judge-service/languages.json`, `src/lib/languages.ts`)
+  declaring 15 languages: Python, JavaScript, TypeScript, Ruby, PHP, Bash,
+  Go, Rust, C, C++, Java, Kotlin, C#, Swift, SQL.
+- `prisma/seed-bulk.ts` deterministically generates 10,000 problems and
+  1,000 contests for stress / scaling tests.
+- `/api/metrics` endpoint emitting Prometheus exposition format with
+  uptime, user/problem/submission counts, and per-status HTTP request
+  counters.
+- Toast notification system (`src/hooks/useToast.ts`,
+  `src/components/ui/toaster.tsx`) and a callable `toast` helper.
+- Discussion forum: `Discussion` + `DiscussionComment` Prisma models,
+  CRUD routes at `/api/discussions` and `/api/discussions/[id]`, the
+  `DiscussionsPanel` component on the problem detail page, and a full
+  thread page at `/discussions/[id]`.
+- Public profile API + page at `/users/[username]` with stats, difficulty
+  breakdown, and recent activity.
+- 86 API integration tests across 16 routes (auth, problems, contests,
+  submissions, leaderboard, tags, health, metrics, discussions, users,
+  admin/*, run-code) plus 10 ADRs in `docs/adr/`.
+- New UI primitives: `EmptyState`, expanded `Skeleton` variants, design
+  tokens for success/warning/easy/medium/hard, motion utilities
+  (`fade-in-up`, `pulse-soft`, `shimmer`), and helpers (`.glass`,
+  `.gradient-text`, `.bg-grid`, `.bg-radial-fade`, `.scrollbar-thin`).
+- Skip-link, expanded metadata, and reduced-motion media query in the
+  root layout.
 - `/api/health` endpoint that probes the database and judge service in
   parallel and reports per-service latency, uptime, and overall status.
 - Concurrency scheduler in the Go judge with a global + per-IP semaphore
@@ -23,7 +58,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `src/lib/logger.ts`: structured JSON logger with level threshold and
   per-request child loggers.
 - 22 additional unit tests (validations-extra, utils, auth) for a TS suite
-  total of 40 tests across 4 files.
+  total now at 126 across 24 files.
 - Go test suite for the judge: scheduler accept/release accounting, per-IP
   isolation, context cancellation, 40-request concurrency stress, plus
   `isSafe()` per language and the rate limiter.
@@ -31,6 +66,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   docker buildx) with a concurrency group that cancels superseded pushes.
 
 ### Changed
+- Prisma provider switched from SQLite to PostgreSQL; schema bodies are
+  unchanged.
+- Landing page rebuilt around the new design tokens with grid backdrop,
+  gradient text, glass CTA, and a stats row showing real platform numbers.
 - `src/services/judge.ts` now POSTs to the Go judge over HTTP instead of
   simulating execution in TypeScript. Connectivity failures surface as a
   typed `JudgeUnavailableError` and are mapped to HTTP 503 by the API.
@@ -52,3 +91,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 - `docker-compose.yml` requires `JWT_SECRET` via shell expansion
   (`${VAR:?msg}`) so the stack refuses to boot without a real secret.
+- Caddy reverse proxy enforces HSTS, X-Content-Type-Options, frame-deny,
+  referrer policy, and a 30 req/min/IP rate limit on auth and admin
+  endpoints in addition to the in-app limiter.
