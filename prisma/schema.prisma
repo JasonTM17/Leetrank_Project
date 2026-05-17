@@ -1,0 +1,127 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  username  String   @unique
+  password  String
+  role      String   @default("user")
+  avatar    String?
+  bio       String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  submissions       Submission[]
+  contestEntries    ContestEntry[]
+}
+
+model Tag {
+  id       String    @id @default(cuid())
+  name     String    @unique
+  slug     String    @unique
+  problems ProblemTag[]
+}
+
+model Problem {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  description String
+  difficulty  String
+  hints       String?
+  editorial   String?
+  constraints String?
+  starterCode String?
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tags        ProblemTag[]
+  testCases   TestCase[]
+  submissions Submission[]
+  contestProblems ContestProblem[]
+}
+
+model ProblemTag {
+  problem   Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  problemId String
+  tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  tagId     String
+
+  @@id([problemId, tagId])
+}
+
+model TestCase {
+  id        String  @id @default(cuid())
+  problemId String
+  input     String
+  expected  String
+  isHidden  Boolean @default(false)
+  order     Int     @default(0)
+
+  problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+}
+
+model Submission {
+  id        String   @id @default(cuid())
+  userId    String
+  problemId String
+  language  String
+  code      String
+  status    String
+  runtime   Int?
+  memory    Int?
+  output    String?
+  error     String?
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+}
+
+model Contest {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  description String?
+  startTime   DateTime
+  endTime     DateTime
+  status      String   @default("upcoming")
+  createdAt   DateTime @default(now())
+
+  problems ContestProblem[]
+  entries  ContestEntry[]
+}
+
+model ContestProblem {
+  contestId String
+  problemId String
+  order     Int    @default(0)
+  points    Int    @default(100)
+
+  contest Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@id([contestId, problemId])
+}
+
+model ContestEntry {
+  id        String   @id @default(cuid())
+  contestId String
+  userId    String
+  score     Int      @default(0)
+  rank      Int?
+  joinedAt  DateTime @default(now())
+
+  contest Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([contestId, userId])
+}

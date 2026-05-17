@@ -1,0 +1,29 @@
+version: "3.9"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=file:/app/data/dev.db
+      - JUDGE_SERVICE_URL=http://judge:9090
+    volumes:
+      - db_data:/app/data
+    depends_on:
+      - judge
+    restart: unless-stopped
+
+  judge:
+    build:
+      context: ./judge-service
+      dockerfile: Dockerfile
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+
+volumes:
+  db_data:
