@@ -1,0 +1,794 @@
+openapi: 3.1.0
+info:
+  title: LeetRank API
+  version: 1.0.0
+  description: |
+    REST API for the LeetRank competitive programming platform. The API is
+    consumed primarily by the Next.js frontend in this repository, but it's
+    documented as a stable surface so third-party tooling (CLIs, mobile apps,
+    automated submitters) can build against it.
+
+    All authenticated endpoints expect a `token` cookie set by `/api/auth/login`
+    or `/api/auth/register`. The cookie is `httpOnly`, so browser-based clients
+    don't need to manage it explicitly.
+  contact:
+    name: Nguyễn Sơn
+    email: jasonbmt06@gmail.com
+    url: https://github.com/JasonTM17
+  license:
+    name: MIT
+    url: https://github.com/JasonTM17/Leetrank_Project/blob/main/LICENSE
+
+servers:
+  - url: http://localhost:3000
+    description: Local development
+  - url: https://leetrank.example.com
+    description: Production
+
+tags:
+  - name: Auth
+    description: Account creation, sign-in, session management.
+  - name: Problems
+    description: Browsable problem catalogue with difficulty + tag filters.
+  - name: Submissions
+    description: Code execution and submission history.
+  - name: Contests
+    description: Time-bounded competitions with leaderboards.
+  - name: Discussions
+    description: Per-problem discussion threads with comments.
+  - name: Bookmarks
+    description: Per-user saved problems.
+  - name: Users
+    description: Public profiles and aggregated stats.
+  - name: Tags
+    description: Problem categorisation.
+  - name: Leaderboard
+    description: Global rankings by unique problems solved.
+  - name: Health
+    description: Service health probes for orchestration and monitoring.
+  - name: Admin
+    description: Administrative endpoints (admin role required).
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: token
+      description: |
+        JWT (HS256) signed with `JWT_SECRET`. Stored in an httpOnly cookie.
+
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+
+    User:
+      type: object
+      required: [id, email, username, role, createdAt]
+      properties:
+        id: { type: string }
+        email: { type: string, format: email }
+        username: { type: string }
+        role: { type: string, enum: [user, admin] }
+        avatar: { type: string, nullable: true }
+        bio: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+
+    PublicUser:
+      type: object
+      required: [id, username, createdAt]
+      properties:
+        id: { type: string }
+        username: { type: string }
+        avatar: { type: string, nullable: true }
+        bio: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+
+    Tag:
+      type: object
+      required: [id, name, slug]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        slug: { type: string, pattern: '^[a-z0-9-]+$' }
+
+    Problem:
+      type: object
+      required: [id, title, slug, description, difficulty]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        slug: { type: string, pattern: '^[a-z0-9-]+$' }
+        description: { type: string }
+        difficulty:
+          type: string
+          enum: [easy, medium, hard]
+        constraints: { type: string, nullable: true }
+        hints: { type: string, nullable: true }
+        editorial: { type: string, nullable: true }
+        starterCode: { type: string, nullable: true }
+        tags:
+          type: array
+          items: { $ref: '#/components/schemas/Tag' }
+        testCases:
+          type: array
+          items: { $ref: '#/components/schemas/TestCase' }
+
+    TestCase:
+      type: object
+      required: [id, input, expected, isHidden, order]
+      properties:
+        id: { type: string }
+        input: { type: string }
+        expected: { type: string }
+        isHidden: { type: boolean }
+        order: { type: integer }
+
+    RunResult:
+      type: object
+      required: [passed, input, expected, actual]
+      properties:
+        passed: { type: boolean }
+        input: { type: string }
+        expected: { type: string }
+        actual: { type: string }
+        runtime: { type: integer, description: Milliseconds }
+        error: { type: string }
+
+    Submission:
+      type: object
+      required: [id, userId, problemId, language, status, createdAt]
+      properties:
+        id: { type: string }
+        userId: { type: string }
+        problemId: { type: string }
+        language:
+          type: string
+          enum:
+            [python, javascript, typescript, ruby, php, bash, go, rust, c, cpp,
+             java, kotlin, csharp, swift, sql]
+        code: { type: string }
+        status:
+          type: string
+          enum: [accepted, wrong_answer, runtime_error, time_limit_exceeded]
+        runtime: { type: integer, nullable: true }
+        memory: { type: integer, nullable: true }
+        error: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+
+    Contest:
+      type: object
+      required: [id, title, slug, startTime, endTime, status]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        slug: { type: string }
+        description: { type: string, nullable: true }
+        startTime: { type: string, format: date-time }
+        endTime: { type: string, format: date-time }
+        status:
+          type: string
+          enum: [upcoming, active, ended]
+
+    Discussion:
+      type: object
+      required: [id, problemId, userId, title, body, createdAt]
+      properties:
+        id: { type: string }
+        problemId: { type: string }
+        userId: { type: string }
+        title: { type: string }
+        body: { type: string }
+        upvotes: { type: integer }
+        createdAt: { type: string, format: date-time }
+        user: { $ref: '#/components/schemas/PublicUser' }
+
+    Comment:
+      type: object
+      required: [id, discussionId, userId, body, createdAt]
+      properties:
+        id: { type: string }
+        discussionId: { type: string }
+        userId: { type: string }
+        body: { type: string }
+        createdAt: { type: string, format: date-time }
+
+    HealthSnapshot:
+      type: object
+      required: [status, uptimeSeconds, timestamp, services]
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded, down]
+        uptimeSeconds: { type: integer }
+        timestamp: { type: string, format: date-time }
+        services:
+          type: object
+          properties:
+            database:
+              $ref: '#/components/schemas/ServiceStatus'
+            judge:
+              $ref: '#/components/schemas/ServiceStatus'
+
+    ServiceStatus:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded, down]
+        latencyMs: { type: integer }
+        error: { type: string }
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid session
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Forbidden:
+      description: Authenticated but not allowed
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    BadRequest:
+      description: Validation failure or malformed request body
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    JudgeUnavailable:
+      description: Judge service is unreachable or saturated
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    RateLimited:
+      description: Too many requests
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+
+paths:
+  /api/auth/register:
+    post:
+      tags: [Auth]
+      summary: Create a new account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, email, password]
+              properties:
+                username: { type: string, minLength: 3, maxLength: 30 }
+                email: { type: string, format: email }
+                password: { type: string, minLength: 6, maxLength: 128 }
+      responses:
+        '201':
+          description: Account created and signed in
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user: { $ref: '#/components/schemas/User' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '409':
+          description: Email or username already in use
+
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      summary: Sign in
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, minLength: 1 }
+      responses:
+        '200':
+          description: Authenticated; sets the token cookie
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user: { $ref: '#/components/schemas/User' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+
+  /api/auth/logout:
+    post:
+      tags: [Auth]
+      summary: Clear the session cookie
+      security: []
+      responses:
+        '200':
+          description: Cookie cleared
+
+  /api/auth/me:
+    get:
+      tags: [Auth]
+      summary: Current user
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: The signed-in user
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user: { $ref: '#/components/schemas/User' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/problems:
+    get:
+      tags: [Problems]
+      summary: List problems
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 50 }
+        - in: query
+          name: difficulty
+          schema: { type: string, enum: [easy, medium, hard] }
+        - in: query
+          name: tag
+          schema: { type: string }
+        - in: query
+          name: search
+          schema: { type: string }
+      responses:
+        '200':
+          description: Paginated problem list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  problems:
+                    type: array
+                    items: { $ref: '#/components/schemas/Problem' }
+                  total: { type: integer }
+                  page: { type: integer }
+                  limit: { type: integer }
+
+  /api/problems/{slug}:
+    get:
+      tags: [Problems]
+      summary: Get a problem by slug
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Problem with public test cases
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  problem: { $ref: '#/components/schemas/Problem' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/run-code:
+    post:
+      tags: [Submissions]
+      summary: Execute code against ad-hoc test cases (no submission stored)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code, language, testCases]
+              properties:
+                code: { type: string }
+                language:
+                  type: string
+                  enum:
+                    [python, javascript, typescript, ruby, php, bash, go, rust,
+                     c, cpp, java, kotlin, csharp, swift, sql]
+                testCases:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: object
+                    properties:
+                      input: { type: string }
+                      expected: { type: string }
+      responses:
+        '200':
+          description: Per-test results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items: { $ref: '#/components/schemas/RunResult' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '503': { $ref: '#/components/responses/JudgeUnavailable' }
+
+  /api/submissions:
+    get:
+      tags: [Submissions]
+      summary: List the signed-in user's submissions
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: query
+          name: problemId
+          schema: { type: string }
+      responses:
+        '200':
+          description: Submission list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  submissions:
+                    type: array
+                    items: { $ref: '#/components/schemas/Submission' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [Submissions]
+      summary: Submit a solution (runs all test cases including hidden)
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code, language, problemId]
+              properties:
+                code: { type: string }
+                language: { type: string }
+                problemId: { type: string }
+      responses:
+        '201':
+          description: Submission stored, results returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  submission: { $ref: '#/components/schemas/Submission' }
+                  results:
+                    type: array
+                    items: { $ref: '#/components/schemas/RunResult' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '503': { $ref: '#/components/responses/JudgeUnavailable' }
+
+  /api/submissions/{id}:
+    get:
+      tags: [Submissions]
+      summary: Get one submission
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Submission detail
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/contests:
+    get:
+      tags: [Contests]
+      summary: List all contests
+      responses:
+        '200':
+          description: Contests sorted by start time desc
+
+  /api/contests/{slug}:
+    get:
+      tags: [Contests]
+      summary: Get a contest with its problems
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Contest detail
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/leaderboard:
+    get:
+      tags: [Leaderboard]
+      summary: Global leaderboard (unique problems solved, dedup-aware)
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer }
+        - in: query
+          name: limit
+          schema: { type: integer, maximum: 100 }
+      responses:
+        '200':
+          description: Ranked entries
+
+  /api/discussions:
+    get:
+      tags: [Discussions]
+      summary: List discussions for a problem
+      parameters:
+        - in: query
+          name: problemId
+          required: true
+          schema: { type: string }
+        - in: query
+          name: page
+          schema: { type: integer }
+        - in: query
+          name: limit
+          schema: { type: integer, maximum: 50 }
+      responses:
+        '200':
+          description: Paginated discussions
+        '400': { $ref: '#/components/responses/BadRequest' }
+    post:
+      tags: [Discussions]
+      summary: Create a discussion
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [problemId, title, body]
+              properties:
+                problemId: { type: string }
+                title: { type: string, minLength: 3, maxLength: 200 }
+                body: { type: string, minLength: 1, maxLength: 10000 }
+      responses:
+        '201':
+          description: Created
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/discussions/{id}:
+    get:
+      tags: [Discussions]
+      summary: Discussion thread with comments
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Thread payload
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      tags: [Discussions]
+      summary: Add a comment
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [body]
+              properties:
+                body: { type: string, minLength: 1, maxLength: 5000 }
+      responses:
+        '201':
+          description: Comment created
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Discussions]
+      summary: Delete a discussion (author or admin only)
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Deleted }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/bookmarks:
+    get:
+      tags: [Bookmarks]
+      summary: List the user's bookmarks (or check a single problem)
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: query
+          name: problemId
+          schema: { type: string }
+      responses:
+        '200': { description: Bookmark list or single state }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [Bookmarks]
+      summary: Toggle a bookmark
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [problemId]
+              properties:
+                problemId: { type: string }
+      responses:
+        '200':
+          description: New state
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/users/{username}:
+    get:
+      tags: [Users]
+      summary: Public profile + stats
+      parameters:
+        - in: path
+          name: username
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Profile payload
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/tags:
+    get:
+      tags: [Tags]
+      summary: List all tags
+
+  /api/tags/{slug}:
+    get:
+      tags: [Tags]
+      summary: Tag with paginated problem list
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema: { type: string }
+
+  /api/health:
+    get:
+      tags: [Health]
+      summary: Service health (db + judge probes)
+      security: []
+      responses:
+        '200':
+          description: All services ok
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/HealthSnapshot' }
+        '503':
+          description: Database is down
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/HealthSnapshot' }
+
+  /api/metrics:
+    get:
+      tags: [Health]
+      summary: Prometheus exposition
+      security: []
+      responses:
+        '200':
+          description: text/plain Prometheus exposition
+          content:
+            text/plain:
+              schema: { type: string }
+
+  /api/admin/problems:
+    get:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: All problems for admin }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }]
+      responses:
+        '201': { description: Created }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /api/admin/problems/{id}:
+    put:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Updated }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    delete:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Deleted }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /api/admin/contests:
+    get:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: All contests for admin }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }]
+      responses:
+        '201': { description: Created }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /api/admin/users:
+    get:
+      tags: [Admin]
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200': { description: User list with submission counts }
+        '403': { $ref: '#/components/responses/Forbidden' }
