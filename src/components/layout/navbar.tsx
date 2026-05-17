@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Code2, Menu, X, User, LogOut, Shield } from "lucide-react";
+import { Code2, Menu, X, User, LogOut, Shield, Bookmark, ListChecks, Settings as SettingsIcon } from "lucide-react";
 import { useEffect, useState, startTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
@@ -81,6 +81,15 @@ export function Navbar() {
                     <Link href="/dashboard" className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-accent">
                       <User className="h-4 w-4" /> Dashboard
                     </Link>
+                    <Link href="/submissions" className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-accent">
+                      <ListChecks className="h-4 w-4" /> Submissions
+                    </Link>
+                    <Link href="/dashboard/bookmarks" className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-accent">
+                      <Bookmark className="h-4 w-4" /> Bookmarks
+                    </Link>
+                    <Link href="/dashboard/settings" className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-accent">
+                      <SettingsIcon className="h-4 w-4" /> Settings
+                    </Link>
                     {user.role === "admin" && (
                       <Link href="/admin" className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-accent">
                         <Shield className="h-4 w-4" /> Admin
@@ -88,7 +97,7 @@ export function Navbar() {
                     )}
                     <button
                       onClick={handleLogout}
-                      className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-accent w-full text-left text-destructive"
+                      className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-accent w-full text-left text-destructive border-t mt-1"
                     >
                       <LogOut className="h-4 w-4" /> Logout
                     </button>
