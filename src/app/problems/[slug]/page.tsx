@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ProblemDescription } from "@/components/problem/problem-description";
 import { TestResultsPanel } from "@/components/problem/test-results-panel";
 import { DiscussionsPanel } from "@/components/problem/discussions-panel";
+import { BookmarkButton } from "@/components/problem/bookmark-button";
 import { Play, Send, Loader2 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { LANGUAGES, monacoLanguageFor } from "@/lib/languages";
@@ -164,6 +165,7 @@ export default function ProblemDetailPage({ params }: { params: Promise<{ slug: 
               ))}
             </select>
             <div className="flex gap-2">
+              <BookmarkButton problemId={problem.id} isAuthenticated={!!user} />
               <Button size="sm" variant="outline" onClick={handleRun} disabled={running}>
                 {running ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Play className="h-4 w-4 mr-1" />}
                 Run
