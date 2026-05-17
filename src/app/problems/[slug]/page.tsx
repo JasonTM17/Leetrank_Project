@@ -5,9 +5,11 @@ import { Navbar } from "@/components/layout/navbar";
 import { Button } from "@/components/ui/button";
 import { ProblemDescription } from "@/components/problem/problem-description";
 import { TestResultsPanel } from "@/components/problem/test-results-panel";
+import { DiscussionsPanel } from "@/components/problem/discussions-panel";
 import { Play, Send, Loader2 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { LANGUAGES, monacoLanguageFor } from "@/lib/languages";
+import { useAuth } from "@/hooks/useAuth";
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), { ssr: false });
 
@@ -35,6 +37,7 @@ interface TestResult {
 
 export default function ProblemDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
+  const { user } = useAuth();
   const [problem, setProblem] = useState<Problem | null>(null);
   const [loading, setLoading] = useState(true);
   const [code, setCode] = useState("");
@@ -134,7 +137,7 @@ export default function ProblemDetailPage({ params }: { params: Promise<{ slug: 
     <>
       <Navbar />
       <div className="flex-1 flex flex-col lg:flex-row min-h-[calc(100vh-4rem)]">
-        <div className="lg:w-1/2 border-r overflow-y-auto">
+        <div className="lg:w-1/2 border-r overflow-y-auto scrollbar-thin">
           <ProblemDescription
             title={problem.title}
             difficulty={problem.difficulty}
@@ -144,6 +147,9 @@ export default function ProblemDetailPage({ params }: { params: Promise<{ slug: 
             testCases={problem.testCases}
             tags={problem.tags}
           />
+          <div className="px-6 pb-8">
+            <DiscussionsPanel problemId={problem.id} isAuthenticated={!!user} />
+          </div>
         </div>
 
         <div className="lg:w-1/2 flex flex-col">
