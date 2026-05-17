@@ -70,5 +70,6 @@ Thumbs.db
 
 # internal tooling
 .omc/
+.claude/worktrees/
 DOCUMENTATION_MASTER.md
 /scripts/
