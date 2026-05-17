@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { updateProblemSchema, firstZodError } from "@/lib/validations";
 
 export async function PUT(
   request: NextRequest,
@@ -13,12 +14,22 @@ export async function PUT(
     }
 
     const { id } = await params;
-    const body = await request.json();
-    const { title, slug, description, difficulty, hints, editorial, constraints, starterCode, order } = body;
+
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return Response.json({ error: "Invalid JSON body" }, { status: 400 });
+    }
+
+    const parsed = updateProblemSchema.safeParse(body);
+    if (!parsed.success) {
+      return Response.json({ error: firstZodError(parsed.error) }, { status: 400 });
+    }
 
     const problem = await prisma.problem.update({
       where: { id },
-      data: { title, slug, description, difficulty, hints, editorial, constraints, starterCode, order },
+      data: parsed.data,
     });
 
     return Response.json({ problem });

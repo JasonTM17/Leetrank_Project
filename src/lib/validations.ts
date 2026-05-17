@@ -18,16 +18,55 @@ export const loginSchema = z.object({
   password: z.string().min(1, "Password is required"),
 });
 
+const slugRegex = /^[a-z0-9-]+$/;
+const difficultyEnum = z.enum(["easy", "medium", "hard"]);
+
+const testCaseSchema = z.object({
+  input: z.string(),
+  expected: z.string(),
+  isHidden: z.boolean().optional(),
+  order: z.number().int().nonnegative().optional(),
+});
+
 export const createProblemSchema = z.object({
   title: z.string().min(1, "Title is required").max(200),
-  slug: z.string().min(1, "Slug is required").max(200).regex(/^[a-z0-9-]+$/, "Slug must be lowercase with hyphens"),
+  slug: z.string().min(1, "Slug is required").max(200).regex(slugRegex, "Slug must be lowercase with hyphens"),
   description: z.string().min(1, "Description is required"),
-  difficulty: z.enum(["easy", "medium", "hard"]),
+  difficulty: difficultyEnum,
   constraints: z.string().optional().default(""),
   hints: z.string().optional().default(""),
+  editorial: z.string().optional().default(""),
   starterCode: z.string().optional().default(""),
+  order: z.number().int().nonnegative().optional().default(0),
   tags: z.array(z.string()).optional().default([]),
+  testCases: z.array(testCaseSchema).optional().default([]),
 });
+
+export const updateProblemSchema = z.object({
+  title: z.string().min(1).max(200).optional(),
+  slug: z.string().min(1).max(200).regex(slugRegex).optional(),
+  description: z.string().min(1).optional(),
+  difficulty: difficultyEnum.optional(),
+  constraints: z.string().optional(),
+  hints: z.string().optional(),
+  editorial: z.string().optional(),
+  starterCode: z.string().optional(),
+  order: z.number().int().nonnegative().optional(),
+});
+
+export const createContestSchema = z
+  .object({
+    title: z.string().min(1, "Title is required").max(200),
+    slug: z.string().min(1).max(200).regex(slugRegex, "Slug must be lowercase with hyphens"),
+    description: z.string().optional().default(""),
+    startTime: z.string().datetime({ message: "startTime must be ISO 8601" }),
+    endTime: z.string().datetime({ message: "endTime must be ISO 8601" }),
+    status: z.enum(["upcoming", "active", "ended"]).optional().default("upcoming"),
+  })
+  .refine((d) => new Date(d.endTime) > new Date(d.startTime), {
+    message: "endTime must be after startTime",
+    path: ["endTime"],
+  });
 
 export const runCodeSchema = z.object({
   code: z.string().min(1, "Code is required"),
@@ -43,3 +82,7 @@ export const submitCodeSchema = z.object({
   language: z.enum(["python", "javascript", "go", "ruby"]),
   problemId: z.string().min(1, "Problem ID is required"),
 });
+
+export function firstZodError(error: { errors: Array<{ message: string }> }): string {
+  return error.errors[0]?.message ?? "Invalid input";
+}
