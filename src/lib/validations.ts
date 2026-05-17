@@ -86,6 +86,16 @@ export const submitCodeSchema = z.object({
   problemId: z.string().min(1, "Problem ID is required"),
 });
 
+export const createDiscussionSchema = z.object({
+  problemId: z.string().min(1, "Problem ID is required"),
+  title: z.string().min(3, "Title must be at least 3 characters").max(200, "Title too long"),
+  body: z.string().min(1, "Body is required").max(10_000, "Body too long"),
+});
+
+export const createCommentSchema = z.object({
+  body: z.string().min(1, "Body is required").max(5_000, "Body too long"),
+});
+
 export function firstZodError(error: { errors: Array<{ message: string }> }): string {
   return error.errors[0]?.message ?? "Invalid input";
 }
