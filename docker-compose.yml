@@ -8,7 +8,7 @@ services:
     environment:
       - NODE_ENV=production
       - DATABASE_URL=file:/app/data/dev.db
-      - JWT_SECRET=dev-secret-change-in-production
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set; copy .env.example to .env first}
       - JUDGE_SERVICE_URL=http://judge:9090
     volumes:
       - db_data:/app/data
