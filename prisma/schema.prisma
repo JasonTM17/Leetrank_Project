@@ -20,6 +20,8 @@ model User {
 
   submissions       Submission[]
   contestEntries    ContestEntry[]
+  discussions       Discussion[]
+  discussionComments DiscussionComment[]
 }
 
 model Tag {
@@ -47,6 +49,7 @@ model Problem {
   testCases   TestCase[]
   submissions Submission[]
   contestProblems ContestProblem[]
+  discussions Discussion[]
 
   @@index([difficulty, order])
   @@index([order])
@@ -136,4 +139,35 @@ model ContestEntry {
 
   @@unique([contestId, userId])
   @@index([contestId, score(sort: Desc)])
+}
+
+model Discussion {
+  id        String   @id @default(cuid())
+  problemId String
+  userId    String
+  title     String
+  body      String
+  upvotes   Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  problem  Problem          @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comments DiscussionComment[]
+
+  @@index([problemId, createdAt(sort: Desc)])
+  @@index([userId, createdAt])
+}
+
+model DiscussionComment {
+  id           String   @id @default(cuid())
+  discussionId String
+  userId       String
+  body         String
+  createdAt    DateTime @default(now())
+
+  discussion Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([discussionId, createdAt])
 }
