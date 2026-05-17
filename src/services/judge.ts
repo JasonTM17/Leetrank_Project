@@ -4,139 +4,91 @@ interface JudgeRequest {
   code: string;
   language: string;
   testCases: { input: string; expected: string }[];
+  timeLimit?: number;
+}
+
+interface GoJudgeResponse {
+  results: Array<{
+    passed: boolean;
+    input: string;
+    expected: string;
+    actual: string;
+    runtime: number;
+    error?: string;
+  }>;
+  status: string;
+}
+
+const JUDGE_URL = process.env.JUDGE_SERVICE_URL || "http://localhost:9090";
+const FETCH_TIMEOUT_MS = 30_000;
+
+export class JudgeUnavailableError extends Error {
+  constructor(cause: unknown) {
+    super(`Judge service is unavailable at ${JUDGE_URL}: ${stringifyError(cause)}`);
+    this.name = "JudgeUnavailableError";
+  }
 }
 
 export async function executeCode(request: JudgeRequest): Promise<RunResult[]> {
-  const results: RunResult[] = [];
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
-  for (const testCase of request.testCases) {
-    try {
-      const result = simulateExecution(request.code, request.language, testCase.input, testCase.expected);
-      results.push(result);
-    } catch (error) {
-      results.push({
-        passed: false,
-        input: testCase.input,
-        expected: testCase.expected,
-        actual: "",
-        error: error instanceof Error ? error.message : "Unknown error",
-      });
+  try {
+    const res = await fetch(`${JUDGE_URL}/execute`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        code: request.code,
+        language: request.language,
+        testCases: request.testCases,
+        timeLimit: request.timeLimit ?? 5_000,
+      }),
+      signal: controller.signal,
+    });
+
+    if (!res.ok) {
+      const text = await safeText(res);
+      throw new Error(`Judge returned HTTP ${res.status}: ${text}`);
     }
-  }
 
-  return results;
-}
-
-function simulateExecution(
-  code: string,
-  language: string,
-  input: string,
-  expected: string
-): RunResult {
-  const startTime = Date.now();
-
-  if (!code.trim()) {
-    return { passed: false, input, expected, actual: "", error: "Empty code submission" };
-  }
-
-  if (code.includes("import os") || code.includes("import subprocess") ||
-      code.includes("require('child_process')") || code.includes("exec(") ||
-      code.includes("eval(") || code.includes("__import__")) {
-    return { passed: false, input, expected, actual: "", error: "Forbidden: dangerous operations detected" };
-  }
-
-  let actual = "";
-
-  if (language === "python") {
-    actual = simulatePython(code, input);
-  } else if (language === "javascript") {
-    actual = simulateJavaScript(code, input);
-  } else {
-    return { passed: false, input, expected, actual: "", error: `Unsupported language: ${language}` };
-  }
-
-  const runtime = Date.now() - startTime + Math.floor(Math.random() * 50);
-  const passed = actual.trim() === expected.trim();
-
-  return { passed, input, expected, actual: actual.trim(), runtime };
-}
-
-function simulatePython(code: string, input: string): string {
-  const lines = code.split("\n");
-  const funcMatch = lines.find(l => l.startsWith("def "));
-  if (!funcMatch) {
-    return tryDirectOutput(code, input);
-  }
-
-  const funcName = funcMatch.match(/def\s+(\w+)/)?.[1];
-  if (!funcName) return "";
-
-  return tryDirectOutput(code, input);
-}
-
-function simulateJavaScript(code: string, input: string): string {
-  const funcMatch = code.match(/function\s+(\w+)/);
-  if (!funcMatch) {
-    return tryDirectOutput(code, input);
-  }
-
-  return tryDirectOutput(code, input);
-}
-
-function tryDirectOutput(code: string, input: string): string {
-  const printMatch = code.match(/(?:print|console\.log)\s*\(\s*(.+?)\s*\)/);
-  if (printMatch) {
-    const expr = printMatch[1];
-    try {
-      const inputParsed = JSON.parse(input);
-      if (typeof inputParsed === "object" && inputParsed !== null) {
-        return evaluateSimpleExpression(expr, inputParsed);
-      }
-    } catch {
-      // fall through
+    const data = (await res.json()) as GoJudgeResponse;
+    return (data.results ?? []).map((r) => ({
+      passed: r.passed,
+      input: r.input,
+      expected: r.expected,
+      actual: r.actual,
+      runtime: r.runtime,
+      error: r.error,
+    }));
+  } catch (err) {
+    if (isAbortOrNetworkError(err)) {
+      throw new JudgeUnavailableError(err);
     }
+    throw err;
+  } finally {
+    clearTimeout(timer);
   }
-
-  const inputLines = input.trim().split("\n");
-  if (inputLines.length > 0) {
-    try {
-      const parsed = JSON.parse(input);
-      if (Array.isArray(parsed)) {
-        return processArrayProblem(code, parsed);
-      }
-    } catch {
-      // fall through
-    }
-  }
-
-  return "";
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function evaluateSimpleExpression(expr: string, _vars: Record<string, unknown>): string {
-  return String(expr);
+function safeText(res: Response): Promise<string> {
+  return res.text().catch(() => "<no body>");
 }
 
-function processArrayProblem(code: string, arr: unknown[]): string {
-  if (code.includes("sort") || code.includes("sorted")) {
-    const sorted = [...arr].sort((a, b) => Number(a) - Number(b));
-    return JSON.stringify(sorted);
-  }
-  if (code.includes("reverse")) {
-    return JSON.stringify([...arr].reverse());
-  }
-  if (code.includes("sum") || code.includes("reduce")) {
-    const sum = arr.reduce((a: number, b: unknown) => a + Number(b), 0);
-    return String(sum);
-  }
-  if (code.includes("max")) {
-    return String(Math.max(...arr.map(Number)));
-  }
-  if (code.includes("min")) {
-    return String(Math.min(...arr.map(Number)));
-  }
-  if (code.includes("len") || code.includes("length")) {
-    return String(arr.length);
-  }
-  return JSON.stringify(arr);
+function stringifyError(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  return String(err);
+}
+
+function isAbortOrNetworkError(err: unknown): boolean {
+  if (!err || typeof err !== "object") return false;
+  const e = err as { name?: string; cause?: { code?: string }; code?: string };
+  if (e.name === "AbortError") return true;
+  const code = e.code ?? e.cause?.code;
+  return (
+    code === "ECONNREFUSED" ||
+    code === "ENOTFOUND" ||
+    code === "ETIMEDOUT" ||
+    code === "ECONNRESET" ||
+    code === "UND_ERR_SOCKET"
+  );
 }

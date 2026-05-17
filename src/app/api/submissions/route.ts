@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
-import { executeCode } from "@/services/judge";
+import { executeCode, JudgeUnavailableError } from "@/services/judge";
 import { submitCodeSchema } from "@/lib/validations";
 
 export async function GET(request: NextRequest) {
@@ -93,7 +93,10 @@ export async function POST(request: NextRequest) {
     });
 
     return Response.json({ submission, results }, { status: 201 });
-  } catch {
+  } catch (err) {
+    if (err instanceof JudgeUnavailableError) {
+      return Response.json({ error: err.message }, { status: 503 });
+    }
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }
