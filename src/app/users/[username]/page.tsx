@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatRelativeTime, getDifficultyBg } from "@/lib/utils";
-import { Trophy, Target, Calendar, Loader2, User as UserIcon } from "lucide-react";
+import { Trophy, Target, Calendar, User as UserIcon } from "lucide-react";
 import Link from "next/link";
 
 interface ProfileData {

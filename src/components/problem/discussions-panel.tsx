@@ -40,7 +40,10 @@ export function DiscussionsPanel({ problemId, isAuthenticated }: DiscussionsPane
       .finally(() => setLoading(false));
   }, [problemId]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    load();
+  }, [load]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
