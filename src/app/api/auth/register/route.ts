@@ -6,14 +6,33 @@ import { signToken } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, username, password } = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return Response.json({ error: "Invalid JSON body" }, { status: 400 });
+    }
+
+    const { email, username, password } = body;
 
     if (!email || !username || !password) {
       return Response.json({ error: "Email, username, and password are required" }, { status: 400 });
     }
 
-    if (password.length < 6) {
-      return Response.json({ error: "Password must be at least 6 characters" }, { status: 400 });
+    if (typeof username !== "string" || username.length < 3 || username.length > 30) {
+      return Response.json({ error: "Username must be 3-30 characters" }, { status: 400 });
+    }
+
+    if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
+      return Response.json({ error: "Username can only contain letters, numbers, underscores, and hyphens" }, { status: 400 });
+    }
+
+    if (typeof email !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 255) {
+      return Response.json({ error: "Invalid email address" }, { status: 400 });
+    }
+
+    if (password.length < 6 || password.length > 128) {
+      return Response.json({ error: "Password must be 6-128 characters" }, { status: 400 });
     }
 
     const existing = await prisma.user.findFirst({
