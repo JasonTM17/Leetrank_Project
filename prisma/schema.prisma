@@ -22,6 +22,7 @@ model User {
   contestEntries    ContestEntry[]
   discussions       Discussion[]
   discussionComments DiscussionComment[]
+  bookmarks         Bookmark[]
 }
 
 model Tag {
@@ -50,6 +51,7 @@ model Problem {
   submissions Submission[]
   contestProblems ContestProblem[]
   discussions Discussion[]
+  bookmarks   Bookmark[]
 
   @@index([difficulty, order])
   @@index([order])
@@ -170,4 +172,17 @@ model DiscussionComment {
   user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([discussionId, createdAt])
+}
+
+model Bookmark {
+  id        String   @id @default(cuid())
+  userId    String
+  problemId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, problemId])
+  @@index([userId, createdAt(sort: Desc)])
 }
