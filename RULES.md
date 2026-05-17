@@ -184,3 +184,29 @@ Lessons learned from building LeetRank. Apply these to future full-stack Next.js
 - **Context7 for docs** — always use Context7 MCP to fetch current library documentation instead of relying on training data.
 - **Claude Team for parallel work** — use Claude Team to parallelize independent tasks (frontend, backend, data, testing).
 - **Rules-driven development** — every project must reference and follow these rules. Update rules after each project with new learnings.
+
+---
+
+## 16. UI/UX Testing (Bắt buộc)
+
+- **Test mọi trang** — bất kì trang nào trong dự án đều phải test đầy đủ: UI render đúng, UX flow hoạt động, responsive trên mobile/tablet/desktop, content hiển thị chính xác.
+- **Claude Team cho testing** — spawn Claude Team agents song song để test frontend, backend, data, UX cùng lúc. Không được test qua loa.
+- **Responsive testing** — test ở 3 viewport tối thiểu: mobile (375px), tablet (768px), desktop (1440px). Mọi element phải hiển thị đúng.
+- **Content verification** — verify text, data, images load đúng. Không chấp nhận placeholder, lorem ipsum, hay data trống trên production.
+- **Interaction testing** — test tất cả buttons, forms, links, modals, dropdowns. Mọi interaction phải hoạt động đúng.
+- **Dark mode testing** — test cả light và dark mode. Không được có text invisible hay contrast kém.
+- **Làm thật kĩ** — không được bỏ qua bất kì page nào. Mỗi page phải pass tất cả criteria trước khi coi là done.
+
+---
+
+## 17. API & Backend Testing (Bắt buộc)
+
+- **Test toàn bộ API** — mọi endpoint phải được test: happy path, error cases, edge cases, validation errors.
+- **Rate limiting test** — verify rate limiter hoạt động đúng: gửi requests vượt limit và confirm bị block (429).
+- **Load testing** — test chịu tải với concurrent requests. API phải respond trong thời gian chấp nhận được dưới load.
+- **Response format** — verify mọi response trả đúng format JSON, đúng HTTP status code, đúng error messages.
+- **Auth flow testing** — test đầy đủ: register → login → access protected → logout → verify blocked. Test expired tokens, invalid tokens.
+- **Business logic testing** — test mọi nghiệp vụ: submission scoring, leaderboard ranking, contest timing, problem filtering, pagination.
+- **Database integrity** — verify data consistency sau mỗi operation. Test cascading deletes, unique constraints, foreign keys.
+- **Security testing** — test injection attempts, XSS, CSRF, unauthorized access. Verify blocklists hoạt động.
+- **Claude Team cho testing** — dùng Claude Team để parallelize: 1 agent test auth, 1 agent test problems API, 1 agent test judge, 1 agent test admin. Tất cả phải pass.
