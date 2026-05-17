@@ -70,3 +70,4 @@ Thumbs.db
 # internal tooling
 .omc/
 DOCUMENTATION_MASTER.md
+/scripts/
