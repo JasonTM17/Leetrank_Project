@@ -5,13 +5,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Code2, Menu, X, User, LogOut, Shield } from "lucide-react";
 import { useEffect, useState, startTransition } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 export function Navbar() {
   const { user, setUser, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -26,6 +27,12 @@ export function Navbar() {
       setDropdownOpen(false);
     });
   }, [pathname]);
+
+  async function handleLogout() {
+    await logout();
+    router.push("/");
+    router.refresh();
+  }
 
   const navLinks = [
     { href: "/problems", label: "Problems" },
@@ -80,7 +87,7 @@ export function Navbar() {
                       </Link>
                     )}
                     <button
-                      onClick={logout}
+                      onClick={handleLogout}
                       className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-accent w-full text-left text-destructive"
                     >
                       <LogOut className="h-4 w-4" /> Logout
@@ -119,7 +126,7 @@ export function Navbar() {
               {user.role === "admin" && (
                 <Link href="/admin" className="block text-sm font-medium py-2">Admin</Link>
               )}
-              <button onClick={logout} className="block text-sm font-medium py-2 text-destructive">Logout</button>
+              <button onClick={handleLogout} className="block text-sm font-medium py-2 text-destructive">Logout</button>
             </>
           ) : (
             <div className="flex gap-2 pt-2">
