@@ -112,6 +112,7 @@ function tryDirectOutput(code: string, input: string): string {
   return "";
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function evaluateSimpleExpression(expr: string, _vars: Record<string, unknown>): string {
   return String(expr);
 }

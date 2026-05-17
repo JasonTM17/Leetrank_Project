@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, startTransition } from "react";
 import { Navbar } from "@/components/layout/navbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -42,7 +42,7 @@ export default function AdminPage() {
   useEffect(() => {
     if (activeTab === "problems") fetchProblems();
     else if (activeTab === "users") fetchUsers();
-    else setLoading(false);
+    else startTransition(() => setLoading(false));
   }, [activeTab]);
 
   async function fetchProblems() {

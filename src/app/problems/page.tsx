@@ -36,30 +36,25 @@ export default function ProblemsPage() {
   }, []);
 
   useEffect(() => {
-    fetchProblems();
-  }, [difficulty, selectedTag]);
-
-  async function fetchProblems() {
-    setLoading(true);
+    let cancelled = false;
     const params = new URLSearchParams();
     if (difficulty) params.set("difficulty", difficulty);
     if (selectedTag) params.set("tag", selectedTag);
     if (search) params.set("search", search);
 
-    try {
-      const res = await fetch(`/api/problems?${params}`);
-      const data = await res.json();
-      setProblems(data.problems || []);
-    } catch {
-      setProblems([]);
-    } finally {
-      setLoading(false);
-    }
-  }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setLoading(true);
+    fetch(`/api/problems?${params}`)
+      .then((r) => r.json())
+      .then((data) => { if (!cancelled) setProblems(data.problems || []); })
+      .catch(() => { if (!cancelled) setProblems([]); })
+      .finally(() => { if (!cancelled) setLoading(false); });
 
-  function handleSearch(e: React.FormEvent<HTMLFormElement>) {
+    return () => { cancelled = true; };
+  }, [difficulty, selectedTag, search]);
+
+  function handleSearch(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
-    fetchProblems();
   }
 
   const difficulties = ["", "Easy", "Medium", "Hard"];
