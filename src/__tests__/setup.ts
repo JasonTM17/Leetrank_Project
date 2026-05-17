@@ -2,7 +2,7 @@ import { vi, beforeEach } from "vitest";
 
 // Stable JWT secret across all tests so signed tokens round-trip.
 process.env.JWT_SECRET = process.env.JWT_SECRET ?? "test-secret-32-chars-minimum-aaaa";
-process.env.NODE_ENV = "test";
+vi.stubEnv("NODE_ENV", "test");
 
 // Per-test in-memory cookie jar so tests can act as different users
 // without bleeding state across files.
