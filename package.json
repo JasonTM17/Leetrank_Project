@@ -13,7 +13,9 @@
     "db:studio": "prisma studio",
     "db:reset": "prisma db push --force-reset && prisma db seed",
     "seed:extra": "npx ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed-extra.ts",
-    "seed:bigdata": "npx ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed-bigdata.ts"
+    "seed:bigdata": "npx ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed-bigdata.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
@@ -32,6 +34,7 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "tailwind-merge": "^3.6.0",
+    "zod": "^3.23.8",
     "zustand": "^5.0.13"
   },
   "prisma": {
@@ -46,6 +49,7 @@
     "eslint-config-next": "16.2.6",
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^2.1.8"
   }
 }

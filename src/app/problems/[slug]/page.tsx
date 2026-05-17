@@ -2,11 +2,10 @@
 
 import { useEffect, useState, use } from "react";
 import { Navbar } from "@/components/layout/navbar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { getDifficultyBg } from "@/lib/utils";
-import { Play, Send, CheckCircle2, XCircle, Loader2, ChevronRight } from "lucide-react";
+import { ProblemDescription } from "@/components/problem/problem-description";
+import { TestResultsPanel } from "@/components/problem/test-results-panel";
+import { Play, Send, Loader2 } from "lucide-react";
 import dynamic from "next/dynamic";
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), { ssr: false });
@@ -43,8 +42,6 @@ export default function ProblemDetailPage({ params }: { params: Promise<{ slug: 
   const [submitting, setSubmitting] = useState(false);
   const [results, setResults] = useState<TestResult[]>([]);
   const [submitStatus, setSubmitStatus] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"description" | "submissions">("description");
-  const [showHints, setShowHints] = useState(false);
 
   useEffect(() => {
     fetch(`/api/problems/${slug}`)
@@ -98,11 +95,7 @@ export default function ProblemDetailPage({ params }: { params: Promise<{ slug: 
       const res = await fetch("/api/submissions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          code,
-          language,
-          problemId: problem.id,
-        }),
+        body: JSON.stringify({ code, language, problemId: problem.id }),
       });
       const data = await res.json();
       setSubmitStatus(data.submission?.status || "error");
@@ -140,106 +133,19 @@ export default function ProblemDetailPage({ params }: { params: Promise<{ slug: 
     <>
       <Navbar />
       <div className="flex-1 flex flex-col lg:flex-row min-h-[calc(100vh-4rem)]">
-        {/* Left Panel - Problem Description */}
         <div className="lg:w-1/2 border-r overflow-y-auto">
-          <div className="p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <h1 className="text-2xl font-bold">{problem.title}</h1>
-              <Badge className={getDifficultyBg(problem.difficulty)}>
-                {problem.difficulty.charAt(0).toUpperCase() + problem.difficulty.slice(1)}
-              </Badge>
-            </div>
-
-            <div className="flex gap-2 mb-6">
-              {problem.tags.map((tag) => (
-                <Badge key={tag.id} variant="secondary">{tag.name}</Badge>
-              ))}
-            </div>
-
-            <div className="flex gap-4 border-b mb-6">
-              <button
-                className={`pb-2 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === "description" ? "border-primary text-primary" : "border-transparent text-muted-foreground"
-                }`}
-                onClick={() => setActiveTab("description")}
-              >
-                Description
-              </button>
-              <button
-                className={`pb-2 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === "submissions" ? "border-primary text-primary" : "border-transparent text-muted-foreground"
-                }`}
-                onClick={() => setActiveTab("submissions")}
-              >
-                Submissions
-              </button>
-            </div>
-
-            {activeTab === "description" && (
-              <div className="space-y-6">
-                <div className="prose prose-sm dark:prose-invert max-w-none">
-                  <div dangerouslySetInnerHTML={{ __html: problem.description.replace(/\n/g, "<br/>") }} />
-                </div>
-
-                {problem.constraints && (
-                  <div>
-                    <h3 className="font-semibold mb-2">Constraints</h3>
-                    <div className="text-sm text-muted-foreground bg-muted/50 rounded-md p-3">
-                      {problem.constraints.split("\n").map((c, i) => (
-                        <div key={i}>{c}</div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {problem.testCases.length > 0 && (
-                  <div>
-                    <h3 className="font-semibold mb-2">Examples</h3>
-                    <div className="space-y-3">
-                      {problem.testCases.slice(0, 3).map((tc, i) => (
-                        <div key={tc.id} className="rounded-md border bg-muted/30 p-3">
-                          <div className="text-xs text-muted-foreground mb-1">Example {i + 1}</div>
-                          <div className="font-mono text-sm space-y-1">
-                            <div><span className="text-muted-foreground">Input: </span>{tc.input}</div>
-                            <div><span className="text-muted-foreground">Output: </span>{tc.expected}</div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {problem.hints && (
-                  <div>
-                    <button
-                      onClick={() => setShowHints(!showHints)}
-                      className="flex items-center gap-1 text-sm text-primary hover:underline"
-                    >
-                      <ChevronRight className={`h-4 w-4 transition-transform ${showHints ? "rotate-90" : ""}`} />
-                      {showHints ? "Hide Hints" : "Show Hints"}
-                    </button>
-                    {showHints && (
-                      <div className="mt-2 text-sm text-muted-foreground bg-muted/50 rounded-md p-3 space-y-1">
-                        {(() => {
-                          try {
-                            const hints: string[] = JSON.parse(problem.hints!);
-                            return hints.map((h, i) => <div key={i}>{i + 1}. {h}</div>);
-                          } catch {
-                            return <div>{problem.hints}</div>;
-                          }
-                        })()}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+          <ProblemDescription
+            title={problem.title}
+            difficulty={problem.difficulty}
+            description={problem.description}
+            constraints={problem.constraints}
+            hints={problem.hints}
+            testCases={problem.testCases}
+            tags={problem.tags}
+          />
         </div>
 
-        {/* Right Panel - Code Editor */}
         <div className="lg:w-1/2 flex flex-col">
-          {/* Language selector and actions */}
           <div className="flex items-center justify-between border-b px-4 py-2">
             <select
               value={language}
@@ -263,7 +169,6 @@ export default function ProblemDetailPage({ params }: { params: Promise<{ slug: 
             </div>
           </div>
 
-          {/* Editor */}
           <div className="flex-1 min-h-[300px]">
             <MonacoEditor
               height="100%"
@@ -283,52 +188,7 @@ export default function ProblemDetailPage({ params }: { params: Promise<{ slug: 
             />
           </div>
 
-          {/* Results Panel */}
-          <div className="border-t max-h-64 overflow-y-auto">
-            {submitStatus && (
-              <div className={`px-4 py-3 text-sm font-medium ${
-                submitStatus === "accepted" ? "bg-green-500/10 text-green-500" :
-                "bg-red-500/10 text-red-500"
-              }`}>
-                {submitStatus === "accepted" ? "Accepted! All test cases passed." :
-                 submitStatus === "wrong_answer" ? "Wrong Answer" :
-                 submitStatus === "runtime_error" ? "Runtime Error" :
-                 "Submission Error"}
-              </div>
-            )}
-            {results.length > 0 && (
-              <div className="p-4 space-y-2">
-                <h4 className="text-sm font-medium mb-2">Test Results</h4>
-                {results.map((r, i) => (
-                  <Card key={i} className={`${r.passed ? "border-green-500/30" : "border-red-500/30"}`}>
-                    <CardContent className="p-3">
-                      <div className="flex items-center gap-2 mb-1">
-                        {r.passed ? (
-                          <CheckCircle2 className="h-4 w-4 text-green-500" />
-                        ) : (
-                          <XCircle className="h-4 w-4 text-red-500" />
-                        )}
-                        <span className="text-sm font-medium">Test Case {i + 1}</span>
-                        {r.runtime && <span className="text-xs text-muted-foreground ml-auto">{r.runtime}ms</span>}
-                      </div>
-                      <div className="font-mono text-xs space-y-0.5 text-muted-foreground">
-                        <div>Input: {r.input}</div>
-                        <div>Expected: {r.expected}</div>
-                        <div className={r.passed ? "text-green-500" : "text-red-500"}>
-                          Output: {r.actual || r.error || "(empty)"}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-            {results.length === 0 && !submitStatus && (
-              <div className="p-4 text-center text-sm text-muted-foreground">
-                Run your code to see results here
-              </div>
-            )}
-          </div>
+          <TestResultsPanel results={results} submitStatus={submitStatus} />
         </div>
       </div>
     </>
