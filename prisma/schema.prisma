@@ -47,6 +47,9 @@ model Problem {
   testCases   TestCase[]
   submissions Submission[]
   contestProblems ContestProblem[]
+
+  @@index([difficulty, order])
+  @@index([order])
 }
 
 model ProblemTag {
@@ -84,6 +87,11 @@ model Submission {
 
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([userId, problemId, status])
+  @@index([problemId, status])
+  @@index([status, createdAt])
 }
 
 model Contest {
@@ -98,6 +106,9 @@ model Contest {
 
   problems ContestProblem[]
   entries  ContestEntry[]
+
+  @@index([status, startTime])
+  @@index([startTime])
 }
 
 model ContestProblem {
@@ -124,4 +135,5 @@ model ContestEntry {
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([contestId, userId])
+  @@index([contestId, score(sort: Desc)])
 }
