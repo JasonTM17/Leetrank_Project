@@ -1,0 +1,150 @@
+{
+  "$schema": "./languages.schema.json",
+  "$comment": "Single source of truth for languages supported by the judge. Adding a new language is a 3-step change: append an entry here, drop a runner in judge-service/runners/, expose it in the UI dropdown via src/lib/languages.ts. Compiled languages set compileCmd; interpreted ones set runCmd directly.",
+  "languages": [
+    {
+      "id": "python",
+      "label": "Python 3",
+      "extension": ".py",
+      "monacoLanguage": "python",
+      "kind": "interpreted",
+      "runCmd": ["python3", "{src}"],
+      "category": "scripting"
+    },
+    {
+      "id": "javascript",
+      "label": "JavaScript (Node)",
+      "extension": ".js",
+      "monacoLanguage": "javascript",
+      "kind": "interpreted",
+      "runCmd": ["node", "{src}"],
+      "category": "scripting"
+    },
+    {
+      "id": "typescript",
+      "label": "TypeScript",
+      "extension": ".ts",
+      "monacoLanguage": "typescript",
+      "kind": "interpreted",
+      "runCmd": ["npx", "tsx", "{src}"],
+      "category": "scripting"
+    },
+    {
+      "id": "ruby",
+      "label": "Ruby",
+      "extension": ".rb",
+      "monacoLanguage": "ruby",
+      "kind": "interpreted",
+      "runCmd": ["ruby", "{src}"],
+      "category": "scripting"
+    },
+    {
+      "id": "php",
+      "label": "PHP",
+      "extension": ".php",
+      "monacoLanguage": "php",
+      "kind": "interpreted",
+      "runCmd": ["php", "{src}"],
+      "category": "scripting"
+    },
+    {
+      "id": "bash",
+      "label": "Bash",
+      "extension": ".sh",
+      "monacoLanguage": "shell",
+      "kind": "interpreted",
+      "runCmd": ["bash", "{src}"],
+      "category": "scripting"
+    },
+    {
+      "id": "go",
+      "label": "Go",
+      "extension": ".go",
+      "monacoLanguage": "go",
+      "kind": "compiled",
+      "compileCmd": ["go", "build", "-o", "{bin}", "{src}"],
+      "runCmd": ["{bin}"],
+      "category": "compiled"
+    },
+    {
+      "id": "rust",
+      "label": "Rust",
+      "extension": ".rs",
+      "monacoLanguage": "rust",
+      "kind": "compiled",
+      "compileCmd": ["rustc", "-O", "-o", "{bin}", "{src}"],
+      "runCmd": ["{bin}"],
+      "category": "compiled"
+    },
+    {
+      "id": "c",
+      "label": "C (gcc)",
+      "extension": ".c",
+      "monacoLanguage": "c",
+      "kind": "compiled",
+      "compileCmd": ["gcc", "-O2", "-std=c17", "-o", "{bin}", "{src}"],
+      "runCmd": ["{bin}"],
+      "category": "compiled"
+    },
+    {
+      "id": "cpp",
+      "label": "C++ (g++)",
+      "extension": ".cpp",
+      "monacoLanguage": "cpp",
+      "kind": "compiled",
+      "compileCmd": ["g++", "-O2", "-std=c++20", "-o", "{bin}", "{src}"],
+      "runCmd": ["{bin}"],
+      "category": "compiled"
+    },
+    {
+      "id": "java",
+      "label": "Java",
+      "extension": ".java",
+      "monacoLanguage": "java",
+      "kind": "compiled",
+      "compileCmd": ["javac", "-d", "{workdir}", "{src}"],
+      "runCmd": ["java", "-cp", "{workdir}", "Main"],
+      "mainClass": "Main",
+      "category": "jvm"
+    },
+    {
+      "id": "kotlin",
+      "label": "Kotlin",
+      "extension": ".kt",
+      "monacoLanguage": "kotlin",
+      "kind": "compiled",
+      "compileCmd": ["kotlinc", "{src}", "-include-runtime", "-d", "{workdir}/main.jar"],
+      "runCmd": ["java", "-jar", "{workdir}/main.jar"],
+      "category": "jvm"
+    },
+    {
+      "id": "csharp",
+      "label": "C#",
+      "extension": ".cs",
+      "monacoLanguage": "csharp",
+      "kind": "compiled",
+      "compileCmd": ["dotnet", "build", "{workdir}", "-c", "Release", "-o", "{workdir}/out"],
+      "runCmd": ["dotnet", "{workdir}/out/main.dll"],
+      "category": "compiled"
+    },
+    {
+      "id": "swift",
+      "label": "Swift",
+      "extension": ".swift",
+      "monacoLanguage": "swift",
+      "kind": "compiled",
+      "compileCmd": ["swiftc", "-O", "-o", "{bin}", "{src}"],
+      "runCmd": ["{bin}"],
+      "category": "compiled"
+    },
+    {
+      "id": "sql",
+      "label": "SQL (sqlite)",
+      "extension": ".sql",
+      "monacoLanguage": "sql",
+      "kind": "interpreted",
+      "runCmd": ["sqlite3", ":memory:", ".read {src}"],
+      "category": "data"
+    }
+  ]
+}
