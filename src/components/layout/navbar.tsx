@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Code2, Menu, X, User, LogOut, Shield } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, startTransition } from "react";
 import { usePathname } from "next/navigation";
 
 export function Navbar() {
@@ -21,8 +21,10 @@ export function Navbar() {
   }, [setUser]);
 
   useEffect(() => {
-    setMobileOpen(false);
-    setDropdownOpen(false);
+    startTransition(() => {
+      setMobileOpen(false);
+      setDropdownOpen(false);
+    });
   }, [pathname]);
 
   const navLinks = [
