@@ -12,7 +12,8 @@
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
     "db:reset": "prisma db push --force-reset && prisma db seed",
-    "seed:extra": "npx ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed-extra.ts"
+    "seed:extra": "npx ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed-extra.ts",
+    "seed:bigdata": "npx ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed-bigdata.ts"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
