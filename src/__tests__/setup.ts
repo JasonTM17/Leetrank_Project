@@ -48,6 +48,8 @@ export const prismaMock = {
   contest: makeModel(),
   contestProblem: makeModel(),
   contestEntry: makeModel(),
+  discussion: makeModel(),
+  discussionComment: makeModel(),
   $queryRaw: vi.fn(),
   $transaction: vi.fn(),
 };
