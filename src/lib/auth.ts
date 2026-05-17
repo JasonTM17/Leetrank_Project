@@ -1,9 +1,18 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 
-const secret = new TextEncoder().encode(
-  process.env.JWT_SECRET || "fallback-secret-do-not-use-in-prod"
-);
+function loadSecret(): Uint8Array {
+  const value = process.env.JWT_SECRET;
+  if (!value || value.length < 16) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("JWT_SECRET must be set to a 16+ character value in production");
+    }
+    return new TextEncoder().encode("dev-only-insecure-secret-change-me");
+  }
+  return new TextEncoder().encode(value);
+}
+
+const secret = loadSecret();
 
 export interface JWTPayload {
   userId: string;
