@@ -98,7 +98,7 @@ describe("runCodeSchema", () => {
   it("rejects unsupported language", () => {
     const result = runCodeSchema.safeParse({
       code: "print('hello')",
-      language: "cpp",
+      language: "cobol",
       testCases: [{ input: "", expected: "hello" }],
     });
     expect(result.success).toBe(false);

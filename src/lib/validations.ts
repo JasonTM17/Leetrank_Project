@@ -1,4 +1,7 @@
 import { z } from "zod";
+import { LANGUAGE_IDS } from "@/lib/languages";
+
+const languageEnum = z.enum(LANGUAGE_IDS as [string, ...string[]]);
 
 export const registerSchema = z.object({
   username: z
@@ -70,7 +73,7 @@ export const createContestSchema = z
 
 export const runCodeSchema = z.object({
   code: z.string().min(1, "Code is required"),
-  language: z.enum(["python", "javascript", "go", "ruby"]),
+  language: languageEnum,
   testCases: z.array(z.object({
     input: z.string(),
     expected: z.string(),
@@ -79,7 +82,7 @@ export const runCodeSchema = z.object({
 
 export const submitCodeSchema = z.object({
   code: z.string().min(1, "Code is required"),
-  language: z.enum(["python", "javascript", "go", "ruby"]),
+  language: languageEnum,
   problemId: z.string().min(1, "Problem ID is required"),
 });
 

@@ -7,6 +7,7 @@ import { ProblemDescription } from "@/components/problem/problem-description";
 import { TestResultsPanel } from "@/components/problem/test-results-panel";
 import { Play, Send, Loader2 } from "lucide-react";
 import dynamic from "next/dynamic";
+import { LANGUAGES, monacoLanguageFor } from "@/lib/languages";
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), { ssr: false });
 
@@ -152,10 +153,9 @@ export default function ProblemDetailPage({ params }: { params: Promise<{ slug: 
               onChange={(e) => setLanguage(e.target.value)}
               className="bg-background border rounded-md px-3 py-1.5 text-sm"
             >
-              <option value="python">Python</option>
-              <option value="javascript">JavaScript</option>
-              <option value="go">Go</option>
-              <option value="ruby">Ruby</option>
+              {LANGUAGES.map((lang) => (
+                <option key={lang.id} value={lang.id}>{lang.label}</option>
+              ))}
             </select>
             <div className="flex gap-2">
               <Button size="sm" variant="outline" onClick={handleRun} disabled={running}>
@@ -172,7 +172,7 @@ export default function ProblemDetailPage({ params }: { params: Promise<{ slug: 
           <div className="flex-1 min-h-[300px]">
             <MonacoEditor
               height="100%"
-              language={language === "python" ? "python" : language === "go" ? "go" : language === "ruby" ? "ruby" : "javascript"}
+              language={monacoLanguageFor(language)}
               theme="vs-dark"
               value={code}
               onChange={(value) => setCode(value || "")}
