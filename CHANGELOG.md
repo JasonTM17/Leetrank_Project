@@ -20,6 +20,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Prisma models.
 - Zod validation for admin POST/PUT routes (problems, contests) including a
   strict ISO 8601 + `endTime > startTime` check.
+- `src/lib/logger.ts`: structured JSON logger with level threshold and
+  per-request child loggers.
+- 22 additional unit tests (validations-extra, utils, auth) for a TS suite
+  total of 40 tests across 4 files.
+- Go test suite for the judge: scheduler accept/release accounting, per-IP
+  isolation, context cancellation, 40-request concurrency stress, plus
+  `isSafe()` per language and the rate limiter.
+- CI now runs four parallel jobs (web, audit, judge with race detector,
+  docker buildx) with a concurrency group that cancels superseded pushes.
 
 ### Changed
 - `src/services/judge.ts` now POSTs to the Go judge over HTTP instead of
@@ -29,6 +38,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   removing the false-negative that required an authenticated cookie.
 - `useAuth.logout` calls `/api/auth/logout` so the httpOnly session cookie
   is actually cleared. The navbar awaits the call before redirecting.
+- `/api/leaderboard` now accepts `page` and `limit` query params (defaults
+  50, max 100), and dedup-aware: `groupBy(userId, problemId)` so multiple
+  AC submissions for one problem stop double-counting.
+- Footer copyright year is computed from `new Date()`.
 
 ### Fixed
 - JWT secret loading throws in production when unset or shorter than 16
