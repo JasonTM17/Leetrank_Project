@@ -170,17 +170,40 @@ LeetRank_Project/
 
 ## Screenshots
 
-> Screenshots will be added after UI testing. Run `npm run dev` and capture with browser DevTools.
-
-| Page | Description |
-|------|-------------|
-| `docs/screenshots/landing-page.png` | Hero section with stats, features, and CTA |
-| `docs/screenshots/problems-list.png` | Problem list with search, filter by difficulty/tag |
-| `docs/screenshots/code-editor.png` | Monaco editor with problem description and test runner |
-| `docs/screenshots/dashboard.png` | User stats, progress chart, recent submissions |
-| `docs/screenshots/leaderboard.png` | Global rankings table |
-| `docs/screenshots/contests.png` | Active and upcoming contests |
-| `docs/screenshots/admin-panel.png` | Admin CRUD interface |
+<table>
+<tr>
+<td align="center"><strong>Landing Page</strong></td>
+<td align="center"><strong>Problems List</strong></td>
+</tr>
+<tr>
+<td><img src="docs/screenshots/landing-page.png" alt="Landing page with hero section, stats, and features" width="400"/></td>
+<td><img src="docs/screenshots/problems-list.png" alt="Problem list with search and difficulty filter" width="400"/></td>
+</tr>
+<tr>
+<td align="center"><strong>Code Editor</strong></td>
+<td align="center"><strong>Dashboard</strong></td>
+</tr>
+<tr>
+<td><img src="docs/screenshots/code-editor.png" alt="Monaco editor with problem description and test runner" width="400"/></td>
+<td><img src="docs/screenshots/dashboard.png" alt="User stats, progress tracking, recent submissions" width="400"/></td>
+</tr>
+<tr>
+<td align="center"><strong>Leaderboard</strong></td>
+<td align="center"><strong>Contests</strong></td>
+</tr>
+<tr>
+<td><img src="docs/screenshots/leaderboard.png" alt="Global rankings table" width="400"/></td>
+<td><img src="docs/screenshots/contests.png" alt="Active and upcoming contests" width="400"/></td>
+</tr>
+<tr>
+<td align="center"><strong>Admin Panel</strong></td>
+<td align="center"><strong>Login</strong></td>
+</tr>
+<tr>
+<td><img src="docs/screenshots/admin-panel.png" alt="Admin CRUD interface for problems and users" width="400"/></td>
+<td><img src="docs/screenshots/login.png" alt="Login page with email and password" width="400"/></td>
+</tr>
+</table>
 
 ---
 
