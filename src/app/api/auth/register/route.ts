@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { signToken } from "@/lib/auth";
+import { registerSchema } from "@/lib/validations";
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,27 +14,13 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: "Invalid JSON body" }, { status: 400 });
     }
 
-    const { email, username, password } = body;
-
-    if (!email || !username || !password) {
-      return Response.json({ error: "Email, username, and password are required" }, { status: 400 });
+    const parsed = registerSchema.safeParse(body);
+    if (!parsed.success) {
+      const firstError = parsed.error.errors[0]?.message || "Invalid input";
+      return Response.json({ error: firstError }, { status: 400 });
     }
 
-    if (typeof username !== "string" || username.length < 3 || username.length > 30) {
-      return Response.json({ error: "Username must be 3-30 characters" }, { status: 400 });
-    }
-
-    if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
-      return Response.json({ error: "Username can only contain letters, numbers, underscores, and hyphens" }, { status: 400 });
-    }
-
-    if (typeof email !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 255) {
-      return Response.json({ error: "Invalid email address" }, { status: 400 });
-    }
-
-    if (password.length < 6 || password.length > 128) {
-      return Response.json({ error: "Password must be 6-128 characters" }, { status: 400 });
-    }
+    const { email, username, password } = parsed.data;
 
     const existing = await prisma.user.findFirst({
       where: { OR: [{ email }, { username }] },

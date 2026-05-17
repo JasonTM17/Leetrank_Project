@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { signToken } from "@/lib/auth";
+import { loginSchema } from "@/lib/validations";
 
 const loginAttempts = new Map<string, { count: number; resetAt: number }>();
 const MAX_ATTEMPTS = 5;
@@ -33,11 +34,13 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: "Invalid JSON body" }, { status: 400 });
     }
 
-    const { email, password } = body;
-
-    if (!email || !password) {
-      return Response.json({ error: "Email and password are required" }, { status: 400 });
+    const parsed = loginSchema.safeParse(body);
+    if (!parsed.success) {
+      const firstError = parsed.error.errors[0]?.message || "Invalid input";
+      return Response.json({ error: firstError }, { status: 400 });
     }
+
+    const { email, password } = parsed.data;
 
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {

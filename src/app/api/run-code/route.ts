@@ -1,14 +1,23 @@
 import { NextRequest } from "next/server";
 import { executeCode } from "@/services/judge";
+import { runCodeSchema } from "@/lib/validations";
 
 export async function POST(request: NextRequest) {
   try {
-    const { code, language, testCases } = await request.json();
-
-    if (!code || !language || !testCases || !Array.isArray(testCases)) {
-      return Response.json({ error: "code, language, and testCases are required" }, { status: 400 });
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return Response.json({ error: "Invalid JSON body" }, { status: 400 });
     }
 
+    const parsed = runCodeSchema.safeParse(body);
+    if (!parsed.success) {
+      const firstError = parsed.error.errors[0]?.message || "Invalid input";
+      return Response.json({ error: firstError }, { status: 400 });
+    }
+
+    const { code, language, testCases } = parsed.data;
     const results = await executeCode({ code, language, testCases });
 
     return Response.json({ results });

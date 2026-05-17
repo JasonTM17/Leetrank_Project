@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { executeCode } from "@/services/judge";
+import { submitCodeSchema } from "@/lib/validations";
 
 export async function GET(request: NextRequest) {
   try {
@@ -37,11 +38,20 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { problemId, language, code } = await request.json();
-
-    if (!problemId || !language || !code) {
-      return Response.json({ error: "problemId, language, and code are required" }, { status: 400 });
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return Response.json({ error: "Invalid JSON body" }, { status: 400 });
     }
+
+    const parsed = submitCodeSchema.safeParse(body);
+    if (!parsed.success) {
+      const firstError = parsed.error.errors[0]?.message || "Invalid input";
+      return Response.json({ error: firstError }, { status: 400 });
+    }
+
+    const { problemId, language, code } = parsed.data;
 
     const problem = await prisma.problem.findUnique({
       where: { id: problemId },
