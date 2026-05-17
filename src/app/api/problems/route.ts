@@ -7,6 +7,8 @@ export async function GET(request: NextRequest) {
     const difficulty = searchParams.get("difficulty");
     const tag = searchParams.get("tag");
     const search = searchParams.get("search");
+    const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") ?? "50", 10) || 50));
 
     const where: Record<string, unknown> = {};
 
@@ -22,14 +24,19 @@ export async function GET(request: NextRequest) {
       where.tags = { some: { tag: { slug: tag } } };
     }
 
-    const problems = await prisma.problem.findMany({
-      where,
-      orderBy: { order: "asc" },
-      include: {
-        tags: { include: { tag: true } },
-        _count: { select: { submissions: true } },
-      },
-    });
+    const [problems, total] = await Promise.all([
+      prisma.problem.findMany({
+        where,
+        orderBy: { order: "asc" },
+        skip: (page - 1) * limit,
+        take: limit,
+        include: {
+          tags: { include: { tag: true } },
+          _count: { select: { submissions: true } },
+        },
+      }),
+      prisma.problem.count({ where }),
+    ]);
 
     const result = problems.map((p) => ({
       id: p.id,
@@ -40,7 +47,7 @@ export async function GET(request: NextRequest) {
       submissionCount: p._count.submissions,
     }));
 
-    return Response.json({ problems: result });
+    return Response.json({ problems: result, total, page, limit });
   } catch {
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
