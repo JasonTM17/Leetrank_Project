@@ -15,6 +15,7 @@ require 'open3'
 require 'timeout'
 
 TIMEOUT_SECONDS = (ENV['RUNNER_TIMEOUT'] || '5').to_i
+MEMORY_LIMIT_BYTES = (ENV['RUNNER_MEMORY_MB'] || '256').to_i * 1024 * 1024
 
 def result(output: '', error: '', timed_out: false)
   puts JSON.generate({ output: output, error: error, timed_out: timed_out })
@@ -41,8 +42,9 @@ def main
 
   begin
     Timeout.timeout(TIMEOUT_SECONDS) do
+      wrapper = %(Process.setrlimit(:AS, #{MEMORY_LIMIT_BYTES}); load '#{code_file.gsub("'", "\\\\'")}')
       stdout_str, stderr_str, status = Open3.capture3(
-        RbConfig.ruby, code_file,
+        RbConfig.ruby, '-e', wrapper,
         stdin_data: stdin_data
       )
       exit_status = status.exitstatus
