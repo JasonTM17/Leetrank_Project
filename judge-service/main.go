@@ -156,6 +156,7 @@ func (rl *rateLimiter) Allow(ip string) bool {
 
 type server struct {
 	rl         *rateLimiter
+	sched      *scheduler
 	runnersDir string
 }
 
@@ -166,10 +167,38 @@ func newServer() *server {
 	if err == nil {
 		runnersDir = filepath.Join(filepath.Dir(exe), "runners")
 	}
+
+	cfg := defaultConcurrency
+	if v := envInt("JUDGE_GLOBAL_MAX", 0); v > 0 {
+		cfg.GlobalMax = v
+	}
+	if v := envInt("JUDGE_PER_IP_MAX", 0); v > 0 {
+		cfg.PerIPMax = v
+	}
+	if v := envInt("JUDGE_QUEUE_WAIT_MS", 0); v > 0 {
+		cfg.QueueWait = time.Duration(v) * time.Millisecond
+	}
+
 	return &server{
 		rl:         newRateLimiter(),
+		sched:      newScheduler(cfg),
 		runnersDir: runnersDir,
 	}
+}
+
+func envInt(name string, fallback int) int {
+	v := os.Getenv(name)
+	if v == "" {
+		return fallback
+	}
+	n := 0
+	for _, c := range v {
+		if c < '0' || c > '9' {
+			return fallback
+		}
+		n = n*10 + int(c-'0')
+	}
+	return n
 }
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
@@ -199,10 +228,11 @@ func loggingMiddleware(next http.Handler) http.Handler {
 
 func (s *server) healthHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{
-		"status":  "ok",
-		"service": "leetrank-judge",
-		"time":    time.Now().UTC().Format(time.RFC3339),
+	json.NewEncoder(w).Encode(map[string]any{
+		"status":     "ok",
+		"service":    "leetrank-judge",
+		"time":       time.Now().UTC().Format(time.RFC3339),
+		"scheduler":  s.sched.snapshot(),
 	})
 }
 
@@ -278,6 +308,20 @@ func (s *server) executeHandler(w http.ResponseWriter, r *http.Request) {
 	if timeLimit <= 0 || timeLimit > 10000 {
 		timeLimit = 5000 // default 5 s
 	}
+
+	// Bound concurrency: refuse fast if the system is saturated rather
+	// than letting the kernel page-in another runner process.
+	acquireCtx, acquireCancel := context.WithCancel(r.Context())
+	defer acquireCancel()
+	release, err := s.sched.Acquire(acquireCtx, ip)
+	if err != nil {
+		writeJSON(w, http.StatusServiceUnavailable, ExecuteResponse{
+			Status:  "busy",
+			Results: []TestResult{{Error: err.Error()}},
+		})
+		return
+	}
+	defer release()
 
 	// Run all test cases concurrently.
 	results := s.runConcurrent(req.Code, req.Language, req.TestCases, timeLimit)
