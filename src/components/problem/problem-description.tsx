@@ -75,7 +75,9 @@ export function ProblemDescription({
       {activeTab === "description" && (
         <div className="space-y-6">
           <div className="prose prose-sm dark:prose-invert max-w-none">
-            <div dangerouslySetInnerHTML={{ __html: description.replace(/\n/g, "<br/>") }} />
+            {description.split("\n").map((line, i) => (
+              <p key={i} className="my-1">{line || " "}</p>
+            ))}
           </div>
 
           {constraints && (
