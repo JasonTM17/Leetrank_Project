@@ -10,7 +10,7 @@ Lessons learned from building LeetRank. Apply these to future full-stack Next.js
 
 - **Author:** Nguyễn Sơn (jasonbmt06@gmail.com)
 - **GitHub:** JasonTM17
-- **Git operations:** Luôn dùng MCP GitHub để push, tạo PR, quản lý issues — không dùng git CLI cho remote operations.
+- **Git operations:** Luôn dùng MCP GitHub tools (push_files, create_or_update_file, create_pull_request, etc.) để push, tạo PR, quản lý issues — không dùng git CLI hay gh CLI cho remote operations. MCP GitHub = chuyên nghiệp, trực tiếp, không cần auth workaround.
 - **Contributor:** Chỉ JasonTM17 — không được để AI/bot xuất hiện trong contributor list.
 - **Commit style:** Conventional commits (`feat:`, `fix:`, `docs:`, `chore:`, `refactor:`)
 - **Documentation disclaimer:** Mọi README/docs phải ghi rõ: "Đây là dự án học tập của Nguyễn Sơn (jasonbmt06@gmail.com). Mọi ý kiến đóng góp và phản hồi xin gửi qua email hoặc GitHub Issues."
