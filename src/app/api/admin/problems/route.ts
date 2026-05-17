@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { createProblemSchema, firstZodError } from "@/lib/validations";
 
 export async function GET(request: NextRequest) {
   try {
@@ -39,34 +40,36 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const body = await request.json();
-    const { title, slug, description, difficulty, hints, editorial, constraints, starterCode, order, tags, testCases } = body;
-
-    if (!title || !slug || !description || !difficulty) {
-      return Response.json({ error: "title, slug, description, and difficulty are required" }, { status: 400 });
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return Response.json({ error: "Invalid JSON body" }, { status: 400 });
     }
 
+    const parsed = createProblemSchema.safeParse(body);
+    if (!parsed.success) {
+      return Response.json({ error: firstZodError(parsed.error) }, { status: 400 });
+    }
+
+    const data = parsed.data;
     const problem = await prisma.problem.create({
       data: {
-        title,
-        slug,
-        description,
-        difficulty,
-        hints,
-        editorial,
-        constraints,
-        starterCode,
-        order: order ?? 0,
-        tags: tags?.length
-          ? {
-              create: tags.map((tagId: string) => ({
-                tag: { connect: { id: tagId } },
-              })),
-            }
+        title: data.title,
+        slug: data.slug,
+        description: data.description,
+        difficulty: data.difficulty,
+        hints: data.hints || undefined,
+        editorial: data.editorial || undefined,
+        constraints: data.constraints || undefined,
+        starterCode: data.starterCode || undefined,
+        order: data.order,
+        tags: data.tags.length
+          ? { create: data.tags.map((tagId) => ({ tag: { connect: { id: tagId } } })) }
           : undefined,
-        testCases: testCases?.length
+        testCases: data.testCases.length
           ? {
-              create: testCases.map((tc: { input: string; expected: string; isHidden?: boolean; order?: number }) => ({
+              create: data.testCases.map((tc) => ({
                 input: tc.input,
                 expected: tc.expected,
                 isHidden: tc.isHidden ?? false,
