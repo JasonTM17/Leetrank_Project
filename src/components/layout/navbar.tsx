@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Code2, Menu, X, User, LogOut, Shield, Bookmark, ListChecks, Settings as SettingsIcon } from "lucide-react";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useEffect, useState, startTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
@@ -65,6 +66,7 @@ export function Navbar() {
           </div>
 
           <div className="hidden md:flex items-center gap-3">
+            <ThemeToggle />
             {user ? (
               <div className="relative">
                 <button
