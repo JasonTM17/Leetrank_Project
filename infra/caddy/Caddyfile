@@ -1,0 +1,58 @@
+{
+	# Global options — keep timeouts generous so judge submissions
+	# (which can run up to RUNNER_TIMEOUT seconds) aren't cut off.
+	servers {
+		timeouts {
+			read_body 30s
+			read_header 10s
+			write 60s
+			idle 5m
+		}
+	}
+	email {$ACME_EMAIL}
+}
+
+# Production virtual host. ACME (Let's Encrypt) certs are auto-issued
+# and renewed via TLS-ALPN as long as port 443 is reachable.
+{$PUBLIC_HOSTNAME:localhost} {
+	encode zstd gzip
+
+	# Standard security headers — set once in the proxy so app code
+	# doesn't have to think about them.
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		# Don't leak server identity.
+		-Server
+	}
+
+	# Public health check — bypasses the app for liveness probes.
+	handle /healthz {
+		respond "ok" 200
+	}
+
+	# Coarse rate limit on auth + write endpoints. Per-IP buckets are
+	# enforced inside the app too; this is a cheap first line of defense.
+	@auth path /api/auth/* /api/admin/*
+	rate_limit @auth {
+		zone auth_zone {
+			key {remote_host}
+			events 30
+			window 1m
+		}
+	}
+
+	# Everything else proxied to Next.js. trusted_proxies tells the app
+	# the X-Forwarded-* headers are legitimate.
+	reverse_proxy app:3000 {
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-For {remote_host}
+		header_up X-Forwarded-Proto {scheme}
+		health_uri /api/health
+		health_interval 30s
+		health_timeout 5s
+	}
+}
