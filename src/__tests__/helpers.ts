@@ -15,9 +15,9 @@ export async function loginAs(payload: Partial<JWTPayload> = {}): Promise<string
 export function jsonRequest(url: string, body: unknown, init: RequestInit = {}): Request {
   return new Request(url, {
     method: "POST",
+    ...init,
     headers: { "Content-Type": "application/json", ...(init.headers as object) },
     body: JSON.stringify(body),
-    ...init,
   });
 }
 
