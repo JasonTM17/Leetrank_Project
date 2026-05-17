@@ -5,6 +5,21 @@
 <p><strong>A competitive programming platform for practicing algorithms and data structures</strong></p>
 
 <p>
+  <a href="https://github.com/JasonTM17/Leetrank_Project/actions/workflows/ci.yml">
+    <img src="https://img.shields.io/github/actions/workflow/status/JasonTM17/Leetrank_Project/ci.yml?style=for-the-badge&logo=github&label=CI" alt="CI Status">
+  </a>
+  <a href="https://github.com/JasonTM17/Leetrank_Project/blob/main/LICENSE">
+    <img src="https://img.shields.io/github/license/JasonTM17/Leetrank_Project?style=for-the-badge" alt="License">
+  </a>
+  <a href="https://github.com/JasonTM17/Leetrank_Project/stargazers">
+    <img src="https://img.shields.io/github/stars/JasonTM17/Leetrank_Project?style=for-the-badge&logo=github" alt="Stars">
+  </a>
+  <a href="https://github.com/JasonTM17/Leetrank_Project/issues">
+    <img src="https://img.shields.io/github/issues/JasonTM17/Leetrank_Project?style=for-the-badge" alt="Issues">
+  </a>
+</p>
+
+<p>
   <img src="https://img.shields.io/badge/Next.js-16-000?style=for-the-badge&logo=next.js" alt="Next.js">
   <img src="https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript">
   <img src="https://img.shields.io/badge/Prisma-5-2D3748?style=for-the-badge&logo=prisma" alt="Prisma">
@@ -137,7 +152,8 @@ LeetRank_Project/
 │   └── seed-extra.ts           # Extended seed (20 problems)
 ├── docs/screenshots/           # Project screenshots & GIFs
 ├── docker-compose.yml          # Multi-service orchestration
-├── Dockerfile                  # Next.js production build
+├── docker-compose.prod.yml     # Production deployment config
+├── Dockerfile                  # Next.js multi-stage build
 ├── .github/workflows/ci.yml    # CI pipeline
 └── RULES.md                    # Project best practices
 ```
@@ -251,7 +267,7 @@ npm run dev
 docker-compose up --build
 
 # App: http://localhost:3000
-# Judge: http://localhost:8080
+# Judge: http://localhost:9090
 ```
 
 ### Environment Variables
@@ -260,8 +276,9 @@ docker-compose up --build
 |----------|-------------|--------|
 | `DATABASE_URL` | Database connection string | `file:./dev.db` |
 | `JWT_SECRET` | Secret for JWT token signing | (required) |
-| `JUDGE_SERVICE_URL` | Judge service endpoint | `http://localhost:8080` |
+| `JUDGE_SERVICE_URL` | Judge service endpoint | `http://localhost:9090` |
 | `NEXT_PUBLIC_APP_URL` | Public app URL | `http://localhost:3000` |
+| `RUNNER_TIMEOUT` | Code execution timeout (seconds) | `5` |
 
 ---
 
@@ -340,6 +357,7 @@ docker-compose up --build
 | POST | `/api/admin/problems` | Create problem |
 | PUT | `/api/admin/problems/[id]` | Update problem |
 | DELETE | `/api/admin/problems/[id]` | Delete problem |
+| GET | `/api/admin/users` | List all users |
 
 </details>
 
@@ -352,7 +370,7 @@ The judge service is a standalone Go application that executes user-submitted co
 ### Security Features
 
 - Per-language blocklists (dangerous imports: `os`, `subprocess`, `exec`, `eval`, etc.)
-- Hard time limits (10s default)
+- Hard time limits (configurable, default 5s)
 - Memory limits
 - No network access during execution
 - Separate process per submission
@@ -369,7 +387,7 @@ The judge service is a standalone Go application that executes user-submitted co
 ### Judge API
 
 ```bash
-POST http://localhost:8080/execute
+POST http://localhost:9090/execute
 Content-Type: application/json
 
 {
@@ -423,12 +441,15 @@ npm run db:reset
 <summary><strong>Docker Compose (Recommended)</strong></summary>
 
 ```bash
-# Production build
-docker-compose -f docker-compose.yml up --build -d
+# Development
+docker-compose up --build
+
+# Production (with resource limits)
+docker-compose -f docker-compose.prod.yml up --build -d
 
 # Services:
 # - app (Next.js): port 3000
-# - judge (Go): port 8080
+# - judge (Go): port 9090
 ```
 
 </details>
@@ -465,6 +486,7 @@ npm start &
 - [x] Go judge service with Python/JS/Ruby runners
 - [x] Docker containerization
 - [x] CI/CD pipeline
+- [x] Auth middleware for route protection
 - [ ] WebSocket real-time contest updates
 - [ ] Discussion forum per problem
 - [ ] User profiles with badges
