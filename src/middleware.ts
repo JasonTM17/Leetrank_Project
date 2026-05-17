@@ -36,7 +36,7 @@ export async function middleware(request: NextRequest) {
 
     const isAdmin = adminRoutes.some((route) => pathname.startsWith(route));
     if (isAdmin && payload.role !== "admin") {
-      return NextResponse.redirect(new URL("/", request.url));
+      return NextResponse.redirect(new URL("/forbidden", request.url));
     }
 
     return NextResponse.next();
