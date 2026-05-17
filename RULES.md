@@ -159,6 +159,8 @@ Lessons learned from building LeetRank. Apply these to future full-stack Next.js
 - **Caption every image** — in README, every screenshot/GIF must have a descriptive caption explaining what it shows.
 - **Keep media updated** — when UI changes, update screenshots. Stale screenshots are worse than none.
 - **README media section** — dedicate a section in README with a visual tour of the application.
+- **No loading/404 screenshots** — screenshots phải hiển thị nội dung thực tế, không được là trang loading, skeleton, hay 404. Nếu screenshot bị lỗi thì phải tự fix (chờ page load xong, fix route, seed data) rồi chụp lại. Screenshot lỗi = không chuyên nghiệp.
+- **Self-healing screenshots** — khi chụp screenshot mà phát hiện page trống/lỗi, phải tự động debug và sửa root cause trước khi chụp lại. Không bao giờ commit screenshot lỗi.
 
 ---
 
