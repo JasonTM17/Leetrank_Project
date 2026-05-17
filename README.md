@@ -248,9 +248,9 @@ docker-compose up --build
 
 | Username | Password | Role |
 |----------|----------|------|
-| `admin` | `admin123` | Admin |
-| `john_doe` | `password123` | User |
-| `jane_smith` | `password123` | User |
+| `admin` | `password123` | Admin |
+| `user1` | `password123` | User |
+| `user2` | `password123` | User |
 
 ### Running Code
 
