@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { executeCode } from "@/services/judge";
+import { executeCode, JudgeUnavailableError } from "@/services/judge";
 import { runCodeSchema } from "@/lib/validations";
 
 export async function POST(request: NextRequest) {
@@ -21,7 +21,10 @@ export async function POST(request: NextRequest) {
     const results = await executeCode({ code, language, testCases });
 
     return Response.json({ results });
-  } catch {
+  } catch (err) {
+    if (err instanceof JudgeUnavailableError) {
+      return Response.json({ error: err.message }, { status: 503 });
+    }
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }
