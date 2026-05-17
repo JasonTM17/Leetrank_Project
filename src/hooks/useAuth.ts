@@ -6,7 +6,7 @@ interface AuthState {
   isLoading: boolean;
   setUser: (user: User | null) => void;
   setLoading: (loading: boolean) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 export const useAuth = create<AuthState>((set) => ({
@@ -14,8 +14,11 @@ export const useAuth = create<AuthState>((set) => ({
   isLoading: true,
   setUser: (user) => set({ user, isLoading: false }),
   setLoading: (isLoading) => set({ isLoading }),
-  logout: () => {
-    document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-    set({ user: null });
+  logout: async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } finally {
+      set({ user: null });
+    }
   },
 }));
