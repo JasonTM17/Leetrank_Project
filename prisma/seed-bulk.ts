@@ -12,7 +12,7 @@
  * bounded on Postgres. Tags are seeded first so problem→tag joins resolve.
  */
 
-import { PrismaClient, Prisma } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -101,8 +101,7 @@ async function seedProblems(rng: () => number, tagBySlug: Map<string, string>): 
           },
           select: { id: true },
         });
-      }),
-      { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted, timeout: 60_000 }
+      })
     );
     ids.push(...created.map((p) => p.id));
     process.stdout.write(`\rseeded problems: ${chunkEnd}/${PROBLEM_COUNT}`);
@@ -139,8 +138,7 @@ async function seedContests(rng: () => number, problemIds: string[]): Promise<vo
             },
           },
         });
-      }),
-      { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted, timeout: 60_000 }
+      })
     );
     process.stdout.write(`\rseeded contests: ${chunkEnd}/${CONTEST_COUNT}`);
   }
