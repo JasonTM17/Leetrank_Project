@@ -16,7 +16,7 @@ export function Footer() {
             <Link href="/leaderboard" className="hover:text-foreground transition-colors">Leaderboard</Link>
           </div>
           <p className="text-sm text-muted-foreground">
-            &copy; 2024 LeetRank. Built for learning.
+            &copy; {new Date().getFullYear()} LeetRank. Built for learning.
           </p>
         </div>
       </div>

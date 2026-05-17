@@ -272,13 +272,17 @@ docker-compose up --build
 
 ### Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|--------|
-| `DATABASE_URL` | Database connection string | `file:./dev.db` |
-| `JWT_SECRET` | Secret for JWT token signing | (required) |
-| `JUDGE_SERVICE_URL` | Judge service endpoint | `http://localhost:9090` |
-| `NEXT_PUBLIC_APP_URL` | Public app URL | `http://localhost:3000` |
-| `RUNNER_TIMEOUT` | Code execution timeout (seconds) | `5` |
+| Variable | Description | Required | Default |
+|----------|-------------|----------|---------|
+| `DATABASE_URL` | Database connection string | Yes | `file:./dev.db` |
+| `JWT_SECRET` | Secret for JWT token signing (16+ chars; production fails to start otherwise) | Yes (production) | — |
+| `JUDGE_SERVICE_URL` | Judge service endpoint | No | `http://localhost:9090` |
+| `NEXT_PUBLIC_APP_URL` | Public app URL | No | `http://localhost:3000` |
+| `RUNNER_TIMEOUT` | Code execution timeout (seconds) | No | `5` |
+| `LOG_LEVEL` | Web logger threshold (`debug`/`info`/`warn`/`error`) | No | `info` |
+| `JUDGE_GLOBAL_MAX` | Max concurrent executions across the judge | No | `16` |
+| `JUDGE_PER_IP_MAX` | Max concurrent executions per remote IP | No | `4` |
+| `JUDGE_QUEUE_WAIT_MS` | How long a request waits for a slot before 503 | No | `10000` |
 
 ---
 
@@ -376,6 +380,31 @@ The judge service is a standalone Go application that executes user-submitted co
 - Separate process per submission
 - Temp file cleanup after execution
 
+### Concurrency & Load Shedding
+
+The judge bounds concurrent executions with a two-tier semaphore:
+
+- **Global cap** (`JUDGE_GLOBAL_MAX`, default 16) — hard ceiling across the whole process.
+- **Per-IP cap** (`JUDGE_PER_IP_MAX`, default 4) — prevents a single user from monopolising the queue.
+- **Bounded wait queue** (`JUDGE_QUEUE_WAIT_MS`, default 10s) — requests that can't acquire a slot return HTTP 503 with `status=busy` instead of stalling.
+
+The `/health` endpoint reports a live snapshot:
+
+```json
+{
+  "status": "ok",
+  "service": "leetrank-judge",
+  "scheduler": {
+    "globalMax": 16,
+    "perIpMax": 4,
+    "inUse": 3,
+    "totalAccepted": 421,
+    "totalRejected": 12,
+    "activeIps": 2
+  }
+}
+```
+
 ### Supported Languages
 
 | Language | Runner | Version |
@@ -426,12 +455,21 @@ npm run typecheck
 # Linting
 npm run lint
 
+# Unit + schema tests (Vitest)
+npm test
+
 # Build verification
 npm run build
 
 # Database reset + reseed
 npm run db:reset
+
+# Judge service tests (race detector)
+cd judge-service && go test -race ./...
 ```
+
+The CI workflow runs all of the above plus `npm audit --audit-level=high`
+and a multi-stage Docker build for both the app and judge images.
 
 ---
 
@@ -478,15 +516,19 @@ npm start &
 - [x] User authentication (register, login, JWT)
 - [x] Problem library with 30+ problems
 - [x] Monaco code editor with multi-language support
-- [x] Code execution and submission system
+- [x] Code execution and submission system (Next.js → Go judge over HTTP)
 - [x] Contest system with live rankings
 - [x] User dashboard and progress tracking
-- [x] Global leaderboard
-- [x] Admin panel (CRUD problems, users, contests)
+- [x] Global leaderboard (paginated, dedup-aware)
+- [x] Admin panel (CRUD problems, users, contests) with Zod-validated payloads
 - [x] Go judge service with Python/JS/Ruby runners
-- [x] Docker containerization
-- [x] CI/CD pipeline
+- [x] Concurrent execution with global + per-IP semaphores
+- [x] Docker containerization (multi-stage, non-root, healthchecks)
+- [x] CI pipeline (typecheck, lint, test, build, audit, Go race tests, Docker build)
 - [x] Auth middleware for route protection
+- [x] `/api/health` with database + judge probes
+- [x] Hot-path Prisma indexes
+- [x] Structured JSON logger
 - [ ] WebSocket real-time contest updates
 - [ ] Discussion forum per problem
 - [ ] User profiles with badges
