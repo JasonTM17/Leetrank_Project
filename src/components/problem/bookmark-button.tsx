@@ -16,16 +16,17 @@ export function BookmarkButton({ problemId, isAuthenticated }: BookmarkButtonPro
   const [pending, setPending] = useState(false);
 
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
     if (!isAuthenticated) {
       setLoading(false);
       return;
     }
     fetch(`/api/bookmarks?problemId=${encodeURIComponent(problemId)}`)
       .then((r) => (r.ok ? r.json() : { bookmarked: false }))
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       .then((data) => setBookmarked(!!data.bookmarked))
       .catch(() => setBookmarked(false))
       .finally(() => setLoading(false));
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [problemId, isAuthenticated]);
 
   async function handleToggle() {
