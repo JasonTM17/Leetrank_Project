@@ -2,6 +2,12 @@
 // and the language dropdown in sync with what the judge actually accepts.
 // Runtime mismatch between the two would leave users staring at a "language
 // X not supported" error from the API. Edit both files together.
+//
+// Today the Go judge only handles python, javascript, ruby, and go end-to-end.
+// The previous list of 15 languages was aspirational — selecting any of the
+// other 11 in the editor produced an "Unsupported language" error from the
+// judge. The languages.go registry scaffold is staged to drive a wider
+// language set without hard-coding the switch in main.go.
 
 export interface LanguageDef {
   id: string;
@@ -14,19 +20,8 @@ export interface LanguageDef {
 export const LANGUAGES: LanguageDef[] = [
   { id: "python", label: "Python 3", extension: ".py", monacoLanguage: "python", category: "scripting" },
   { id: "javascript", label: "JavaScript (Node)", extension: ".js", monacoLanguage: "javascript", category: "scripting" },
-  { id: "typescript", label: "TypeScript", extension: ".ts", monacoLanguage: "typescript", category: "scripting" },
   { id: "ruby", label: "Ruby", extension: ".rb", monacoLanguage: "ruby", category: "scripting" },
-  { id: "php", label: "PHP", extension: ".php", monacoLanguage: "php", category: "scripting" },
-  { id: "bash", label: "Bash", extension: ".sh", monacoLanguage: "shell", category: "scripting" },
   { id: "go", label: "Go", extension: ".go", monacoLanguage: "go", category: "compiled" },
-  { id: "rust", label: "Rust", extension: ".rs", monacoLanguage: "rust", category: "compiled" },
-  { id: "c", label: "C (gcc)", extension: ".c", monacoLanguage: "c", category: "compiled" },
-  { id: "cpp", label: "C++ (g++)", extension: ".cpp", monacoLanguage: "cpp", category: "compiled" },
-  { id: "java", label: "Java", extension: ".java", monacoLanguage: "java", category: "jvm" },
-  { id: "kotlin", label: "Kotlin", extension: ".kt", monacoLanguage: "kotlin", category: "jvm" },
-  { id: "csharp", label: "C#", extension: ".cs", monacoLanguage: "csharp", category: "compiled" },
-  { id: "swift", label: "Swift", extension: ".swift", monacoLanguage: "swift", category: "compiled" },
-  { id: "sql", label: "SQL", extension: ".sql", monacoLanguage: "sql", category: "data" },
 ];
 
 export const LANGUAGE_BY_ID = new Map(LANGUAGES.map((l) => [l.id, l]));
