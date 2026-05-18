@@ -11,9 +11,9 @@ describe("GET /api/admin/users", () => {
     void asNextRequest;
   });
 
-  it("returns 403 for unauthenticated", async () => {
+  it("returns 401 for unauthenticated", async () => {
     const res = await GET();
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(401);
   });
 
   it("returns user list with submission counts for admin", async () => {

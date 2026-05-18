@@ -1,25 +1,23 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
-import { getSession } from "@/lib/auth";
-
-// PATCH /api/admin/users/[id]/role — promote/demote a user. Self-demotion
-// is blocked so an admin can't accidentally lock everyone out by removing
-// their own privileges last.
+import { requireAdmin } from "@/lib/admin-guard";
 import { z } from "zod";
 
 const roleSchema = z.object({
   role: z.enum(["user", "admin"]),
 });
 
+// PATCH /api/admin/users/[id]/role — promote/demote a user. Self-demotion
+// is blocked so an admin can't accidentally lock everyone out by removing
+// their own privileges last.
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getSession();
-    if (!session || session.role !== "admin") {
-      return Response.json({ error: "Forbidden" }, { status: 403 });
-    }
+    const gate = await requireAdmin(request);
+    if (!gate.ok) return gate.response;
+    const session = gate.session;
 
     const { id } = await params;
     if (id === session.userId) {

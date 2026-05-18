@@ -1,12 +1,10 @@
-import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { requireAdmin } from "@/lib/admin-guard";
 
 export async function GET() {
   try {
-    const session = await getSession();
-    if (!session || session.role !== "admin") {
-      return Response.json({ error: "Forbidden" }, { status: 403 });
-    }
+    const gate = await requireAdmin();
+    if (!gate.ok) return gate.response;
 
     const users = await prisma.user.findMany({
       orderBy: { createdAt: "desc" },

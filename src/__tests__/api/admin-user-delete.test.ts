@@ -10,9 +10,9 @@ function paramsFor(id: string) {
 const opts = { method: "DELETE" } as const;
 
 describe("DELETE /api/admin/users/[id]", () => {
-  it("403 unauthenticated", async () => {
+  it("401 unauthenticated", async () => {
     const res = await DELETE(asNextRequest(new Request("http://x/api/admin/users/u1", opts)), paramsFor("u1"));
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(401);
   });
 
   it("403 non-admin", async () => {

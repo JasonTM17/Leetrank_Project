@@ -10,14 +10,12 @@
  * eviction frequency) which is internal information.
  */
 import { NextRequest } from "next/server";
-import { getSession } from "@/lib/auth";
+import { requireAdmin } from "@/lib/admin-guard";
 import { cache } from "@/lib/cache";
 
-export async function GET(_request: NextRequest) {
-  const session = await getSession();
-  if (!session || session.role !== "admin") {
-    return Response.json({ error: "Forbidden" }, { status: 403 });
-  }
+export async function GET(request: NextRequest) {
+  const gate = await requireAdmin(request);
+  if (!gate.ok) return gate.response;
 
   const stats = cache.stats();
   return Response.json(

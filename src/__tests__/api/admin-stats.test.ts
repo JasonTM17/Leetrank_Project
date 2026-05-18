@@ -10,9 +10,9 @@ describe("GET /api/admin/stats", () => {
     expect(res.status).toBe(403);
   });
 
-  it("403 unauthenticated", async () => {
+  it("401 unauthenticated", async () => {
     const res = await GET(asNextRequest(new Request("http://x/api/admin/stats")));
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(401);
   });
 
   it("returns the eight counters for admin", async () => {
