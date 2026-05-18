@@ -49,8 +49,11 @@ export function invalidateProblemsCache() {
   deletePrefix("trending");
 }
 
-export function invalidateContestsCache() {
+export function invalidateContestsCache(slug?: string) {
   cache.delete("contests:all");
+  if (slug) {
+    cache.delete(`contests:detail:${slug}`);
+  }
 }
 
 export function invalidateTagsCache() {
