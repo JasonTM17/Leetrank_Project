@@ -40,7 +40,7 @@ async function computeTop(): Promise<TopEntry[]> {
     where: { id: { in: ids } },
     select: { id: true, username: true, avatar: true },
   });
-  const byId = new Map(users.map((u) => [u.id, u]));
+  const byId = new Map(users.map((u: { id: string; username: string; avatar: string | null }) => [u.id, u]));
 
   return ids
     .map((id, i) => {

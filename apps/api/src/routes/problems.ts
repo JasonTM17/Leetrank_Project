@@ -96,7 +96,7 @@ export async function problemDetailHandler(c: Context) {
         hints: problem.hints,
         editorial: problem.editorial,
         starterCode: problem.starterCode,
-        tags: problem.tags.map((pt) => ({ id: pt.tag.id, name: pt.tag.name, slug: pt.tag.slug })),
+        tags: problem.tags.map((pt: { tag: { id: string; name: string; slug: string } }) => ({ id: pt.tag.id, name: pt.tag.name, slug: pt.tag.slug })),
         testCases: problem.testCases,
       },
     });
