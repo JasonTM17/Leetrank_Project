@@ -1,0 +1,104 @@
+groups:
+  - name: leetrank-availability
+    interval: 30s
+    rules:
+      - alert: ServiceDown
+        expr: up == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.job }} down"
+          description: "Job {{ $labels.job }} ({{ $labels.instance }}) has been unreachable for 2 minutes."
+
+      - alert: ApiHighErrorRate
+        expr: |
+          (
+            sum(rate(leetrank_api_http_requests_total{status=~"5.."}[5m])) by (job)
+            /
+            sum(rate(leetrank_api_http_requests_total[5m])) by (job)
+          ) > 0.02
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "API 5xx rate over 2% on {{ $labels.job }}"
+          description: "5xx error ratio on {{ $labels.job }} stayed above 2% for 5 minutes."
+
+      - alert: ApiSlowP99
+        expr: |
+          histogram_quantile(
+            0.99,
+            sum(rate(leetrank_api_http_request_duration_seconds_bucket[5m])) by (le, job, path)
+          ) > 1.0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "p99 latency over 1s on {{ $labels.job }}{{ $labels.path }}"
+          description: "p99 request duration on {{ $labels.job }}{{ $labels.path }} has been above 1.0 s for 10 minutes."
+
+      - alert: ApiInFlightSurge
+        expr: leetrank_api_http_requests_in_flight > 100
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.job }} has >100 in-flight requests"
+          description: "Sustained backlog. Either traffic spike or downstream stall."
+
+  - name: leetrank-postgres
+    interval: 30s
+    rules:
+      - alert: PostgresDown
+        expr: pg_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Postgres unreachable from postgres-exporter"
+          description: "pg_up has been 0 for 1 minute. Database connectivity is broken."
+
+      - alert: PostgresConnectionsNearMax
+        expr: |
+          (sum(pg_stat_activity_count) by (instance) / pg_settings_max_connections) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Postgres connections > 85% of max on {{ $labels.instance }}"
+          description: "Pool starvation likely; investigate per-service connection_limit."
+
+  - name: leetrank-redis
+    interval: 30s
+    rules:
+      - alert: RedisDown
+        expr: redis_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis unreachable from redis-exporter"
+
+      - alert: RedisMemoryPressure
+        expr: |
+          (redis_memory_used_bytes / redis_memory_max_bytes) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis memory > 85% of maxmemory"
+          description: "Approaching eviction; expand or shed cold keys."
+
+  - name: leetrank-judge
+    interval: 30s
+    rules:
+      - alert: JudgeRejectionRate
+        expr: |
+          rate(leetrank_judge_rejections_total[5m]) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Judge rejecting > 1 req/s due to busy scheduler"
+          description: "Concurrency caps are biting. Consider raising JUDGE_GLOBAL_MAX or scaling judge replicas."
