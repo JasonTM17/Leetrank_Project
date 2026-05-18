@@ -4,6 +4,9 @@
   "private": true,
   "description": "LeetRank backend API service. Standalone HTTP server consumed by the web app and external clients.",
   "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
