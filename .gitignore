@@ -73,7 +73,10 @@ Thumbs.db
 .omc/
 .claude/worktrees/
 DOCUMENTATION_MASTER.md
-/scripts/
+/scripts/*
+# Project artifacts under /scripts/ that ARE tracked
+!/scripts/load-test.mjs
+!/scripts/load-test-fixtures.mjs
 
 # private notes — never commit personal plans, drafts, or scratch docs
 PLAN*.md

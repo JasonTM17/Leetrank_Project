@@ -18,7 +18,10 @@
     "seed:1k": "npx ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed-bulk.ts 1000 1000",
     "seed:stress": "npx ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed-bulk.ts 10000 1000",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "load:smoke": "node scripts/load-test.mjs --scenario smoke",
+    "load:stress": "node scripts/load-test.mjs --scenario stress",
+    "load:contest": "node scripts/load-test.mjs --scenario contest-storm"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
@@ -44,6 +47,7 @@
     "seed": "npx ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
   },
   "devDependencies": {
+    "autocannon": "^7.15.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
