@@ -1,6 +1,10 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { rateLimit } from "@/lib/rate-limit";
+
+const RATE_LIMIT_MAX = 10;
+const RATE_LIMIT_WINDOW_MS = 60_000;
 
 // POST /api/contests/[slug]/join — registers the signed-in user for a contest.
 // Idempotent: re-joining is a no-op that returns the existing entry. We
@@ -14,6 +18,15 @@ export async function POST(
     const session = await getSession();
     if (!session) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const limit = rateLimit(`contest-join:${session.userId}`, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_MS);
+    if (!limit.allowed) {
+      const retryAfter = Math.max(1, Math.ceil((limit.resetAt - Date.now()) / 1000));
+      return Response.json(
+        { error: "Too many join requests. Slow down." },
+        { status: 429, headers: { "Retry-After": String(retryAfter) } }
+      );
     }
 
     const { slug } = await params;

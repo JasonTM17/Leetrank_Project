@@ -1,11 +1,17 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { rateLimit } from "@/lib/rate-limit";
 import { z } from "zod";
 
 const toggleSchema = z.object({
   problemId: z.string().min(1, "problemId is required"),
 });
+
+// RULES §4: rate-limit toggle writes. 30/min per user is generous; the
+// FE only fires this on a button click, not in tight loops.
+const TOGGLE_LIMIT_MAX = 30;
+const TOGGLE_LIMIT_WINDOW_MS = 60_000;
 
 export async function GET(request: NextRequest) {
   try {
@@ -49,6 +55,15 @@ export async function POST(request: NextRequest) {
     const session = await getSession();
     if (!session) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const limit = rateLimit(`bookmark:${session.userId}`, TOGGLE_LIMIT_MAX, TOGGLE_LIMIT_WINDOW_MS);
+    if (!limit.allowed) {
+      const retryAfter = Math.max(1, Math.ceil((limit.resetAt - Date.now()) / 1000));
+      return Response.json(
+        { error: "Too many bookmark toggles. Slow down." },
+        { status: 429, headers: { "Retry-After": String(retryAfter) } }
+      );
     }
 
     let body;

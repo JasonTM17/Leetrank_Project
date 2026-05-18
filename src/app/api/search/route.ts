@@ -1,17 +1,42 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
+import { rateLimit } from "@/lib/rate-limit";
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 50;
+
+// Search runs three concurrent LIKE queries — comparatively expensive
+// vs. a single-row lookup. RULES §4 says rate-limit compute-heavy
+// endpoints; bot scrapers can hit this hard otherwise.
+const RATE_LIMIT_MAX = 30;
+const RATE_LIMIT_WINDOW_MS = 60_000;
+
+function clientIp(request: NextRequest): string {
+  return (
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    request.headers.get("x-real-ip") ??
+    "unknown"
+  );
+}
 
 // Simple search endpoint that fans out across problems, contests, and tags.
 // Returns three result sets in one round trip so the search UI can render
 // grouped suggestions without three independent fetches.
 export async function GET(request: NextRequest) {
   try {
+    const ip = clientIp(request);
+    const limit = rateLimit(`search:${ip}`, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_MS);
+    if (!limit.allowed) {
+      const retryAfter = Math.max(1, Math.ceil((limit.resetAt - Date.now()) / 1000));
+      return Response.json(
+        { error: "Too many search requests. Slow down." },
+        { status: 429, headers: { "Retry-After": String(retryAfter) } }
+      );
+    }
+
     const { searchParams } = request.nextUrl;
     const query = (searchParams.get("q") ?? "").trim();
-    const limit = Math.min(
+    const lim = Math.min(
       MAX_LIMIT,
       Math.max(1, parseInt(searchParams.get("limit") ?? String(DEFAULT_LIMIT), 10) || DEFAULT_LIMIT)
     );
@@ -25,18 +50,18 @@ export async function GET(request: NextRequest) {
         where: { title: { contains: query } },
         select: { id: true, title: true, slug: true, difficulty: true },
         orderBy: { order: "asc" },
-        take: limit,
+        take: lim,
       }),
       prisma.contest.findMany({
         where: { title: { contains: query } },
         select: { id: true, title: true, slug: true, status: true, startTime: true },
         orderBy: { startTime: "desc" },
-        take: limit,
+        take: lim,
       }),
       prisma.tag.findMany({
         where: { name: { contains: query } },
         select: { id: true, name: true, slug: true },
-        take: limit,
+        take: lim,
       }),
     ]);
 

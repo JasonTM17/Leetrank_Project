@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { rateLimit } from "@/lib/rate-limit";
 import { z } from "zod";
 
 const updateProfileSchema = z.object({
@@ -8,11 +9,23 @@ const updateProfileSchema = z.object({
   avatar: z.string().url("Avatar must be a URL").optional().or(z.literal("")),
 });
 
+const RATE_LIMIT_MAX = 10;
+const RATE_LIMIT_WINDOW_MS = 60_000;
+
 export async function PATCH(request: NextRequest) {
   try {
     const session = await getSession();
     if (!session) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const limit = rateLimit(`profile:${session.userId}`, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_MS);
+    if (!limit.allowed) {
+      const retryAfter = Math.max(1, Math.ceil((limit.resetAt - Date.now()) / 1000));
+      return Response.json(
+        { error: "Too many profile updates. Slow down." },
+        { status: 429, headers: { "Retry-After": String(retryAfter) } }
+      );
     }
 
     let body;
