@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { invalidateContestsCache } from "@/lib/cache-invalidate";
 import { z } from "zod";
 
 const statusSchema = z.object({
@@ -38,8 +39,12 @@ export async function POST(
       const contest = await prisma.contest.update({
         where: { id },
         data: { status: parsed.data.status },
-        select: { id: true, status: true },
+        select: { id: true, slug: true, status: true },
       });
+      // Invalidate both list and the per-slug detail cache so the public
+      // pages reflect the new lifecycle status immediately. Critical for
+      // contests transitioning to 'active' — participants are refreshing.
+      invalidateContestsCache(contest.slug);
       return Response.json({ contest });
     } catch (err) {
       if (err instanceof Error && err.message.includes("Record to update not found")) {
