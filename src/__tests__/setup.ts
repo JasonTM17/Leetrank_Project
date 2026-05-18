@@ -1,4 +1,5 @@
 import { vi, beforeEach } from "vitest";
+import { cache } from "@/lib/cache";
 
 // Stable JWT secret across all tests so signed tokens round-trip.
 process.env.JWT_SECRET = process.env.JWT_SECRET ?? "test-secret-32-chars-minimum-aaaa";
@@ -62,6 +63,7 @@ vi.mock("@/lib/db", () => ({
 // Reset jar + every mock between tests.
 beforeEach(() => {
   cookies.clear();
+  cache.clear();
   for (const model of Object.values(prismaMock)) {
     if (typeof model === "function") {
       (model as ReturnType<typeof vi.fn>).mockReset();
