@@ -5,6 +5,7 @@ import { logger } from "hono/logger";
 import { leaderboardTopHandler } from "./routes/leaderboard.js";
 import { tagsHandler } from "./routes/tags.js";
 import { contestsHandler } from "./routes/contests.js";
+import { problemsListHandler, problemDetailHandler } from "./routes/problems.js";
 
 /**
  * LeetRank API service.
@@ -55,6 +56,8 @@ app.get("/health", (c) =>
 app.get("/leaderboard/top", leaderboardTopHandler);
 app.get("/tags", tagsHandler);
 app.get("/contests", contestsHandler);
+app.get("/problems", problemsListHandler);
+app.get("/problems/:slug", problemDetailHandler);
 
 const port = Number(process.env.API_PORT ?? 4000);
 
