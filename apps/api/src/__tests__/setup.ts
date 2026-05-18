@@ -24,15 +24,25 @@ vi.mock("../db.js", () => {
     contest: makeCrud(),
     submission: makeCrud(),
     user: makeCrud(),
-    $queryRaw: vi.fn().mockResolvedValue([{ "?column?": 1 }]),
-    $disconnect: vi.fn().mockResolvedValue(undefined),
+    $queryRaw: vi.fn(),
+    $disconnect: vi.fn(),
   };
 
   return { prisma };
 });
 
-// Clear call history between tests but keep mock implementations intact
-// so $queryRaw keeps its default resolved value.
+import { prisma } from "../db.js";
+
+// Reset implementations between tests AND re-arm $queryRaw + $disconnect
+// defaults so /readyz stays healthy unless a test overrides explicitly.
+// (vi.clearAllMocks() wipes implementations set in the factory above; we
+// have to re-apply defaults here.)
 beforeEach(() => {
-  vi.clearAllMocks();
+  vi.resetAllMocks();
+  const p = prisma as unknown as {
+    $queryRaw: ReturnType<typeof vi.fn>;
+    $disconnect: ReturnType<typeof vi.fn>;
+  };
+  p.$queryRaw.mockResolvedValue([{ "?column?": 1 }]);
+  p.$disconnect.mockResolvedValue(undefined);
 });
