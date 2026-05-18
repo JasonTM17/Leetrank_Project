@@ -5,15 +5,20 @@ import logger from "../logger.js";
  * Central error handler — catches any unhandled error thrown in a route.
  *
  * Security: stack traces and raw error messages are NEVER sent to the client.
- * They are logged server-side with the requestId for correlation.
+ * Stack traces are also NOT logged in production — they leak code paths and
+ * line numbers that help attackers map the codebase. In dev they're useful;
+ * in prod we log message + class only.
  */
+const isDev = process.env.NODE_ENV !== "production";
+
 export const errorHandler: ErrorHandler = (err, c: Context) => {
   const requestId = (c.get("requestId") as string | undefined) ?? "unknown";
 
   logger.error("unhandled error", {
     requestId,
     error: err.message,
-    stack: err.stack,
+    errorClass: err.constructor.name,
+    ...(isDev ? { stack: err.stack } : {}),
   });
 
   return c.json(

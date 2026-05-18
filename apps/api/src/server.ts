@@ -8,7 +8,7 @@ import { cors } from "hono/cors";
 import { bodyLimit } from "hono/body-limit";
 import { requestContext } from "./middleware/request-context.js";
 import { errorHandler, notFoundHandler } from "./middleware/error-handler.js";
-import { healthHandler } from "./routes/health.js";
+import { healthHandler, livenessHandler } from "./routes/health.js";
 import { metricsHandler } from "./routes/metrics.js";
 import { leaderboardTopHandler } from "./routes/leaderboard.js";
 import { tagsHandler } from "./routes/tags.js";
@@ -95,6 +95,8 @@ app.get("/", (c) =>
 );
 
 app.get("/health", healthHandler);
+app.get("/healthz", livenessHandler);
+app.get("/readyz", healthHandler);
 app.get("/metrics", metricsHandler);
 
 app.get("/stats", statsHandler);

@@ -2,14 +2,29 @@ import type { Context } from "hono";
 import { prisma } from "../db.js";
 
 /**
- * GET /health — deep health check that probes Postgres.
+ * Liveness vs readiness — the audit asked for both.
  *
- * 200 → service and DB are healthy.
- * 503 → DB is unreachable (service itself is still up).
+ *  GET /healthz — cheap liveness probe. 200 as long as the process is up.
+ *                 Used by orchestrators to decide whether to restart the
+ *                 container. Must NOT do DB I/O — a slow Postgres should
+ *                 not cause a restart loop.
+ *  GET /readyz  — readiness. Probes Postgres with a 2s timeout.
+ *                 Returns 503 when DB is unreachable so the load balancer
+ *                 stops routing traffic until DB is back.
+ *  GET /health  — kept as an alias for /readyz for backwards compat.
  */
 
 const startedAt = Date.now();
 const VERSION = "0.1.0";
+
+export function livenessHandler(c: Context) {
+  return c.json({
+    status: "ok",
+    service: "leetrank-api",
+    uptimeSeconds: (Date.now() - startedAt) / 1000,
+    timestamp: new Date().toISOString(),
+  });
+}
 
 export async function healthHandler(c: Context) {
   const uptimeSeconds = (Date.now() - startedAt) / 1000;
