@@ -2,6 +2,7 @@ import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
+import { leaderboardTopHandler } from "./routes/leaderboard.js";
 
 /**
  * LeetRank API service.
@@ -48,6 +49,8 @@ app.get("/health", (c) =>
     timestamp: new Date().toISOString(),
   })
 );
+
+app.get("/leaderboard/top", leaderboardTopHandler);
 
 const port = Number(process.env.API_PORT ?? 4000);
 
