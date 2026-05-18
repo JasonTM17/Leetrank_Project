@@ -7,6 +7,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { bodyLimit } from "hono/body-limit";
 import { requestContext } from "./middleware/request-context.js";
+import { timeout } from "./middleware/timeout.js";
 import { errorHandler, notFoundHandler } from "./middleware/error-handler.js";
 import { healthHandler, livenessHandler } from "./routes/health.js";
 import { metricsHandler } from "./routes/metrics.js";
@@ -35,7 +36,11 @@ const app = new Hono();
 // 1. Structured request logging + request-ID + Prometheus counters.
 app.use("*", requestContext);
 
-// 2. CORS — tightened defaults.
+// 2. Global request timeout — 15 s is the outer guardrail for all routes.
+// Per-route overrides can be added by mounting timeout(N) before the handler.
+app.use("*", timeout(15_000));
+
+// 3. CORS — tightened defaults.
 const allowedOrigins = env.CORS_ALLOWED_ORIGINS.split(",")
   .map((s) => s.trim())
   .filter(Boolean);
