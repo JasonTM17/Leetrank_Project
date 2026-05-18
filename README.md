@@ -120,67 +120,99 @@ The platform features a production-grade code judge service written in Go that s
 
 ## Architecture
 
+LeetRank is a multi-service platform. The Next.js app is the UI + remaining canonical handlers; the Hono API service owns ported read-only routes; the Go judge runs sandboxed code; n8n drives the chatbot workflow; Caddy is the edge.
+
+### Service inventory
+
+| Service | Tech | Port | Image | Role |
+|---|---|---|---|---|
+| `app` | Next.js 16 | 3000 | `jasontm17/leetrank-app` | UI + remaining /api/* |
+| `api` | Hono + Node 20 | 4000 | `jasontm17/leetrank-api` | Ported read-only routes (`/api/v1/*`) |
+| `auth` | Hono + Node 20 | 4001 | `jasontm17/leetrank-auth` | JWKS + auth (Phase 3.1) |
+| `judge` | Go 1.21 | 9090 | `jasontm17/leetrank-judge` | Sandboxed code execution (34 languages) |
+| `n8n` | n8n 1.70 | 5678 | upstream `n8nio/n8n` | Chatbot workflow runtime |
+| `postgres` | Postgres 16-alpine | 5432 | upstream | OLTP store |
+| `redis` | Redis 7-alpine | 6379 | upstream | Cache + (future) Streams |
+| `caddy` | Caddy 2 | 80/443 | upstream | TLS, path routing, rate limit |
+
+Observability stack ships in `docker-compose.observability.yml` (opt-in): Prometheus, Grafana, Loki, Promtail, postgres-exporter, redis-exporter.
+
+### Repository layout
+
 ```
 LeetRank_Project/
-├── src/
-│   ├── app/                    # Next.js App Router
-│   │   ├── api/                # 14+ API routes
-│   │   ├── problems/           # Problem list & detail pages
-│   │   ├── contests/           # Contest system
-│   │   ├── dashboard/          # User dashboard
-│   │   ├── leaderboard/        # Global rankings
-│   │   ├── admin/              # Admin panel
-│   │   ├── login/              # Authentication
-│   │   └── register/
-│   ├── components/
-│   │   ├── ui/                 # Reusable UI primitives
-│   │   └── layout/             # Navbar, Footer
-│   ├── hooks/                  # Custom hooks (useAuth)
-│   ├── lib/                    # Utilities (db, auth, utils)
-│   ├── services/               # Business logic (judge)
-│   └── types/                  # TypeScript interfaces
-├── judge-service/              # Go judge with language runners
-│   ├── main.go                 # HTTP server, rate limiting, CORS
-│   ├── runners/
-│   │   ├── python_runner.py
-│   │   ├── js_runner.js
-│   │   └── ruby_runner.rb
-│   └── Dockerfile
+├── apps/
+│   ├── api/                    # Hono read-only API service (port 4000)
+│   └── auth/                   # Auth service scaffold (port 4001)
+├── packages/
+│   ├── api-contracts/          # Shared zod schemas + types
+│   └── auth-verify/            # JWT/JWKS verifier + Hono middleware
+├── src/                        # Next.js app (Server Components + remaining routes)
+│   ├── app/                    # App Router pages + /api/* (being ported out)
+│   ├── components/             # UI primitives, problem editor, chat widget
+│   ├── lib/                    # rate-limit, queue, cache, admin-guard, …
+│   └── services/               # Judge client, business logic
+├── judge-service/              # Go judge — registry-driven, 34 languages
+│   ├── main.go
+│   ├── languages.json          # Language registry (single source of truth)
+│   ├── languages.go            # Go-side registry loader
+│   ├── exec.go                 # Generic compile + run dispatcher
+│   └── runners/                # Python/JS/Ruby/Bash wrappers with setrlimit
 ├── prisma/
-│   ├── schema.prisma           # Database schema
-│   ├── seed.ts                 # Base seed (10 problems)
-│   └── seed-extra.ts           # Extended seed (20 problems)
-├── docs/screenshots/           # Project screenshots & GIFs
-├── docker-compose.yml          # Multi-service orchestration
-├── docker-compose.prod.yml     # Production deployment config
-├── Dockerfile                  # Next.js multi-stage build
-├── .github/workflows/ci.yml    # CI pipeline
-└── RULES.md                    # Project best practices
+│   ├── schema.prisma
+│   ├── seed-bulk.ts            # 1000 problems + 1000 contests deterministic
+│   └── …
+├── infra/
+│   ├── caddy/Caddyfile
+│   ├── prometheus/prometheus.yml + alerts.yml
+│   ├── loki/loki-config.yml
+│   ├── promtail/promtail-config.yml
+│   └── n8n/                    # Chatbot workflow docs
+├── scripts/
+│   └── load-test.mjs           # autocannon harness (smoke/stress/contest-storm)
+├── docs/
+│   ├── adr/                    # 0001-0016 architecture decisions
+│   ├── load-testing.md
+│   └── runbooks/docker.md
+├── docker-compose.yml                   # Default boot
+├── docker-compose.dev.yml               # Hot-reload override
+├── docker-compose.observability.yml     # Observability stack overlay
+└── .github/workflows/                   # CI + Docker Hub publish + load test
 ```
 
 <details>
-<summary><strong>System Architecture Diagram</strong></summary>
+<summary><strong>Service interaction diagram</strong></summary>
 
 ```
-┌──────────────┐         ┌──────────────────┐         ┌─────────────┐
-│   Browser    │────────▶│   Next.js App    │────────▶│  SQLite/    │
-│  (React 19)  │◀────────│  (API + SSR)     │◀────────│  PostgreSQL │
-└──────────────┘         └────────┬─────────┘         └─────────────┘
-                                  │
-                          ┌───────▼────────┐
-                          │  Judge Service │
-                          │   (Go 1.21)    │
-                          ├────────────────┤
-                          │ ┌────┐ ┌────┐  │
-                          │ │ Py │ │ JS │  │
-                          │ └────┘ └────┘  │
-                          │ ┌────┐         │
-                          │ │Ruby│         │
-                          │ └────┘         │
-                          └────────────────┘
+                    ┌──────────────┐
+                    │   Browser    │
+                    └──────┬───────┘
+                           │ HTTPS
+                    ┌──────▼───────┐
+                    │  Caddy (80)  │  TLS + rate limit + path routing
+                    └──┬───┬───┬───┘
+                       │   │   │
+            ┌──────────┘   │   └──────────────────────┐
+            │              │                          │
+       ┌────▼─────┐  ┌─────▼────┐  ┌──────────┐  ┌───▼─────┐
+       │   app    │  │   api    │  │  auth    │  │  n8n    │
+       │ (Next)   │  │  (Hono)  │  │ (Hono)   │  │ chat    │
+       │ :3000    │  │  :4000   │  │ :4001    │  │ :5678   │
+       └────┬─────┘  └────┬─────┘  └────┬─────┘  └───┬─────┘
+            │             │             │            │
+            ├─────────────┼─────────────┼────────────┘
+            ▼             ▼             ▼
+       ┌──────────┐  ┌──────────┐  ┌──────────┐
+       │ postgres │  │  redis   │  │  judge   │
+       │  :5432   │  │  :6379   │  │ (Go)     │
+       └──────────┘  └──────────┘  │ :9090    │
+                                   └──────────┘
 ```
+
+JWT verification is local in every service (JWKS fetched from `auth` once at boot, cached 30 s). Service-to-service traffic is bounded inside the docker network.
 
 </details>
+
 
 ---
 
