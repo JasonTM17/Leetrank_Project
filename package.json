@@ -14,6 +14,9 @@
     "db:reset": "prisma db push --force-reset && prisma db seed",
     "seed:extra": "npx ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed-extra.ts",
     "seed:bigdata": "npx ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed-bigdata.ts",
+    "seed:bulk": "npx ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed-bulk.ts",
+    "seed:1k": "npx ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed-bulk.ts 1000 1000",
+    "seed:stress": "npx ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed-bulk.ts 10000 1000",
     "test": "vitest run",
     "test:watch": "vitest"
   },
