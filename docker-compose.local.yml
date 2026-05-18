@@ -1,0 +1,35 @@
+# Local-only override to remap ports so LeetRank can boot beside other
+# Docker projects on the same host. The `!override` tag tells Compose to
+# REPLACE the parent ports list rather than merge (Compose v2.24+).
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.local.yml \
+#     up -d --build postgres redis app api auth judge
+#
+# Then open: http://localhost:13000 (app), :14000 (api), :14001 (auth),
+# :19090 (judge). Internals: postgres :15432, redis :16379.
+
+services:
+  postgres:
+    ports: !override
+      - "15432:5432"
+
+  redis:
+    ports: !override
+      - "16379:6379"
+
+  app:
+    ports: !override
+      - "13000:3000"
+
+  api:
+    ports: !override
+      - "14000:4000"
+
+  auth:
+    ports: !override
+      - "14001:4001"
+
+  judge:
+    ports: !override
+      - "19090:9090"
