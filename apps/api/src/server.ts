@@ -121,9 +121,43 @@ app.notFound(notFoundHandler);
 // ── Server bootstrap ──────────────────────────────────────────────────────────
 
 if (env.NODE_ENV !== "test") {
-  serve({ fetch: app.fetch, port: env.API_PORT }, (info) => {
+  const httpServer = serve({ fetch: app.fetch, port: env.API_PORT }, (info) => {
     logger.info("leetrank-api started", { port: info.port });
   });
+
+  // Graceful shutdown: SIGTERM (k8s/compose stop) and SIGINT (Ctrl-C).
+  // Drain in-flight requests, then close prisma, then exit. Bounded by a
+  // 15s hard timeout — the orchestrator's own SIGKILL window is usually 30s.
+  const SHUTDOWN_TIMEOUT_MS = 15_000;
+  const shutdown = (signal: NodeJS.Signals) => {
+    logger.info("shutting down", { signal });
+    const killTimer = setTimeout(() => {
+      logger.error("graceful shutdown timed out, forcing exit");
+      process.exit(1);
+    }, SHUTDOWN_TIMEOUT_MS);
+    killTimer.unref();
+
+    httpServer.close(async (closeErr) => {
+      if (closeErr) {
+        logger.error("http server close error", { error: closeErr.message });
+      }
+      try {
+        // Side-effect import — db.ts singleton may or may not be loaded
+        // depending on which routes were hit. Disconnect best-effort.
+        const { prisma } = await import("./db.js");
+        await prisma.$disconnect();
+      } catch (err) {
+        logger.error("prisma disconnect error", {
+          error: err instanceof Error ? err.message : "unknown",
+        });
+      }
+      logger.info("shutdown complete");
+      process.exit(0);
+    });
+  };
+
+  process.on("SIGTERM", () => shutdown("SIGTERM"));
+  process.on("SIGINT", () => shutdown("SIGINT"));
 }
 
 export { app };
