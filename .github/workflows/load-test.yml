@@ -1,0 +1,100 @@
+name: Load Test (manual)
+
+# Manual trigger only — not run on every PR.
+# See docs/load-testing.md for usage instructions.
+on:
+  workflow_dispatch:
+    inputs:
+      scenario:
+        description: "Scenario to run (smoke | stress | contest-storm)"
+        required: false
+        default: "smoke"
+        type: choice
+        options:
+          - smoke
+          - stress
+          - contest-storm
+      duration:
+        description: "Override duration in seconds (0 = use scenario default)"
+        required: false
+        default: "0"
+
+concurrency:
+  group: load-test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  load-test:
+    name: Load Test — ${{ inputs.scenario }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # ── Node (root workspace — for autocannon + seed scripts) ──────────────
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install root dependencies
+        run: npm ci
+
+      # ── Boot API + Postgres via docker compose ─────────────────────────────
+      - name: Start services (api + postgres)
+        run: |
+          docker compose up -d postgres api
+        env:
+          JWT_SECRET: load-test-ci-secret-32-chars-aaaa
+          DATABASE_URL: postgresql://leetrank:leetrank-dev@localhost:5432/leetrank?schema=public
+
+      - name: Wait for Postgres to be healthy
+        run: |
+          for i in $(seq 1 30); do
+            docker compose exec -T postgres pg_isready -U leetrank -d leetrank && break
+            echo "Waiting for postgres... ($i/30)"
+            sleep 2
+          done
+
+      - name: Wait for API to be healthy
+        run: |
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:4000/health && break
+            echo "Waiting for API... ($i/30)"
+            sleep 2
+          done
+
+      # ── Seed 1 k problems + users ──────────────────────────────────────────
+      - name: Seed database (1k)
+        run: npm run seed:1k
+        env:
+          DATABASE_URL: postgresql://leetrank:leetrank-dev@localhost:5432/leetrank?schema=public
+
+      # ── Run the load test ──────────────────────────────────────────────────
+      - name: Run load test
+        run: |
+          DURATION_FLAG=""
+          if [ "${{ inputs.duration }}" != "0" ]; then
+            DURATION_FLAG="--duration ${{ inputs.duration }}"
+          fi
+          node scripts/load-test.mjs \
+            --target http://localhost:4000 \
+            --scenario ${{ inputs.scenario }} \
+            $DURATION_FLAG
+        env:
+          # Ensure colour codes are stripped in CI logs
+          NO_COLOR: "1"
+
+      # ── Upload results JSON as a workflow artifact ─────────────────────────
+      - name: Upload load-test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: load-test-results-${{ inputs.scenario }}-${{ github.run_id }}
+          path: load-test-results/
+          retention-days: 30
+
+      # ── Tear down containers ───────────────────────────────────────────────
+      - name: Stop services
+        if: always()
+        run: docker compose down -v
