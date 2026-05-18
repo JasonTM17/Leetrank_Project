@@ -5,6 +5,9 @@ global:
     cluster: leetrank
     environment: ${ENV:-prod}
 
+rule_files:
+  - "alerts.yml"
+
 scrape_configs:
   - job_name: prometheus
     static_configs:
