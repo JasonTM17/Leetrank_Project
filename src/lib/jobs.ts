@@ -10,6 +10,9 @@ import { queue } from "./queue";
 import { invalidateProblemsCache, invalidateLeaderboardCache } from "./cache-invalidate";
 import { logger } from "./logger";
 
+// Side-effect import: registers the judge-submission handler on the queue.
+import "./submission-jobs";
+
 const log = logger.with({ scope: "jobs" });
 
 interface RecomputeStatsPayload {
