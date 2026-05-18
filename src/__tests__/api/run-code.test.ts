@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { prismaMock } from "../setup";
-import { jsonRequest, asNextRequest } from "../helpers";
+import { jsonRequest, asNextRequest, loginAs } from "../helpers";
 
 vi.mock("@/services/judge", () => {
   class JudgeUnavailableError extends Error {
@@ -25,7 +25,13 @@ describe("POST /api/run-code", () => {
     testCases: [{ input: "", expected: "hi" }],
   };
 
+  it("returns 401 unauthenticated", async () => {
+    const res = await POST(asNextRequest(jsonRequest("http://x/api/run-code", validBody)));
+    expect(res.status).toBe(401);
+  });
+
   it("returns judged results on the happy path", async () => {
+    await loginAs({ userId: "u1" });
     (executeCode as ReturnType<typeof vi.fn>).mockResolvedValue([
       { passed: true, input: "", expected: "hi", actual: "hi", runtime: 12 },
     ]);
@@ -38,6 +44,7 @@ describe("POST /api/run-code", () => {
   });
 
   it("returns 400 on malformed JSON", async () => {
+    await loginAs({ userId: "u1" });
     const req = asNextRequest(new Request("http://x/api/run-code", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -48,6 +55,7 @@ describe("POST /api/run-code", () => {
   });
 
   it("returns 400 on unsupported language", async () => {
+    await loginAs({ userId: "u1" });
     const res = await POST(asNextRequest(jsonRequest("http://x/api/run-code", {
       ...validBody, language: "cobol",
     })));
@@ -55,6 +63,7 @@ describe("POST /api/run-code", () => {
   });
 
   it("returns 400 on missing testCases", async () => {
+    await loginAs({ userId: "u1" });
     const res = await POST(asNextRequest(jsonRequest("http://x/api/run-code", {
       code: "x", language: "python", testCases: [],
     })));
@@ -62,6 +71,7 @@ describe("POST /api/run-code", () => {
   });
 
   it("returns 503 when the judge is unreachable", async () => {
+    await loginAs({ userId: "u1" });
     (executeCode as ReturnType<typeof vi.fn>).mockRejectedValue(
       new (JudgeUnavailableError as new (c: unknown) => Error)("ECONNREFUSED")
     );
@@ -71,10 +81,24 @@ describe("POST /api/run-code", () => {
   });
 
   it("returns 500 on unexpected errors", async () => {
+    await loginAs({ userId: "u1" });
     (executeCode as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("boom"));
 
     const res = await POST(asNextRequest(jsonRequest("http://x/api/run-code", validBody)));
     expect(res.status).toBe(500);
+  });
+
+  it("rate-limits after 10 calls within the window", async () => {
+    await loginAs({ userId: "rate-victim" });
+    (executeCode as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+
+    for (let i = 0; i < 10; i++) {
+      const ok = await POST(asNextRequest(jsonRequest("http://x/api/run-code", validBody)));
+      expect(ok.status).toBe(200);
+    }
+    const blocked = await POST(asNextRequest(jsonRequest("http://x/api/run-code", validBody)));
+    expect(blocked.status).toBe(429);
+    expect(blocked.headers.get("Retry-After")).toBeTruthy();
   });
 });
 
