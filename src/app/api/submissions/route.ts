@@ -14,19 +14,29 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = request.nextUrl;
     const problemId = searchParams.get("problemId");
+    const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10) || 1);
+    const limit = Math.min(
+      100,
+      Math.max(1, parseInt(searchParams.get("limit") ?? "20", 10) || 20)
+    );
 
     const where: Record<string, unknown> = { userId: session.userId };
     if (problemId) where.problemId = problemId;
 
-    const submissions = await prisma.submission.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      include: {
-        problem: { select: { id: true, title: true, slug: true, difficulty: true } },
-      },
-    });
+    const [submissions, total] = await Promise.all([
+      prisma.submission.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * limit,
+        take: limit,
+        include: {
+          problem: { select: { id: true, title: true, slug: true, difficulty: true } },
+        },
+      }),
+      prisma.submission.count({ where }),
+    ]);
 
-    return Response.json({ submissions });
+    return Response.json({ submissions, total, page, limit });
   } catch {
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
