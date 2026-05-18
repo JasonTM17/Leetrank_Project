@@ -1,7 +1,15 @@
+// env MUST be the first import — it validates process.env and exits on failure.
+import "./env.js";
+import { env } from "./env.js";
+
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { logger } from "hono/logger";
+import { bodyLimit } from "hono/body-limit";
+import { requestContext } from "./middleware/request-context.js";
+import { errorHandler, notFoundHandler } from "./middleware/error-handler.js";
+import { healthHandler } from "./routes/health.js";
+import { metricsHandler } from "./routes/metrics.js";
 import { leaderboardTopHandler } from "./routes/leaderboard.js";
 import { tagsHandler } from "./routes/tags.js";
 import { tagDetailHandler } from "./routes/tags-detail.js";
@@ -12,36 +20,71 @@ import { contestDetailHandler } from "./routes/contests-detail.js";
 import { problemsListHandler, problemDetailHandler } from "./routes/problems.js";
 import { trendingHandler, randomHandler } from "./routes/trending.js";
 import { statsHandler } from "./routes/stats.js";
+import logger from "./logger.js";
 
 /**
  * LeetRank API service.
  *
  * Standalone HTTP server consumed by apps/web and external clients.
- * The first vertical slice migrated here is the read-only leaderboard
- * (planned per docs/adr/0011). Until the migration completes, the
- * canonical handlers continue to live in apps/web/src/app/api — this
- * service is opt-in via WEB_API_PROXY_BASE.
  */
 
 const app = new Hono();
 
-app.use("*", logger());
+// ── Middleware (order matters) ────────────────────────────────────────────────
+
+// 1. Structured request logging + request-ID + Prometheus counters.
+app.use("*", requestContext);
+
+// 2. CORS — tightened defaults.
+const allowedOrigins = env.CORS_ALLOWED_ORIGINS.split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+
+if (env.NODE_ENV === "production" && allowedOrigins.length === 0) {
+  logger.warn(
+    "CORS_ALLOWED_ORIGINS is empty in production — all cross-origin requests will be rejected"
+  );
+}
+
 app.use(
   "*",
   cors({
     origin: (origin) => {
-      const allowed = (process.env.CORS_ALLOWED_ORIGINS ?? "")
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean);
-      // Allow exact-match origins from the env list. In dev the web app
-      // is same-origin so an empty allowlist (default) is fine.
-      if (allowed.length === 0) return origin ?? "*";
-      return allowed.includes(origin ?? "") ? origin ?? null : null;
+      // No Origin header = same-origin or non-browser request; no CORS needed.
+      if (!origin) return null;
+
+      // Explicit allowlist takes precedence in all environments.
+      if (allowedOrigins.length > 0) {
+        return allowedOrigins.includes(origin) ? origin : null;
+      }
+
+      // Production with empty allowlist → reject all cross-origin.
+      if (env.NODE_ENV === "production") {
+        return null;
+      }
+
+      // Dev/test: allow localhost and 127.0.0.1 on any port.
+      if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+        return origin;
+      }
+
+      return null;
     },
     credentials: true,
   })
 );
+
+// 3. Body size limit — 512 KB ceiling on mutating methods (preventative).
+app.on(
+  ["POST", "PUT", "PATCH"],
+  "*",
+  bodyLimit({
+    maxSize: 512 * 1024,
+    onError: (c) => c.json({ error: "Request body too large" }, 413),
+  })
+);
+
+// ── Routes ────────────────────────────────────────────────────────────────────
 
 app.get("/", (c) =>
   c.json({
@@ -51,13 +94,8 @@ app.get("/", (c) =>
   })
 );
 
-app.get("/health", (c) =>
-  c.json({
-    status: "ok",
-    service: "leetrank-api",
-    timestamp: new Date().toISOString(),
-  })
-);
+app.get("/health", healthHandler);
+app.get("/metrics", metricsHandler);
 
 app.get("/stats", statsHandler);
 app.get("/leaderboard/top", leaderboardTopHandler);
@@ -75,12 +113,16 @@ app.get("/problems/trending", trendingHandler);
 app.get("/problems/random", randomHandler);
 app.get("/problems/:slug", problemDetailHandler);
 
-const port = Number(process.env.API_PORT ?? 4000);
+// ── Error handling ────────────────────────────────────────────────────────────
 
-if (process.env.NODE_ENV !== "test") {
-  serve({ fetch: app.fetch, port }, (info) => {
-    // eslint-disable-next-line no-console
-    console.log(`leetrank-api listening on :${info.port}`);
+app.onError(errorHandler);
+app.notFound(notFoundHandler);
+
+// ── Server bootstrap ──────────────────────────────────────────────────────────
+
+if (env.NODE_ENV !== "test") {
+  serve({ fetch: app.fetch, port: env.API_PORT }, (info) => {
+    logger.info("leetrank-api started", { port: info.port });
   });
 }
 
