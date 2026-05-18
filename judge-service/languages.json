@@ -1,6 +1,6 @@
 {
   "$schema": "./languages.schema.json",
-  "$comment": "Single source of truth for languages supported by the judge. Adding a new language is a 4-step change: append an entry here, drop a runner in judge-service/runners/ (or a compileCmd entry), expose it in the UI dropdown via src/lib/languages.ts, install the toolchain in judge-service/Dockerfile. The Go server today only accepts these languages at runtime — declared but unimplemented entries previously caused user-visible 'Unsupported language' errors. Compiled-language coverage (C/C++/Rust/Java/Kotlin/C#/Swift/PHP/Bash/SQL/TypeScript) is tracked for the registry-driven rewrite scaffolded in languages.go.",
+  "$comment": "Single source of truth for languages supported by the judge. Adding a new language is a 4-step change: append an entry here, drop a runner under judge-service/runners/ (or just a compileCmd/runCmd entry for registry-driven languages), expose it in the UI dropdown via src/lib/languages.ts, install the toolchain in judge-service/Dockerfile. Compiled languages set compileCmd; interpreted ones set runCmd directly. Placeholders {src}, {bin}, {workdir} are expanded at execution time. Wrapper-runner languages (python/javascript/ruby) keep dedicated paths in main.go because their wrappers apply per-process setrlimit guards.",
   "languages": [
     {
       "id": "python",
@@ -21,12 +21,39 @@
       "category": "scripting"
     },
     {
+      "id": "typescript",
+      "label": "TypeScript",
+      "extension": ".ts",
+      "monacoLanguage": "typescript",
+      "kind": "interpreted",
+      "runCmd": ["tsx", "{src}"],
+      "category": "scripting"
+    },
+    {
       "id": "ruby",
       "label": "Ruby",
       "extension": ".rb",
       "monacoLanguage": "ruby",
       "kind": "interpreted",
       "runCmd": ["ruby", "{src}"],
+      "category": "scripting"
+    },
+    {
+      "id": "php",
+      "label": "PHP",
+      "extension": ".php",
+      "monacoLanguage": "php",
+      "kind": "interpreted",
+      "runCmd": ["php", "{src}"],
+      "category": "scripting"
+    },
+    {
+      "id": "bash",
+      "label": "Bash",
+      "extension": ".sh",
+      "monacoLanguage": "shell",
+      "kind": "interpreted",
+      "runCmd": ["bash", "{src}"],
       "category": "scripting"
     },
     {
@@ -38,6 +65,56 @@
       "compileCmd": ["go", "build", "-o", "{bin}", "{src}"],
       "runCmd": ["{bin}"],
       "category": "compiled"
+    },
+    {
+      "id": "rust",
+      "label": "Rust",
+      "extension": ".rs",
+      "monacoLanguage": "rust",
+      "kind": "compiled",
+      "compileCmd": ["rustc", "-O", "-o", "{bin}", "{src}"],
+      "runCmd": ["{bin}"],
+      "category": "compiled"
+    },
+    {
+      "id": "c",
+      "label": "C (gcc)",
+      "extension": ".c",
+      "monacoLanguage": "c",
+      "kind": "compiled",
+      "compileCmd": ["gcc", "-O2", "-std=c17", "-o", "{bin}", "{src}"],
+      "runCmd": ["{bin}"],
+      "category": "compiled"
+    },
+    {
+      "id": "cpp",
+      "label": "C++ (g++)",
+      "extension": ".cpp",
+      "monacoLanguage": "cpp",
+      "kind": "compiled",
+      "compileCmd": ["g++", "-O2", "-std=c++20", "-o", "{bin}", "{src}"],
+      "runCmd": ["{bin}"],
+      "category": "compiled"
+    },
+    {
+      "id": "java",
+      "label": "Java",
+      "extension": ".java",
+      "monacoLanguage": "java",
+      "kind": "compiled",
+      "compileCmd": ["javac", "-d", "{workdir}", "{src}"],
+      "runCmd": ["java", "-cp", "{workdir}", "Main"],
+      "mainClass": "Main",
+      "category": "jvm"
+    },
+    {
+      "id": "sql",
+      "label": "SQL (sqlite)",
+      "extension": ".sql",
+      "monacoLanguage": "sql",
+      "kind": "interpreted",
+      "runCmd": ["sqlite3", ":memory:", ".read {src}"],
+      "category": "data"
     }
   ]
 }
