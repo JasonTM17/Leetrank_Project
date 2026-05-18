@@ -1,0 +1,25 @@
+# n8n service snippet — merge into root docker-compose.yml in a later commit.
+# Usage (standalone):
+#   docker compose -f docker-compose.yml -f infra/n8n/docker-compose.snippet.yml up n8n
+
+services:
+  n8n:
+    image: n8nio/n8n:1.70.0
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=${N8N_USER}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD}
+    volumes:
+      - n8n_data:/home/node/.n8n
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:5678/healthz || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    restart: unless-stopped
+
+volumes:
+  n8n_data:

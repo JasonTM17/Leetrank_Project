@@ -23,6 +23,7 @@ model User {
   discussions       Discussion[]
   discussionComments DiscussionComment[]
   bookmarks         Bookmark[]
+  chatMessages      ChatMessage[]
 }
 
 model Tag {
@@ -185,4 +186,19 @@ model Bookmark {
 
   @@unique([userId, problemId])
   @@index([userId, createdAt(sort: Desc)])
+}
+
+model ChatMessage {
+  id         String   @id @default(cuid())
+  userId     String
+  problemId  String?
+  contestId  String?
+  role       String   // "user" | "assistant" | "system"
+  content    String
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([problemId, createdAt])
 }
