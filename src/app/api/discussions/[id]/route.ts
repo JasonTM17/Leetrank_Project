@@ -2,6 +2,12 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { createCommentSchema, firstZodError } from "@/lib/validations";
+import { rateLimit } from "@/lib/rate-limit";
+
+// RULES §4: rate-limit comment writes. Comment-spam is the canonical
+// forum-abuse pattern; 10/min per user is generous for normal use.
+const COMMENT_LIMIT_MAX = 10;
+const COMMENT_LIMIT_WINDOW_MS = 60_000;
 
 export async function GET(
   _request: NextRequest,
@@ -42,6 +48,19 @@ export async function POST(
     }
 
     const { id } = await params;
+
+    const limit = rateLimit(
+      `comment:${session.userId}`,
+      COMMENT_LIMIT_MAX,
+      COMMENT_LIMIT_WINDOW_MS
+    );
+    if (!limit.allowed) {
+      const retryAfter = Math.max(1, Math.ceil((limit.resetAt - Date.now()) / 1000));
+      return Response.json(
+        { error: "Too many comments. Slow down." },
+        { status: 429, headers: { "Retry-After": String(retryAfter) } }
+      );
+    }
 
     let body;
     try {

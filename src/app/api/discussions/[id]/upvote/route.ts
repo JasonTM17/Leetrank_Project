@@ -1,12 +1,19 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { rateLimit } from "@/lib/rate-limit";
 
 // POST /api/discussions/[id]/upvote — toggles +1 on the discussion's upvote
 // counter. We don't track per-user votes yet (no DiscussionVote model) so
 // upvotes are best-effort and a user could vote multiple times. The
 // counter is meant as a popularity signal, not a strict tally — if/when
 // abuse becomes a problem we'll add the join table.
+//
+// Until that join table lands, the rate limit is the only thing keeping
+// the count honest. 1 per second per user per discussion is plenty for
+// real interaction and tight enough to make scripted spam pointless.
+const UPVOTE_LIMIT_MAX = 5;
+const UPVOTE_LIMIT_WINDOW_MS = 60_000;
 
 export async function POST(
   _request: NextRequest,
@@ -19,6 +26,19 @@ export async function POST(
     }
 
     const { id } = await params;
+
+    const limit = rateLimit(
+      `upvote:${session.userId}:${id}`,
+      UPVOTE_LIMIT_MAX,
+      UPVOTE_LIMIT_WINDOW_MS
+    );
+    if (!limit.allowed) {
+      const retryAfter = Math.max(1, Math.ceil((limit.resetAt - Date.now()) / 1000));
+      return Response.json(
+        { error: "Too many upvotes. Slow down." },
+        { status: 429, headers: { "Retry-After": String(retryAfter) } }
+      );
+    }
 
     const discussion = await prisma.discussion.update({
       where: { id },
