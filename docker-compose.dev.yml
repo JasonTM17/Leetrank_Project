@@ -1,0 +1,45 @@
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up app api postgres redis
+#
+# Hot-reload overrides for the app (Next.js) and api (Hono/tsx) services.
+# Source is bind-mounted into the container; node_modules from the image are
+# preserved via anonymous volumes so the host directory does not shadow them.
+#
+# Prerequisites: build the base images at least once before using this file:
+#   docker compose build app api
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: deps
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    command: npm run dev
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=${DATABASE_URL:-postgresql://leetrank:leetrank-dev@postgres:5432/leetrank?schema=public}
+      - JWT_SECRET=${JWT_SECRET:-dev-secret-replace-in-production}
+      - JUDGE_SERVICE_URL=http://judge:9090
+      - REDIS_URL=${REDIS_URL:-redis://:leetrank-dev@redis:6379/0}
+      - LOG_LEVEL=${LOG_LEVEL:-debug}
+      - N8N_CHATBOT_WEBHOOK_URL=http://n8n:5678/webhook/leetrank-chatbot
+
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+      target: builder
+    volumes:
+      - ./apps/api:/app
+      - /app/node_modules
+    command: npx tsx watch src/server.ts
+    environment:
+      - NODE_ENV=development
+      - API_PORT=4000
+      - DATABASE_URL=${DATABASE_URL:-postgresql://leetrank:leetrank-dev@postgres:5432/leetrank?schema=public}
+      - JWT_SECRET=${JWT_SECRET:-dev-secret-replace-in-production}
+      - CORS_ALLOWED_ORIGINS=${API_CORS_ALLOWED_ORIGINS:-http://localhost:3000}
