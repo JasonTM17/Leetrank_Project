@@ -25,6 +25,12 @@
 		X-Frame-Options "DENY"
 		Referrer-Policy "strict-origin-when-cross-origin"
 		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		# CSP: 'unsafe-inline' is required because Next.js 16 injects inline
+		# <script> tags for hydration and route prefetching. 'unsafe-eval' is
+		# required by Monaco Editor (code editor on the problem page). Both are
+		# trade-offs accepted for this stack; tighten once Next.js ships nonce
+		# support and Monaco drops eval.
+		Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https: wss:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
 		# Don't leak server identity.
 		-Server
 	}
@@ -43,6 +49,14 @@
 			events 30
 			window 1m
 		}
+	}
+
+	# Ported API routes live under /api/v1/* and are served by apps/api.
+	# When a route is ported from apps/web to apps/api, expose it here under
+	# /api/v1/<route> and update the FE caller URL at the same cutover.
+	# Routes still on apps/web continue to be served by the catch-all below.
+	handle_path /api/v1/* {
+		reverse_proxy api:4000
 	}
 
 	# Everything else proxied to Next.js. trusted_proxies tells the app
