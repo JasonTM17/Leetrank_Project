@@ -62,6 +62,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   root layout.
 - DiscussionsPanel on the problem detail page, full thread page at
   /discussions/[id].
+- Language manifest expanded from 15 to **34 languages**: added Lua, Perl,
+  Elixir, D, Pascal, Nim, Fortran, Scala, Groovy, Clojure, Haskell, OCaml,
+  Racket, Common Lisp (SBCL), Erlang, F#, R, Julia, Tcl, AWK. Each entry
+  carries `kind`, `category`, `compileCmd`/`runCmd`, and Monaco language ID.
+  `src/lib/languages.ts` mirrors the manifest for the frontend dropdown.
+- `apps/auth` scaffold: standalone Hono auth service (register, login, logout,
+  /me) extracted from the web app as Phase 1 of ADR 0016. Not yet wired into
+  production traffic.
+- `packages/api-contracts`: shared Zod schemas and TypeScript types for every
+  `apps/api` endpoint. Frontend imports types from this package; no more
+  hand-rolled interfaces.
+- `packages/auth-verify`: shared JWT verification middleware consumed by both
+  `apps/api` and `apps/auth`. Single source of truth for cookie parsing and
+  token validation.
+- Chatbot scaffold (`apps/chatbot` / n8n integration per ADR 0015): in-platform
+  assistant wired to the `ChatMessage` Prisma model. Stores `userId`,
+  `problemId`/`contestId` context, role, and content.
+- Multi-service Docker compose: `apps/api`, `apps/auth`, `apps/web`, and
+  `judge-service` each have independent Dockerfiles. `docker-compose.yml`
+  boots all four plus Postgres, Redis, Caddy, Prometheus, and Grafana with
+  a single `docker compose up`.
+- Test suite expanded to **461 tests across 12 Vitest configs** (up from 377
+  across 76 files). New coverage: `apps/api` route integration tests,
+  `packages/api-contracts` schema round-trips, `packages/auth-verify`
+  middleware unit tests.
+- Audit deliverables committed to `docs/`: security audit, production-readiness
+  audit (F-series items), DX audit, UI/UX audit, microservices migration plan.
+- Per-service runbooks in `docs/runbooks/` covering `apps/api`, `apps/auth`,
+  `apps/web`, and `judge-service`. Disaster-recovery runbook at
+  `docs/runbooks/disaster-recovery.md`.
+- Dependabot config (`.github/dependabot.yml`) for npm and GitHub Actions
+  ecosystems with weekly cadence.
+- Prettier config and `.gitattributes` for consistent line endings across
+  platforms.
 
 ### Changed
 - Prisma provider switched from SQLite to PostgreSQL; schema bodies are
