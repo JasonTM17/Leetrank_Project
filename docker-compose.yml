@@ -44,6 +44,7 @@ services:
       - JUDGE_SERVICE_URL=http://judge:9090
       - REDIS_URL=${REDIS_URL:-redis://:leetrank-dev@redis:6379/0}
       - LOG_LEVEL=${LOG_LEVEL:-info}
+      - N8N_CHATBOT_WEBHOOK_URL=http://n8n:5678/webhook/leetrank-chatbot
     depends_on:
       postgres:
         condition: service_healthy
@@ -119,58 +120,30 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-  prometheus:
-    image: prom/prometheus:v2.55.0
-    command:
-      - "--config.file=/etc/prometheus/prometheus.yml"
-      - "--storage.tsdb.path=/prometheus"
-      - "--storage.tsdb.retention.time=${PROMETHEUS_RETENTION:-15d}"
-      - "--web.enable-lifecycle"
+  n8n:
+    image: n8nio/n8n:1.70.0
     ports:
-      - "9091:9090"
+      - "5678:5678"
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=${N8N_USER:-admin}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD:?Set N8N_PASSWORD in .env}
+      - N8N_HOST=${N8N_HOST:-localhost}
+      - N8N_PORT=5678
+      - WEBHOOK_URL=${N8N_WEBHOOK_URL:-http://localhost:5678/}
     volumes:
-      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - prometheus_data:/prometheus
+      - n8n_data:/home/node/.n8n
     restart: unless-stopped
-
-  grafana:
-    image: grafana/grafana:11.3.0
-    ports:
-      - "3001:3000"
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
-      - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_INSTALL_PLUGINS=
-    volumes:
-      - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
-      - grafana_data:/var/lib/grafana
-    depends_on:
-      - prometheus
-    restart: unless-stopped
-
-  postgres-exporter:
-    image: prometheuscommunity/postgres-exporter:v0.16.0
-    environment:
-      DATA_SOURCE_NAME: "postgresql://${POSTGRES_USER:-leetrank}:${POSTGRES_PASSWORD:-leetrank-dev}@postgres:5432/${POSTGRES_DB:-leetrank}?sslmode=disable"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    restart: unless-stopped
-
-  redis-exporter:
-    image: oliver006/redis_exporter:v1.62.0
-    environment:
-      REDIS_ADDR: redis://redis:6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-leetrank-dev}
-    depends_on:
-      redis:
-        condition: service_healthy
-    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:5678/healthz || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
 
 volumes:
   postgres_data:
   redis_data:
   caddy_data:
   caddy_config:
-  prometheus_data:
-  grafana_data:
+  n8n_data:

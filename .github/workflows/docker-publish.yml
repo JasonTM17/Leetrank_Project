@@ -74,6 +74,9 @@ jobs:
           provenance: true
           sbom: true
 
+      - name: Verify image tag landed on Docker Hub
+        run: docker manifest inspect ${{ matrix.image }}:latest
+
       - name: Update Docker Hub description
         uses: peter-evans/dockerhub-description@v4
         if: matrix.service == 'app'
