@@ -3,6 +3,11 @@
  *
  * In production: one JSON line per log call.
  * In dev: ANSI-coloured pretty output for readability.
+ *
+ * Field redaction: sensitive keys (password, token, authorization, cookie,
+ * set-cookie, secret, jwt) are stripped from every log line before output
+ * so accidental `logger.info("ctx", req.headers)` calls don't leak creds
+ * into the log stream.
  */
 
 type Level = "debug" | "info" | "warn" | "error";
@@ -28,19 +33,53 @@ const DIM = "\x1b[2m";
 const isDev = process.env.NODE_ENV !== "production";
 const minLevel: Level = (process.env.LOG_LEVEL as Level | undefined) ?? "info";
 
+// Keys whose values must never reach the log output. Match is
+// case-insensitive on the key name; values are replaced by "[REDACTED]".
+const REDACT_KEYS = new Set([
+  "password",
+  "passwd",
+  "token",
+  "authorization",
+  "auth",
+  "cookie",
+  "set-cookie",
+  "secret",
+  "jwt",
+  "api_key",
+  "apikey",
+  "session",
+]);
+
 function shouldLog(level: Level): boolean {
   return LEVEL_RANK[level] >= LEVEL_RANK[minLevel];
+}
+
+function redact(value: unknown, depth = 0): unknown {
+  if (depth > 6) return "[depth-limit]";
+  if (value === null || typeof value !== "object") return value;
+  if (Array.isArray(value)) return value.map((v) => redact(v, depth + 1));
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+    if (REDACT_KEYS.has(k.toLowerCase())) {
+      out[k] = "[REDACTED]";
+    } else {
+      out[k] = redact(v, depth + 1);
+    }
+  }
+  return out;
 }
 
 function write(level: Level, msg: string, fields: Fields): void {
   if (!shouldLog(level)) return;
 
+  const safe = redact(fields) as Fields;
+
   if (isDev) {
     const colour = ANSI[level];
     const ts = new Date().toISOString();
     const extra =
-      Object.keys(fields).length > 0
-        ? " " + DIM + JSON.stringify(fields) + RESET
+      Object.keys(safe).length > 0
+        ? " " + DIM + JSON.stringify(safe) + RESET
         : "";
     // eslint-disable-next-line no-console
     console.log(
@@ -51,7 +90,7 @@ function write(level: Level, msg: string, fields: Fields): void {
       ts: new Date().toISOString(),
       level,
       msg,
-      ...fields,
+      ...safe,
     };
     // eslint-disable-next-line no-console
     console.log(JSON.stringify(line));
