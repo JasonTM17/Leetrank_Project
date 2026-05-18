@@ -51,6 +51,14 @@
 		}
 	}
 
+	# Phase 3.1 destination: auth service handles all /api/v1/auth/* traffic.
+	# Routes are 501 stubs until Phase 3.1.5 completes the migration from apps/web.
+	# Add this block BEFORE the generic /api/v1/* reverse_proxy so auth paths
+	# are matched first and never fall through to apps/api.
+	handle_path /api/v1/auth/* {
+		reverse_proxy auth:4001
+	}
+
 	# Ported API routes live under /api/v1/* and are served by apps/api.
 	# When a route is ported from apps/web to apps/api, expose it here under
 	# /api/v1/<route> and update the FE caller URL at the same cutover.
