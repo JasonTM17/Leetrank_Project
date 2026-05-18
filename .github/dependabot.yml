@@ -1,0 +1,138 @@
+version: 2
+updates:
+  # ── Root Next.js app ──────────────────────────────────────────────────
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Ho_Chi_Minh"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "scope:web"
+    groups:
+      next:
+        patterns:
+          - "next"
+          - "next-themes"
+          - "@next/*"
+          - "eslint-config-next"
+      prisma:
+        patterns:
+          - "prisma"
+          - "@prisma/*"
+      types:
+        patterns:
+          - "@types/*"
+      dev-deps:
+        dependency-type: "development"
+    ignore:
+      # Pin the major; let security PRs through anyway.
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
+
+  # ── apps/api ──────────────────────────────────────────────────────────
+  - package-ecosystem: "npm"
+    directory: "/apps/api"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "scope:api"
+    groups:
+      hono:
+        patterns:
+          - "hono"
+          - "@hono/*"
+
+  # ── apps/auth ─────────────────────────────────────────────────────────
+  - package-ecosystem: "npm"
+    directory: "/apps/auth"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "scope:auth"
+
+  # ── packages/api-contracts ────────────────────────────────────────────
+  - package-ecosystem: "npm"
+    directory: "/packages/api-contracts"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 2
+    labels:
+      - "dependencies"
+      - "scope:contracts"
+
+  # ── packages/auth-verify ──────────────────────────────────────────────
+  - package-ecosystem: "npm"
+    directory: "/packages/auth-verify"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 2
+    labels:
+      - "dependencies"
+      - "scope:auth-verify"
+
+  # ── judge-service (Go) ────────────────────────────────────────────────
+  - package-ecosystem: "gomod"
+    directory: "/judge-service"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 2
+    labels:
+      - "dependencies"
+      - "scope:judge"
+
+  # ── Dockerfiles ───────────────────────────────────────────────────────
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 2
+    labels:
+      - "dependencies"
+      - "scope:docker"
+
+  - package-ecosystem: "docker"
+    directory: "/apps/api"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 2
+    labels:
+      - "dependencies"
+      - "scope:docker"
+
+  - package-ecosystem: "docker"
+    directory: "/apps/auth"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 2
+    labels:
+      - "dependencies"
+      - "scope:docker"
+
+  - package-ecosystem: "docker"
+    directory: "/judge-service"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 2
+    labels:
+      - "dependencies"
+      - "scope:docker"
+
+  # ── GitHub Actions ────────────────────────────────────────────────────
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "scope:ci"

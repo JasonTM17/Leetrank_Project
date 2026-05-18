@@ -1,0 +1,40 @@
+# Auto-normalise to LF in the repo so Windows checkouts don't keep
+# emitting "LF will be replaced by CRLF" warnings on every git add.
+# Binary files keep their original encoding.
+
+* text=auto eol=lf
+
+# Lockfiles + generated artefacts always LF.
+*.json text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.md text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.mjs text eol=lf
+*.cjs text eol=lf
+*.go text eol=lf
+*.sh text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+Dockerfile text eol=lf
+Caddyfile text eol=lf
+.gitignore text eol=lf
+.gitattributes text eol=lf
+.editorconfig text eol=lf
+
+# Binary artefacts.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
+
+# Mark generated files so GitHub's diff view collapses them.
+pnpm-lock.yaml linguist-generated=true
+package-lock.json linguist-generated=true
+prisma/migrations/** linguist-generated=true
