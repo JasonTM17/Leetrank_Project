@@ -10,7 +10,9 @@ describe("language manifest extra coverage", () => {
     expect(categories.has("scripting")).toBe(true);
     expect(categories.has("compiled")).toBe(true);
     expect(categories.has("jvm")).toBe(true);
+    expect(categories.has("functional")).toBe(true);
     expect(categories.has("data")).toBe(true);
+    expect(categories.has("esoteric")).toBe(true);
   });
 
   it("each language declares a non-empty extension starting with a dot", () => {

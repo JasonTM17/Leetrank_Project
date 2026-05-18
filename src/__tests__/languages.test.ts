@@ -6,9 +6,42 @@ describe("language manifest", () => {
     // Source of truth lives in judge-service/languages.json; this list
     // must match. Adding a language without updating both files puts us
     // back in the "Unsupported language" UX hole.
-    expect(LANGUAGES.map((l) => l.id).sort()).toEqual(
-      ["bash", "c", "cpp", "csharp", "elixir", "go", "java", "javascript", "kotlin", "lua", "perl", "php", "python", "r", "ruby", "rust", "scala", "sql", "typescript"]
-    );
+    expect(LANGUAGES.map((l) => l.id).sort()).toEqual([
+      "awk",
+      "bash",
+      "c",
+      "clojure",
+      "cpp",
+      "csharp",
+      "d",
+      "elixir",
+      "erlang",
+      "fortran",
+      "fsharp",
+      "go",
+      "groovy",
+      "haskell",
+      "java",
+      "javascript",
+      "julia",
+      "kotlin",
+      "lua",
+      "nim",
+      "ocaml",
+      "pascal",
+      "perl",
+      "php",
+      "python",
+      "r",
+      "racket",
+      "ruby",
+      "rust",
+      "sbcl",
+      "scala",
+      "sql",
+      "tcl",
+      "typescript",
+    ]);
   });
 
   it("every language has a unique id", () => {
@@ -28,20 +61,20 @@ describe("language manifest", () => {
 
   it("languageLabel returns the human-readable label", () => {
     expect(languageLabel("python")).toBe("Python 3");
-    expect(languageLabel("cpp")).toBe("C++ (g++)");
+    expect(languageLabel("haskell")).toBe("Haskell");
   });
 
   it("languageLabel falls back to the raw id for unknowns", () => {
-    expect(languageLabel("haskell")).toBe("haskell");
+    expect(languageLabel("brainfuck")).toBe("brainfuck");
   });
 
   it("monacoLanguageFor maps to the Monaco mode", () => {
     expect(monacoLanguageFor("typescript")).toBe("typescript");
-    expect(monacoLanguageFor("rust")).toBe("rust");
+    expect(monacoLanguageFor("haskell")).toBe("haskell");
   });
 
   it("monacoLanguageFor falls back to plaintext for unknowns", () => {
-    expect(monacoLanguageFor("haskell")).toBe("plaintext");
+    expect(monacoLanguageFor("brainfuck")).toBe("plaintext");
   });
 
   it("each language declares a non-empty extension and label", () => {
