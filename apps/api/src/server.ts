@@ -4,9 +4,14 @@ import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { leaderboardTopHandler } from "./routes/leaderboard.js";
 import { tagsHandler } from "./routes/tags.js";
+import { tagDetailHandler } from "./routes/tags-detail.js";
 import { contestsHandler } from "./routes/contests.js";
+import { contestsActiveHandler } from "./routes/contests-active.js";
+import { contestsUpcomingHandler } from "./routes/contests-upcoming.js";
+import { contestDetailHandler } from "./routes/contests-detail.js";
 import { problemsListHandler, problemDetailHandler } from "./routes/problems.js";
 import { trendingHandler, randomHandler } from "./routes/trending.js";
+import { statsHandler } from "./routes/stats.js";
 
 /**
  * LeetRank API service.
@@ -54,12 +59,18 @@ app.get("/health", (c) =>
   })
 );
 
+app.get("/stats", statsHandler);
 app.get("/leaderboard/top", leaderboardTopHandler);
 app.get("/tags", tagsHandler);
+// Static sub-paths must register before the :slug catch-all.
+app.get("/tags/:slug", tagDetailHandler);
 app.get("/contests", contestsHandler);
-app.get("/problems", problemsListHandler);
 // Static sub-paths must register before the :slug catch-all so they
 // don't get swallowed as values for the slug param.
+app.get("/contests/active", contestsActiveHandler);
+app.get("/contests/upcoming", contestsUpcomingHandler);
+app.get("/contests/:slug", contestDetailHandler);
+app.get("/problems", problemsListHandler);
 app.get("/problems/trending", trendingHandler);
 app.get("/problems/random", randomHandler);
 app.get("/problems/:slug", problemDetailHandler);
