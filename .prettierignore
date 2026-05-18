@@ -1,0 +1,28 @@
+# Anything Prettier shouldn't touch.
+
+# Build artefacts
+.next/
+out/
+dist/
+build/
+node_modules/
+coverage/
+
+# Generated
+.tsbuildinfo
+*.tsbuildinfo
+prisma/migrations/**/migration.sql
+
+# Binary / non-text
+public/
+docs/screenshots/
+
+# Lockfiles — let pnpm/npm own them
+pnpm-lock.yaml
+package-lock.json
+
+# Vendored configs
+infra/grafana/provisioning/
+
+# Don't reformat the gitignored private dir
+.claude-private/
