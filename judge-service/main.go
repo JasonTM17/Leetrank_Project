@@ -164,6 +164,64 @@ var dangerousPatterns = map[string][]string{
 		"System.cmd", ":os.cmd", "File.rm", "File.write", "Port.open",
 		":file.", ":gen_tcp", ":httpc", "System.halt",
 	},
+	"d": {
+		"import std.process", "import std.socket", "import std.file",
+		"executeShell", "spawnProcess", "spawnShell",
+	},
+	"pascal": {
+		"uses Process", "uses Sockets", "ExecuteProcess",
+		"FpExec", "fpExecve", "fpFork", "fpSocket",
+	},
+	"nim": {
+		"import os", "import osproc", "import net", "import nativesockets",
+		"execShellCmd", "execProcess", "startProcess", "writeFile",
+	},
+	"fortran": {
+		"call system", "call execute_command_line", "open(unit=",
+	},
+	"groovy": {
+		".execute()", "Runtime.getRuntime", "ProcessBuilder",
+		"java.io.File", "java.net.", "System.exit",
+	},
+	"clojure": {
+		"(sh ", "(clojure.java.shell/sh", "(java.lang.Runtime",
+		"(.exec", "(System/exit", "java.io.File", "java.net.",
+	},
+	"haskell": {
+		"System.Process", "System.IO", "System.Directory", "Network.",
+		"Foreign.", "unsafePerformIO", "unsafeCoerce",
+	},
+	"ocaml": {
+		"Unix.system", "Unix.execv", "Unix.fork", "Unix.socket",
+		"Sys.command", "open_process", "Stdlib.exit",
+	},
+	"racket": {
+		"(system ", "(process ", "(subprocess ", "(open-input-file",
+		"(open-output-file", "(file-exists? \"/etc",
+	},
+	"sbcl": {
+		"(sb-ext:run-program", "(sb-ext:exit", "(sb-ext:quit",
+		"(uiop:run-program", "(open ", "(with-open-file",
+		"sb-bsd-sockets", "sb-posix:",
+	},
+	"erlang": {
+		"os:cmd", "erlang:halt", "file:delete", "file:write_file",
+		"gen_tcp:", "ssh:", "httpc:",
+	},
+	"fsharp": {
+		"System.Diagnostics.Process", "System.IO.File", "System.IO.Directory",
+		"System.Net.", "Environment.Exit", "Assembly.Load",
+	},
+	"julia": {
+		"run(", "Cmd(", "readchomp(", "ENV[",
+		"download(", "open(", "rm(",
+	},
+	"tcl": {
+		"exec ", "open |", "socket ", "file delete", "puts -nonewline ",
+	},
+	"awk": {
+		"system(", "getline cmd", "| getline", "close(",
+	},
 }
 
 func isSafe(code, language string) bool {

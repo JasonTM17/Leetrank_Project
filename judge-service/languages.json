@@ -57,6 +57,33 @@
       "category": "scripting"
     },
     {
+      "id": "lua",
+      "label": "Lua",
+      "extension": ".lua",
+      "monacoLanguage": "lua",
+      "kind": "interpreted",
+      "runCmd": ["lua5.4", "{src}"],
+      "category": "scripting"
+    },
+    {
+      "id": "perl",
+      "label": "Perl",
+      "extension": ".pl",
+      "monacoLanguage": "perl",
+      "kind": "interpreted",
+      "runCmd": ["perl", "{src}"],
+      "category": "scripting"
+    },
+    {
+      "id": "elixir",
+      "label": "Elixir",
+      "extension": ".ex",
+      "monacoLanguage": "elixir",
+      "kind": "interpreted",
+      "runCmd": ["elixir", "{src}"],
+      "category": "scripting"
+    },
+    {
       "id": "go",
       "label": "Go",
       "extension": ".go",
@@ -97,6 +124,56 @@
       "category": "compiled"
     },
     {
+      "id": "csharp",
+      "label": "C# (Mono)",
+      "extension": ".cs",
+      "monacoLanguage": "csharp",
+      "kind": "compiled",
+      "compileCmd": ["mcs", "-out:{workdir}/main.exe", "{src}"],
+      "runCmd": ["mono", "{workdir}/main.exe"],
+      "category": "compiled"
+    },
+    {
+      "id": "d",
+      "label": "D (gdc)",
+      "extension": ".d",
+      "monacoLanguage": "d",
+      "kind": "compiled",
+      "compileCmd": ["gdc", "-O", "-o", "{bin}", "{src}"],
+      "runCmd": ["{bin}"],
+      "category": "compiled"
+    },
+    {
+      "id": "pascal",
+      "label": "Pascal (fpc)",
+      "extension": ".pas",
+      "monacoLanguage": "pascal",
+      "kind": "compiled",
+      "compileCmd": ["fpc", "-O2", "-o{bin}", "{src}"],
+      "runCmd": ["{bin}"],
+      "category": "compiled"
+    },
+    {
+      "id": "nim",
+      "label": "Nim",
+      "extension": ".nim",
+      "monacoLanguage": "nim",
+      "kind": "compiled",
+      "compileCmd": ["nim", "compile", "--opt:speed", "-o:{bin}", "{src}"],
+      "runCmd": ["{bin}"],
+      "category": "compiled"
+    },
+    {
+      "id": "fortran",
+      "label": "Fortran (gfortran)",
+      "extension": ".f90",
+      "monacoLanguage": "fortran",
+      "kind": "compiled",
+      "compileCmd": ["gfortran", "-O2", "-o", "{bin}", "{src}"],
+      "runCmd": ["{bin}"],
+      "category": "compiled"
+    },
+    {
       "id": "java",
       "label": "Java",
       "extension": ".java",
@@ -108,15 +185,6 @@
       "category": "jvm"
     },
     {
-      "id": "sql",
-      "label": "SQL (sqlite)",
-      "extension": ".sql",
-      "monacoLanguage": "sql",
-      "kind": "interpreted",
-      "runCmd": ["sqlite3", ":memory:", ".read {src}"],
-      "category": "data"
-    },
-    {
       "id": "kotlin",
       "label": "Kotlin",
       "extension": ".kt",
@@ -125,43 +193,6 @@
       "compileCmd": ["kotlinc", "{src}", "-include-runtime", "-d", "{workdir}/main.jar"],
       "runCmd": ["java", "-jar", "{workdir}/main.jar"],
       "category": "jvm"
-    },
-    {
-      "id": "csharp",
-      "label": "C# (Mono)",
-      "extension": ".cs",
-      "monacoLanguage": "csharp",
-      "kind": "compiled",
-      "compileCmd": ["mcs", "-out:{workdir}/main.exe", "{src}"],
-      "runCmd": ["mono", "{workdir}/main.exe"],
-      "category": "compiled"
-    },
-    {
-      "id": "r",
-      "label": "R",
-      "extension": ".r",
-      "monacoLanguage": "r",
-      "kind": "interpreted",
-      "runCmd": ["Rscript", "{src}"],
-      "category": "data"
-    },
-    {
-      "id": "lua",
-      "label": "Lua",
-      "extension": ".lua",
-      "monacoLanguage": "lua",
-      "kind": "interpreted",
-      "runCmd": ["lua5.4", "{src}"],
-      "category": "scripting"
-    },
-    {
-      "id": "perl",
-      "label": "Perl",
-      "extension": ".pl",
-      "monacoLanguage": "perl",
-      "kind": "interpreted",
-      "runCmd": ["perl", "{src}"],
-      "category": "scripting"
     },
     {
       "id": "scala",
@@ -175,13 +206,121 @@
       "category": "jvm"
     },
     {
-      "id": "elixir",
-      "label": "Elixir",
-      "extension": ".ex",
-      "monacoLanguage": "elixir",
+      "id": "groovy",
+      "label": "Groovy",
+      "extension": ".groovy",
+      "monacoLanguage": "groovy",
       "kind": "interpreted",
-      "runCmd": ["elixir", "{src}"],
-      "category": "scripting"
+      "runCmd": ["groovy", "{src}"],
+      "category": "jvm"
+    },
+    {
+      "id": "clojure",
+      "label": "Clojure",
+      "extension": ".clj",
+      "monacoLanguage": "clojure",
+      "kind": "interpreted",
+      "runCmd": ["clojure", "-M", "{src}"],
+      "category": "jvm"
+    },
+    {
+      "id": "haskell",
+      "label": "Haskell",
+      "extension": ".hs",
+      "monacoLanguage": "haskell",
+      "kind": "interpreted",
+      "runCmd": ["runghc", "{src}"],
+      "category": "functional"
+    },
+    {
+      "id": "ocaml",
+      "label": "OCaml",
+      "extension": ".ml",
+      "monacoLanguage": "ocaml",
+      "kind": "interpreted",
+      "runCmd": ["ocaml", "{src}"],
+      "category": "functional"
+    },
+    {
+      "id": "racket",
+      "label": "Racket",
+      "extension": ".rkt",
+      "monacoLanguage": "racket",
+      "kind": "interpreted",
+      "runCmd": ["racket", "{src}"],
+      "category": "functional"
+    },
+    {
+      "id": "sbcl",
+      "label": "Common Lisp (SBCL)",
+      "extension": ".lisp",
+      "monacoLanguage": "lisp",
+      "kind": "interpreted",
+      "runCmd": ["sbcl", "--script", "{src}"],
+      "category": "functional"
+    },
+    {
+      "id": "erlang",
+      "label": "Erlang",
+      "extension": ".erl",
+      "monacoLanguage": "erlang",
+      "kind": "interpreted",
+      "runCmd": ["escript", "{src}"],
+      "category": "functional"
+    },
+    {
+      "id": "fsharp",
+      "label": "F# (Mono)",
+      "extension": ".fsx",
+      "monacoLanguage": "fsharp",
+      "kind": "interpreted",
+      "runCmd": ["fsharpi", "--exec", "{src}"],
+      "category": "functional"
+    },
+    {
+      "id": "sql",
+      "label": "SQL (sqlite)",
+      "extension": ".sql",
+      "monacoLanguage": "sql",
+      "kind": "interpreted",
+      "runCmd": ["sqlite3", ":memory:", ".read {src}"],
+      "category": "data"
+    },
+    {
+      "id": "r",
+      "label": "R",
+      "extension": ".r",
+      "monacoLanguage": "r",
+      "kind": "interpreted",
+      "runCmd": ["Rscript", "{src}"],
+      "category": "data"
+    },
+    {
+      "id": "julia",
+      "label": "Julia",
+      "extension": ".jl",
+      "monacoLanguage": "julia",
+      "kind": "interpreted",
+      "runCmd": ["julia", "{src}"],
+      "category": "data"
+    },
+    {
+      "id": "tcl",
+      "label": "Tcl",
+      "extension": ".tcl",
+      "monacoLanguage": "tcl",
+      "kind": "interpreted",
+      "runCmd": ["tclsh", "{src}"],
+      "category": "esoteric"
+    },
+    {
+      "id": "awk",
+      "label": "AWK (gawk)",
+      "extension": ".awk",
+      "monacoLanguage": "plaintext",
+      "kind": "interpreted",
+      "runCmd": ["gawk", "-f", "{src}"],
+      "category": "esoteric"
     }
   ]
 }
