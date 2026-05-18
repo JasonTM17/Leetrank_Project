@@ -70,6 +70,16 @@ var dangerousPatterns = map[string][]string{
 		"__dirname", "__filename",
 		"globalThis.process",
 	},
+	"typescript": {
+		"require('child_process')", `require("child_process")`,
+		"require('fs')", `require("fs")`,
+		"require('net')", `require("net")`,
+		"from 'child_process'", `from "child_process"`,
+		"from 'fs'", `from "fs"`,
+		"from 'net'", `from "net"`,
+		"process.exit", "process.env", "process.binding",
+		"__dirname", "__filename",
+	},
 	"ruby": {
 		"require 'open3'", `require "open3"`,
 		"require 'fileutils'", `require "fileutils"`,
@@ -81,6 +91,44 @@ var dangerousPatterns = map[string][]string{
 		`"os/exec"`, `"syscall"`, `"net"`, `"net/http"`,
 		`"os"`, `"io/ioutil"`, `"bufio"`,
 		"os.Remove", "os.Exit", "syscall.",
+	},
+	"c": {
+		"#include <unistd.h>", "#include <sys/socket.h>", "#include <netdb.h>",
+		"system(", "popen(", "fork(", "execve(", "execl(",
+		"socket(", "connect(", "fopen(/etc", "fopen(\"/etc",
+	},
+	"cpp": {
+		"#include <unistd.h>", "#include <sys/socket.h>", "#include <netdb.h>",
+		"std::system", "system(", "popen(", "fork(", "execve(", "execl(",
+		"socket(", "connect(", "std::ifstream(\"/etc",
+	},
+	"rust": {
+		"std::process::Command", "std::process::exit", "std::net::",
+		"std::fs::", "std::os::unix",
+		"unsafe ", "unsafe{",
+		"extern ", "asm!",
+	},
+	"java": {
+		"Runtime.getRuntime", "ProcessBuilder", "System.exit",
+		"java.net.", "java.io.File", "java.io.FileWriter",
+		"java.io.FileOutputStream", "java.lang.reflect.",
+		"sun.misc.Unsafe", "Class.forName",
+	},
+	"php": {
+		"system(", "exec(", "shell_exec(", "passthru(", "popen(",
+		"proc_open(", "fopen(", "file_get_contents(/etc",
+		"file_get_contents(\"/etc", "eval(", "assert(",
+		"include ", "require ", "include_once", "require_once",
+	},
+	"bash": {
+		"rm -rf", ">/dev/", "</dev/tcp", "curl ", "wget ", "nc ", "ncat ",
+		"/etc/passwd", "/etc/shadow", "$(curl", "$(wget",
+		"chmod +x /", "ssh ", "scp ",
+	},
+	"sql": {
+		"attach database", "load_extension", "pragma ",
+		".system", ".shell", ".import", "vacuum into",
+		"create virtual table", "writefile",
 	},
 }
 
@@ -158,14 +206,17 @@ type server struct {
 	rl         *rateLimiter
 	sched      *scheduler
 	runnersDir string
+	languages  *LanguageRegistry
 }
 
 func newServer() *server {
 	// Runners live next to the binary.
 	exe, err := os.Executable()
 	runnersDir := "runners"
+	baseDir := "."
 	if err == nil {
-		runnersDir = filepath.Join(filepath.Dir(exe), "runners")
+		baseDir = filepath.Dir(exe)
+		runnersDir = filepath.Join(baseDir, "runners")
 	}
 
 	cfg := defaultConcurrency
@@ -179,10 +230,24 @@ func newServer() *server {
 		cfg.QueueWait = time.Duration(v) * time.Millisecond
 	}
 
+	// languages.json sits next to the binary in the production image. In
+	// dev we fall back to the working directory so `go run .` works from
+	// judge-service/.
+	langPath := filepath.Join(baseDir, "languages.json")
+	if _, statErr := os.Stat(langPath); statErr != nil {
+		langPath = "languages.json"
+	}
+	registry, regErr := loadLanguageRegistry(langPath)
+	if regErr != nil {
+		log.Fatalf("loadLanguageRegistry(%s): %v", langPath, regErr)
+	}
+	log.Printf("loaded %d languages: %s", len(registry.IDs()), strings.Join(registry.IDs(), ", "))
+
 	return &server{
 		rl:         newRateLimiter(),
 		sched:      newScheduler(cfg),
 		runnersDir: runnersDir,
+		languages:  registry,
 	}
 }
 
@@ -260,10 +325,7 @@ func (s *server) executeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	req.Language = strings.ToLower(strings.TrimSpace(req.Language))
-	supportedLanguages := map[string]bool{
-		"python": true, "javascript": true, "ruby": true, "go": true,
-	}
-	if !supportedLanguages[req.Language] {
+	if _, ok := s.languages.Get(req.Language); !ok {
 		writeJSON(w, http.StatusBadRequest, ExecuteResponse{
 			Status:  "error",
 			Results: []TestResult{{Error: fmt.Sprintf("Unsupported language: %s", req.Language)}},
@@ -365,6 +427,23 @@ func (s *server) runConcurrent(code, language string, testCases []TestCase, time
 func (s *server) executeTestCase(code, language string, tc TestCase, timeLimitMs int) TestResult {
 	start := time.Now()
 
+	// Wrapper-runner languages (python/javascript/ruby) get sandboxed via
+	// their dedicated scripts under judge-service/runners/. Those scripts
+	// apply per-process setrlimit (memory/CPU/file-descriptor caps) we
+	// don't want to lose. Everything else — go, c, cpp, rust, java, php,
+	// bash, sql, typescript — routes through the generic registry-driven
+	// executor which compiles (when applicable) and runs the user code
+	// directly.
+	if language != "python" && language != "javascript" && language != "ruby" {
+		lc, ok := s.languages.Get(language)
+		if !ok {
+			return errorResult(tc, "Unsupported language: "+language, start)
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeLimitMs)*time.Millisecond)
+		defer cancel()
+		return s.executeFromConfig(ctx, lc, code, tc, timeLimitMs)
+	}
+
 	// Write code to a temp file.
 	ext := extensionFor(language)
 	tmpFile, err := os.CreateTemp("", fmt.Sprintf("judge_*%s", ext))
@@ -395,10 +474,10 @@ func (s *server) executeTestCase(code, language string, tc TestCase, timeLimitMs
 	case "ruby":
 		runner := filepath.Join(s.runnersDir, "ruby_runner.rb")
 		cmd = exec.CommandContext(ctx, "ruby", runner, tmpPath)
-	case "go":
-		return s.executeGo(ctx, code, tc, timeLimitMs, start)
 	default:
-		return errorResult(tc, "Unsupported language: "+language, start)
+		// Unreachable: the early-return above sends every non-wrapper
+		// language through executeFromConfig.
+		return errorResult(tc, "Internal: unreachable wrapper switch for "+language, start)
 	}
 
 	cmd.Stdin = strings.NewReader(tc.Input)
@@ -465,76 +544,12 @@ func (s *server) executeTestCase(code, language string, tc TestCase, timeLimitMs
 	}
 }
 
-// executeGo compiles and runs Go code in a temp directory.
-func (s *server) executeGo(ctx context.Context, code string, tc TestCase, timeLimitMs int, start time.Time) TestResult {
-	tmpDir, err := os.MkdirTemp("", "judge_go_*")
-	if err != nil {
-		return errorResult(tc, "Failed to create temp dir: "+err.Error(), start)
-	}
-	defer os.RemoveAll(tmpDir)
-
-	srcPath := filepath.Join(tmpDir, "main.go")
-	if err := os.WriteFile(srcPath, []byte(code), 0644); err != nil {
-		return errorResult(tc, "Failed to write Go source: "+err.Error(), start)
-	}
-
-	// Compile.
-	compileCtx, compileCancel := context.WithTimeout(ctx, 15*time.Second)
-	defer compileCancel()
-
-	binPath := filepath.Join(tmpDir, "solution")
-	compileCmd := exec.CommandContext(compileCtx, "go", "build", "-o", binPath, srcPath)
-	if compileOut, compileErr := compileCmd.CombinedOutput(); compileErr != nil {
-		return TestResult{
-			Passed:   false,
-			Input:    tc.Input,
-			Expected: tc.Expected,
-			Runtime:  int(time.Since(start).Milliseconds()),
-			Error:    "Compilation error: " + strings.TrimSpace(string(compileOut)),
-		}
-	}
-
-	// Run.
-	runCmd := exec.CommandContext(ctx, binPath)
-	runCmd.Stdin = strings.NewReader(tc.Input)
-	output, runErr := runCmd.CombinedOutput()
-	runtime := int(time.Since(start).Milliseconds())
-
-	if ctx.Err() == context.DeadlineExceeded {
-		return TestResult{
-			Passed:  false,
-			Input:   tc.Input,
-			Expected: tc.Expected,
-			Runtime: runtime,
-			Error:   "Time Limit Exceeded",
-		}
-	}
-
-	if runErr != nil {
-		return TestResult{
-			Passed:   false,
-			Input:    tc.Input,
-			Expected: tc.Expected,
-			Actual:   strings.TrimSpace(string(output)),
-			Runtime:  runtime,
-			Error:    runErr.Error(),
-		}
-	}
-
-	actual := strings.TrimSpace(string(output))
-	expected := strings.TrimSpace(tc.Expected)
-
-	return TestResult{
-		Passed:   actual == expected,
-		Input:    tc.Input,
-		Expected: tc.Expected,
-		Actual:   actual,
-		Runtime:  runtime,
-	}
-}
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+// extensionFor returns the file extension used for the wrapper-runner
+// path. Non-wrapper languages don't reach this — they go through the
+// registry-driven executeFromConfig and pull the extension off the
+// LanguageConfig directly.
 func extensionFor(language string) string {
 	switch language {
 	case "python":
@@ -543,8 +558,6 @@ func extensionFor(language string) string {
 		return ".js"
 	case "ruby":
 		return ".rb"
-	case "go":
-		return ".go"
 	default:
 		return ".txt"
 	}

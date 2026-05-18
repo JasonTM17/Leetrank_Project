@@ -3,11 +3,11 @@ import { LANGUAGES, LANGUAGE_BY_ID, LANGUAGE_IDS, languageLabel, monacoLanguageF
 
 describe("language manifest", () => {
   it("exposes the languages the judge actually accepts", () => {
-    // The Go judge currently handles python, javascript, ruby, and go.
-    // Adding more here without a runner + Dockerfile install + main.go
-    // entry would put us back in the "Unsupported language" UX hole.
+    // Source of truth lives in judge-service/languages.json; this list
+    // must match. Adding a language without updating both files puts us
+    // back in the "Unsupported language" UX hole.
     expect(LANGUAGES.map((l) => l.id).sort()).toEqual(
-      ["go", "javascript", "python", "ruby"]
+      ["bash", "c", "cpp", "go", "java", "javascript", "php", "python", "ruby", "rust", "sql", "typescript"]
     );
   });
 
@@ -28,7 +28,7 @@ describe("language manifest", () => {
 
   it("languageLabel returns the human-readable label", () => {
     expect(languageLabel("python")).toBe("Python 3");
-    expect(languageLabel("go")).toBe("Go");
+    expect(languageLabel("cpp")).toBe("C++ (g++)");
   });
 
   it("languageLabel falls back to the raw id for unknowns", () => {
@@ -36,8 +36,8 @@ describe("language manifest", () => {
   });
 
   it("monacoLanguageFor maps to the Monaco mode", () => {
-    expect(monacoLanguageFor("javascript")).toBe("javascript");
-    expect(monacoLanguageFor("ruby")).toBe("ruby");
+    expect(monacoLanguageFor("typescript")).toBe("typescript");
+    expect(monacoLanguageFor("rust")).toBe("rust");
   });
 
   it("monacoLanguageFor falls back to plaintext for unknowns", () => {
