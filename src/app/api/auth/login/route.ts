@@ -4,27 +4,32 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { signToken } from "@/lib/auth";
 import { loginSchema } from "@/lib/validations";
+import { rateLimit } from "@/lib/rate-limit";
 
-const loginAttempts = new Map<string, { count: number; resetAt: number }>();
-const MAX_ATTEMPTS = 5;
-const WINDOW_MS = 15 * 60 * 1000;
+// RULES §4: rate-limit auth routes. Switched from the local Map-based
+// limiter to the shared lib/rate-limit helper so the GC + reset
+// behaviour is consistent with /register and other write paths.
+const RATE_LIMIT_MAX = 5;
+const RATE_LIMIT_WINDOW_MS = 15 * 60_000;
 
-function isRateLimited(ip: string): boolean {
-  const now = Date.now();
-  const entry = loginAttempts.get(ip);
-  if (!entry || now > entry.resetAt) {
-    loginAttempts.set(ip, { count: 1, resetAt: now + WINDOW_MS });
-    return false;
-  }
-  entry.count++;
-  return entry.count > MAX_ATTEMPTS;
+function clientIp(request: NextRequest): string {
+  return (
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    request.headers.get("x-real-ip") ??
+    "unknown"
+  );
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const ip = request.headers.get("x-forwarded-for") ?? request.headers.get("x-real-ip") ?? "unknown";
-    if (isRateLimited(ip)) {
-      return Response.json({ error: "Too many login attempts. Try again later." }, { status: 429 });
+    const ip = clientIp(request);
+    const limit = rateLimit(`login:${ip}`, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_MS);
+    if (!limit.allowed) {
+      const retryAfter = Math.max(1, Math.ceil((limit.resetAt - Date.now()) / 1000));
+      return Response.json(
+        { error: "Too many login attempts. Try again later." },
+        { status: 429, headers: { "Retry-After": String(retryAfter) } }
+      );
     }
 
     let body;
@@ -64,6 +69,7 @@ export async function POST(request: NextRequest) {
       httpOnly: true,
       path: "/",
       sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
       maxAge: 60 * 60 * 24 * 7,
     });
 

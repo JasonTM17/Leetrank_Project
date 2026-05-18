@@ -4,9 +4,39 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { signToken } from "@/lib/auth";
 import { registerSchema } from "@/lib/validations";
+import { rateLimit } from "@/lib/rate-limit";
+
+// RULES §4: rate-limit auth routes. Registration is a write path that
+// allocates DB rows + runs bcrypt — uncapped traffic here is both a spam
+// vector and a cheap CPU exhaustion attack.
+const RATE_LIMIT_MAX = 5;
+const RATE_LIMIT_WINDOW_MS = 15 * 60_000;
+
+// RULES §4: bcrypt cost ≥ 10 minimum, 12 for auth endpoints. The cost is
+// a per-hash CPU tax; 12 is ~four-fold heavier than 10 and aligns with
+// modern OWASP guidance.
+const BCRYPT_COST = 12;
+
+function clientIp(request: NextRequest): string {
+  return (
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    request.headers.get("x-real-ip") ??
+    "unknown"
+  );
+}
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = clientIp(request);
+    const limit = rateLimit(`register:${ip}`, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_MS);
+    if (!limit.allowed) {
+      const retryAfter = Math.max(1, Math.ceil((limit.resetAt - Date.now()) / 1000));
+      return Response.json(
+        { error: "Too many registration attempts. Try again later." },
+        { status: 429, headers: { "Retry-After": String(retryAfter) } }
+      );
+    }
+
     let body;
     try {
       body = await request.json();
@@ -31,7 +61,7 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: `${field} already in use` }, { status: 409 });
     }
 
-    const hashed = await bcrypt.hash(password, 10);
+    const hashed = await bcrypt.hash(password, BCRYPT_COST);
     const user = await prisma.user.create({
       data: { email, username, password: hashed },
     });
@@ -48,6 +78,7 @@ export async function POST(request: NextRequest) {
       httpOnly: true,
       path: "/",
       sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
       maxAge: 60 * 60 * 24 * 7,
     });
 
