@@ -1,36 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useTheme } from "next-themes";
 import { Sun, Moon, Monitor } from "lucide-react";
 
-type Theme = "light" | "dark" | "system";
-
-const STORAGE_KEY = "leetrank-theme";
-
-function applyTheme(theme: Theme) {
-  const root = document.documentElement;
-  const resolved = theme === "system"
-    ? window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
-    : theme;
-  root.classList.toggle("dark", resolved === "dark");
-}
-
 export function ThemeToggle() {
-  const [theme, setTheme] = useState<Theme>("dark");
-
-  useEffect(() => {
-    /* eslint-disable react-hooks/set-state-in-effect */
-    const stored = (localStorage.getItem(STORAGE_KEY) as Theme | null) ?? "dark";
-    setTheme(stored);
-    applyTheme(stored);
-    /* eslint-enable react-hooks/set-state-in-effect */
-  }, []);
-
-  function set(next: Theme) {
-    setTheme(next);
-    localStorage.setItem(STORAGE_KEY, next);
-    applyTheme(next);
-  }
+  const { theme, setTheme } = useTheme();
 
   return (
     <div
@@ -51,7 +25,7 @@ export function ThemeToggle() {
             role="radio"
             aria-checked={active}
             aria-label={label}
-            onClick={() => set(id)}
+            onClick={() => setTheme(id)}
             className={`inline-flex items-center justify-center h-7 w-7 rounded-full transition-colors ${
               active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
             }`}

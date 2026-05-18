@@ -38,11 +38,17 @@ export function ProblemDescription({
     difficulty === "medium" ? "bg-yellow-500/10 text-yellow-500" :
     "bg-red-500/10 text-red-500";
 
+  const difficultyDotColor =
+    difficulty === "easy" ? "text-green-500" :
+    difficulty === "medium" ? "text-yellow-500" :
+    "text-red-500";
+
   return (
     <div className="p-6">
       <div className="flex items-center gap-3 mb-4">
         <h1 className="text-2xl font-bold">{title}</h1>
         <Badge className={difficultyBg}>
+          <span aria-hidden="true" className={`mr-1 ${difficultyDotColor}`}>●</span>
           {difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}
         </Badge>
       </div>
