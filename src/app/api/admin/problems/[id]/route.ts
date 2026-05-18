@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { updateProblemSchema, firstZodError } from "@/lib/validations";
+import { invalidateProblemsCache } from "@/lib/cache-invalidate";
 
 export async function PUT(
   request: NextRequest,
@@ -32,6 +33,8 @@ export async function PUT(
       data: parsed.data,
     });
 
+    invalidateProblemsCache();
+
     return Response.json({ problem });
   } catch {
     return Response.json({ error: "Internal server error" }, { status: 500 });
@@ -51,6 +54,8 @@ export async function DELETE(
     const { id } = await params;
 
     await prisma.problem.delete({ where: { id } });
+
+    invalidateProblemsCache();
 
     return Response.json({ success: true });
   } catch {
