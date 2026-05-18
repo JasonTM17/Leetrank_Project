@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { createContestSchema, firstZodError } from "@/lib/validations";
+import { cache } from "@/lib/cache";
 
 export async function GET() {
   try {
@@ -51,6 +52,10 @@ export async function POST(request: NextRequest) {
         status: data.status,
       },
     });
+
+    // Bust the public list cache so the new contest shows up immediately
+    // for everyone instead of waiting for the 60s TTL to roll over.
+    cache.delete("contests:all");
 
     return Response.json({ contest }, { status: 201 });
   } catch {
