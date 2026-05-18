@@ -16,9 +16,9 @@ describe("DELETE /api/admin/discussions/[id]", () => {
     expect(res.status).toBe(403);
   });
 
-  it("403 unauthenticated", async () => {
+  it("401 unauthenticated", async () => {
     const res = await DELETE(asNextRequest(new Request("http://x/api/admin/discussions/d1", opts)), paramsFor("d1"));
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(401);
   });
 
   it("happy path delegates to prisma.discussion.delete", async () => {

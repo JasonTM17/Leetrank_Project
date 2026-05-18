@@ -4,9 +4,9 @@ import { asNextRequest, loginAs } from "../helpers";
 import { GET } from "@/app/api/admin/cache/stats/route";
 
 describe("GET /api/admin/cache/stats", () => {
-  it("403 unauthenticated", async () => {
+  it("401 unauthenticated", async () => {
     const res = await GET(asNextRequest(new Request("http://x/api/admin/cache/stats")));
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(401);
   });
 
   it("403 non-admin", async () => {

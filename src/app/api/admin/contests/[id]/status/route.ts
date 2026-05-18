@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
-import { getSession } from "@/lib/auth";
+import { requireAdmin } from "@/lib/admin-guard";
 import { invalidateContestsCache } from "@/lib/cache-invalidate";
 import { z } from "zod";
 
@@ -17,10 +17,8 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getSession();
-    if (!session || session.role !== "admin") {
-      return Response.json({ error: "Forbidden" }, { status: 403 });
-    }
+    const gate = await requireAdmin(request);
+    if (!gate.ok) return gate.response;
 
     let body;
     try {

@@ -1,20 +1,18 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
-import { getSession } from "@/lib/auth";
+import { requireAdmin } from "@/lib/admin-guard";
 
 // DELETE /api/admin/discussions/[id] — admin-only force delete that doesn't
 // require the discussion to be authored by the caller. Distinct from the
 // regular DELETE on /api/discussions/[id] which is author-or-admin — this
 // one is purely the admin moderation path so we can audit it separately.
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getSession();
-    if (!session || session.role !== "admin") {
-      return Response.json({ error: "Forbidden" }, { status: 403 });
-    }
+    const gate = await requireAdmin(request);
+    if (!gate.ok) return gate.response;
 
     const { id } = await params;
     try {

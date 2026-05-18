@@ -1,15 +1,13 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
-import { getSession } from "@/lib/auth";
+import { requireAdmin } from "@/lib/admin-guard";
 import { createContestSchema, firstZodError } from "@/lib/validations";
 import { cache } from "@/lib/cache";
 
 export async function GET() {
   try {
-    const session = await getSession();
-    if (!session || session.role !== "admin") {
-      return Response.json({ error: "Forbidden" }, { status: 403 });
-    }
+    const gate = await requireAdmin();
+    if (!gate.ok) return gate.response;
 
     const contests = await prisma.contest.findMany({
       orderBy: { startTime: "desc" },
@@ -24,10 +22,8 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getSession();
-    if (!session || session.role !== "admin") {
-      return Response.json({ error: "Forbidden" }, { status: 403 });
-    }
+    const gate = await requireAdmin(request);
+    if (!gate.ok) return gate.response;
 
     let body;
     try {

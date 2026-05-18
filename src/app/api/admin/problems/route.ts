@@ -1,15 +1,13 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
-import { getSession } from "@/lib/auth";
+import { requireAdmin } from "@/lib/admin-guard";
 import { createProblemSchema, firstZodError } from "@/lib/validations";
 import { invalidateProblemsCache } from "@/lib/cache-invalidate";
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getSession();
-    if (!session || session.role !== "admin") {
-      return Response.json({ error: "Forbidden" }, { status: 403 });
-    }
+    const gate = await requireAdmin(request);
+    if (!gate.ok) return gate.response;
 
     const { searchParams } = request.nextUrl;
     const difficulty = searchParams.get("difficulty");
@@ -36,10 +34,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getSession();
-    if (!session || session.role !== "admin") {
-      return Response.json({ error: "Forbidden" }, { status: 403 });
-    }
+    const gate = await requireAdmin(request);
+    if (!gate.ok) return gate.response;
 
     let body;
     try {

@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
-import { getSession } from "@/lib/auth";
+import { requireAdmin } from "@/lib/admin-guard";
 
 // DELETE /api/admin/users/[id] — wipe a user. Cascading deletes (Prisma
 // schema marks every user-owned table with onDelete: Cascade) handle the
@@ -8,14 +8,13 @@ import { getSession } from "@/lib/auth";
 // vanish in one transaction. Self-deletion is blocked so an admin can't
 // orphan the system.
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getSession();
-    if (!session || session.role !== "admin") {
-      return Response.json({ error: "Forbidden" }, { status: 403 });
-    }
+    const gate = await requireAdmin(request);
+    if (!gate.ok) return gate.response;
+    const session = gate.session;
 
     const { id } = await params;
     if (id === session.userId) {

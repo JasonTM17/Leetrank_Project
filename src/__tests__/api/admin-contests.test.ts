@@ -19,7 +19,7 @@ describe("POST /api/admin/contests", () => {
 
   it("returns 401 with no session", async () => {
     const res = await POST(asNextRequest(jsonRequest("http://x/api/admin/contests", valid)));
-    expect(res.status).toBe(403); // route returns 403 for both unauthenticated and non-admin
+    expect(res.status).toBe(401);
   });
 
   it("creates contest on valid admin payload", async () => {
