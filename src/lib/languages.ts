@@ -24,6 +24,13 @@ export const LANGUAGES: LanguageDef[] = [
   { id: "cpp", label: "C++ (g++)", extension: ".cpp", monacoLanguage: "cpp", category: "compiled" },
   { id: "java", label: "Java", extension: ".java", monacoLanguage: "java", category: "jvm" },
   { id: "sql", label: "SQL (sqlite)", extension: ".sql", monacoLanguage: "sql", category: "data" },
+  { id: "kotlin", label: "Kotlin", extension: ".kt", monacoLanguage: "kotlin", category: "jvm" },
+  { id: "csharp", label: "C# (Mono)", extension: ".cs", monacoLanguage: "csharp", category: "compiled" },
+  { id: "r", label: "R", extension: ".r", monacoLanguage: "r", category: "data" },
+  { id: "lua", label: "Lua", extension: ".lua", monacoLanguage: "lua", category: "scripting" },
+  { id: "perl", label: "Perl", extension: ".pl", monacoLanguage: "perl", category: "scripting" },
+  { id: "scala", label: "Scala", extension: ".scala", monacoLanguage: "scala", category: "jvm" },
+  { id: "elixir", label: "Elixir", extension: ".ex", monacoLanguage: "elixir", category: "scripting" },
 ];
 
 export const LANGUAGE_BY_ID = new Map(LANGUAGES.map((l) => [l.id, l]));

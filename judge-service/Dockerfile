@@ -17,8 +17,13 @@ FROM ubuntu:22.04
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install language runtimes and utilities. One big RUN to keep layers small.
-# Languages currently supported (per languages.json):
-#   python, javascript, typescript, ruby, php, bash, go, rust, c, cpp, java, sql
+# Languages shipped (per languages.json):
+#   python, javascript, typescript, ruby, php, bash, go, rust, c, cpp, java, sql,
+#   kotlin, csharp (mono), r, lua, perl, scala, elixir
+# Deferred (toolchain too heavy or needs external apt repo):
+#   swift  — needs packages.swift.org apt key; ~600 MB runtime
+#   haskell — ghc ~700 MB; image would exceed 3 GB
+#   dart   — needs Google apt key (dl.google.com/linux/dart/deb)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     curl \
@@ -34,6 +39,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     rustc \
     cargo \
     default-jdk \
+    kotlin \
+    mono-mcs \
+    mono-runtime \
+    r-base \
+    lua5.4 \
+    perl \
+    scala \
+    elixir \
  && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
  && apt-get install -y --no-install-recommends nodejs \
  && npm install -g tsx@^4 \

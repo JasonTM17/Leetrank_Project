@@ -7,7 +7,7 @@ describe("language manifest", () => {
     // must match. Adding a language without updating both files puts us
     // back in the "Unsupported language" UX hole.
     expect(LANGUAGES.map((l) => l.id).sort()).toEqual(
-      ["bash", "c", "cpp", "go", "java", "javascript", "php", "python", "ruby", "rust", "sql", "typescript"]
+      ["bash", "c", "cpp", "csharp", "elixir", "go", "java", "javascript", "kotlin", "lua", "perl", "php", "python", "r", "ruby", "rust", "scala", "sql", "typescript"]
     );
   });
 

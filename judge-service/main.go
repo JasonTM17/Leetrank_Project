@@ -130,6 +130,40 @@ var dangerousPatterns = map[string][]string{
 		".system", ".shell", ".import", "vacuum into",
 		"create virtual table", "writefile",
 	},
+	"kotlin": {
+		"Runtime.getRuntime", "ProcessBuilder", "System.exit",
+		"kotlin.system.exitProcess", "java.io.File", "java.net.",
+		"java.io.FileWriter", "java.io.FileOutputStream",
+		"java.lang.reflect.", "sun.misc.Unsafe", "Class.forName",
+	},
+	"csharp": {
+		"System.Diagnostics.Process", "System.IO.File", "System.IO.Directory",
+		"System.Net.", "Environment.Exit", "System.Reflection.",
+		"Assembly.Load", "System.Runtime.InteropServices",
+	},
+	"r": {
+		"system(", "system2(", "Sys.getenv", "file.remove", "unlink(",
+		"readLines(", "writeLines(", "download.file(", "url(",
+		"socketConnection(", "pipe(", "fifo(",
+	},
+	"lua": {
+		`os.execute`, `os.remove`, `io.open`, `loadfile`, `dofile`,
+		`require("io")`, `require'io'`, `require("os")`, `require'os'`,
+		`require("socket")`, `require'socket'`,
+	},
+	"perl": {
+		"system(", "exec(", "qx{", "qx/", "open(",
+		"unlink ", "unlink(", "`",
+	},
+	"scala": {
+		"sys.process.", "Runtime.getRuntime", "java.io.File", "java.net.",
+		"scala.sys.process", "System.exit", "ProcessBuilder",
+		"java.lang.reflect.", "Class.forName",
+	},
+	"elixir": {
+		"System.cmd", ":os.cmd", "File.rm", "File.write", "Port.open",
+		":file.", ":gen_tcp", ":httpc", "System.halt",
+	},
 }
 
 func isSafe(code, language string) bool {
