@@ -1,0 +1,97 @@
+name: E2E (Playwright)
+
+on:
+  workflow_dispatch:
+    inputs:
+      project:
+        description: "Playwright project to run (chromium-desktop / firefox-desktop / tablet / mobile / all)"
+        required: false
+        default: "chromium-desktop"
+  pull_request:
+    paths:
+      - "src/**"
+      - "playwright.config.ts"
+      - "e2e/**"
+      - ".github/workflows/e2e.yml"
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    name: Playwright
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: leetrank
+          POSTGRES_PASSWORD: leetrank-dev
+          POSTGRES_DB: leetrank
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U leetrank -d leetrank"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: "postgresql://leetrank:leetrank-dev@localhost:5432/leetrank?schema=public"
+      JWT_SECRET: "ci-only-secret-32-chars-aaaaaaaa"
+      NEXT_PUBLIC_APP_URL: "http://localhost:3000"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Apply Prisma schema
+        run: npx prisma db push --skip-generate
+
+      - name: Seed minimal data
+        run: npm run db:seed
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium ${{ github.event.inputs.project == 'all' && 'firefox webkit' || '' }}
+
+      - name: Build Next.js
+        run: npm run build
+
+      - name: Start Next.js
+        run: npm start &
+        env:
+          PORT: 3000
+
+      - name: Wait for app
+        run: npx wait-on http://localhost:3000 --timeout 120000
+
+      - name: Run Playwright tests
+        run: npx playwright test ${{ github.event.inputs.project != 'all' && format('--project={0}', github.event.inputs.project) || '' }}
+        env:
+          E2E_BASE_URL: "http://localhost:3000"
+
+      - name: Upload Playwright HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ github.run_id }}
+          path: playwright-report/
+          retention-days: 30
+
+      - name: Upload trace + screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces-${{ github.run_id }}
+          path: test-results/
+          retention-days: 14

@@ -19,6 +19,10 @@
     "seed:stress": "npx ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed-bulk.ts 10000 1000",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "playwright:install": "playwright install --with-deps",
     "load:smoke": "node scripts/load-test.mjs --scenario smoke",
     "load:stress": "node scripts/load-test.mjs --scenario stress",
     "load:contest": "node scripts/load-test.mjs --scenario contest-storm"
@@ -47,6 +51,7 @@
     "seed": "npx ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
   },
   "devDependencies": {
+    "@playwright/test": "^1.48.0",
     "autocannon": "^7.15.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
