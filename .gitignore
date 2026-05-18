@@ -89,3 +89,9 @@ draft*.md
 *.local.md
 .claude-private/
 .private/
+
+# author-only rules — internal lessons file, not for the public repo
+RULES.md
+
+# pnpm is the workspace package manager — no npm lockfile in the tree
+package-lock.json
