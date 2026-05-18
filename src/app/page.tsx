@@ -4,6 +4,7 @@ import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import {
   Trophy,
   Users,
@@ -51,14 +52,39 @@ const FEATURES = [
   },
 ];
 
-const STATS = [
+const STATIC_STATS_FALLBACK = [
   { value: "10K+", label: "Problems" },
   { value: "1K+", label: "Contests" },
   { value: "15", label: "Languages" },
   { value: "<200ms", label: "P99 judge latency" },
 ];
 
+interface ApiStats {
+  problems: number;
+  contests: number;
+  users: number;
+  accepted: number;
+}
+
 export default function HomePage() {
+  const [liveStats, setLiveStats] = useState<ApiStats | null>(null);
+
+  useEffect(() => {
+    fetch("/api/stats")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: ApiStats | null) => { if (data) setLiveStats(data); })
+      .catch(() => {/* keep fallback */});
+  }, []);
+
+  const STATS = liveStats
+    ? [
+        { value: liveStats.problems.toLocaleString(), label: "Problems" },
+        { value: liveStats.contests.toLocaleString(), label: "Contests" },
+        { value: liveStats.users.toLocaleString(), label: "Users" },
+        { value: liveStats.accepted.toLocaleString(), label: "Accepted submissions" },
+      ]
+    : STATIC_STATS_FALLBACK;
+
   return (
     <>
       <Navbar />

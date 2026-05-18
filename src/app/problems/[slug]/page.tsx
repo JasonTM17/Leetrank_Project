@@ -13,6 +13,7 @@ import { LANGUAGES, monacoLanguageFor } from "@/lib/languages";
 import { useAuth } from "@/hooks/useAuth";
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), { ssr: false });
+const ChatBot = dynamic(() => import("@/components/chat/chat-bot").then((m) => ({ default: m.ChatBot })), { ssr: false });
 
 interface Problem {
   id: string;
@@ -199,6 +200,7 @@ export default function ProblemDetailPage({ params }: { params: Promise<{ slug: 
           <TestResultsPanel results={results} submitStatus={submitStatus} />
         </div>
       </div>
+      <ChatBot userId={user?.id ?? null} problemId={problem.id} />
     </>
   );
 }
