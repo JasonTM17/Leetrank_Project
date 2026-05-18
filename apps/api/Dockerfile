@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 
 # --- Build stage ---
-FROM node:24-alpine AS builder
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
@@ -11,11 +11,14 @@ RUN corepack enable
 COPY package.json tsconfig.json ./
 COPY src ./src
 
+# pnpm-lock.yaml lives at the repo root so single-service builds don't see
+# it; until the workspace install lands inside the image (Plan 04 §3.0),
+# install with the per-service package.json and skip optionals.
 RUN npm install --omit=optional --no-package-lock \
  && npx tsc
 
 # --- Runtime stage ---
-FROM node:24-alpine AS runtime
+FROM node:20-alpine AS runtime
 
 # Drop root for the runtime process.
 RUN addgroup -S leetrank && adduser -S leetrank -G leetrank
