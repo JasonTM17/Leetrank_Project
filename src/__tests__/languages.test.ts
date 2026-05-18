@@ -2,8 +2,13 @@ import { describe, it, expect } from "vitest";
 import { LANGUAGES, LANGUAGE_BY_ID, LANGUAGE_IDS, languageLabel, monacoLanguageFor } from "@/lib/languages";
 
 describe("language manifest", () => {
-  it("exposes 15 languages", () => {
-    expect(LANGUAGES).toHaveLength(15);
+  it("exposes the languages the judge actually accepts", () => {
+    // The Go judge currently handles python, javascript, ruby, and go.
+    // Adding more here without a runner + Dockerfile install + main.go
+    // entry would put us back in the "Unsupported language" UX hole.
+    expect(LANGUAGES.map((l) => l.id).sort()).toEqual(
+      ["go", "javascript", "python", "ruby"]
+    );
   });
 
   it("every language has a unique id", () => {
@@ -23,7 +28,7 @@ describe("language manifest", () => {
 
   it("languageLabel returns the human-readable label", () => {
     expect(languageLabel("python")).toBe("Python 3");
-    expect(languageLabel("cpp")).toBe("C++ (g++)");
+    expect(languageLabel("go")).toBe("Go");
   });
 
   it("languageLabel falls back to the raw id for unknowns", () => {
@@ -31,8 +36,8 @@ describe("language manifest", () => {
   });
 
   it("monacoLanguageFor maps to the Monaco mode", () => {
-    expect(monacoLanguageFor("typescript")).toBe("typescript");
-    expect(monacoLanguageFor("kotlin")).toBe("kotlin");
+    expect(monacoLanguageFor("javascript")).toBe("javascript");
+    expect(monacoLanguageFor("ruby")).toBe("ruby");
   });
 
   it("monacoLanguageFor falls back to plaintext for unknowns", () => {
