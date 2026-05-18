@@ -1,0 +1,33 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022"],
+    "outDir": "dist",
+    "rootDir": "src",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": false,
+    "sourceMap": true,
+    "incremental": true,
+    "tsBuildInfoFile": "./.tsbuildinfo",
+    "baseUrl": ".",
+    "paths": {
+      "hono": ["../api/node_modules/hono/dist/types/index.d.ts"],
+      "hono/cors": ["../api/node_modules/hono/dist/types/middleware/cors/index.d.ts"],
+      "hono/factory": ["../api/node_modules/hono/dist/types/helper/factory/index.d.ts"],
+      "hono/body-limit": ["../api/node_modules/hono/dist/types/middleware/body-limit/index.d.ts"],
+      "@hono/node-server": ["../api/node_modules/@hono/node-server/dist/index.d.ts"],
+      "zod": ["../api/node_modules/zod/index.d.cts"],
+      "@prisma/client": ["../api/node_modules/@prisma/client/default.d.ts"],
+      "jose": ["../api/node_modules/jose/dist/types/index.d.ts"]
+    }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

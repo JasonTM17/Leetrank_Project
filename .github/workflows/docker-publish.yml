@@ -31,6 +31,10 @@ jobs:
             context: ./apps/api
             dockerfile: Dockerfile
             image: jasontm17/leetrank-api
+          - service: auth
+            context: ./apps/auth
+            dockerfile: Dockerfile
+            image: jasontm17/leetrank-auth
           - service: judge
             context: ./judge-service
             dockerfile: Dockerfile
