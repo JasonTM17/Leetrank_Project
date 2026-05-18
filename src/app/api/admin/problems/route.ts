@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { createProblemSchema, firstZodError } from "@/lib/validations";
+import { invalidateProblemsCache } from "@/lib/cache-invalidate";
 
 export async function GET(request: NextRequest) {
   try {
@@ -80,6 +81,8 @@ export async function POST(request: NextRequest) {
       },
       include: { tags: { include: { tag: true } }, testCases: true },
     });
+
+    invalidateProblemsCache();
 
     return Response.json({ problem }, { status: 201 });
   } catch {
