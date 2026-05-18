@@ -2,9 +2,16 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { createDiscussionSchema, firstZodError } from "@/lib/validations";
+import { rateLimit } from "@/lib/rate-limit";
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 50;
+
+// RULES §4: rate-limit write paths. Discussion creation is cheap per
+// call but a viable spam vector — 5/min per user is generous enough
+// for normal use and tight enough to make spam hurt.
+const WRITE_LIMIT_MAX = 5;
+const WRITE_LIMIT_WINDOW_MS = 60_000;
 
 export async function GET(request: NextRequest) {
   try {
@@ -45,6 +52,15 @@ export async function POST(request: NextRequest) {
     const session = await getSession();
     if (!session) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const limit = rateLimit(`discussion-create:${session.userId}`, WRITE_LIMIT_MAX, WRITE_LIMIT_WINDOW_MS);
+    if (!limit.allowed) {
+      const retryAfter = Math.max(1, Math.ceil((limit.resetAt - Date.now()) / 1000));
+      return Response.json(
+        { error: "Too many discussions created. Slow down." },
+        { status: 429, headers: { "Retry-After": String(retryAfter) } }
+      );
     }
 
     let body;
