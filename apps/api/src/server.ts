@@ -6,6 +6,7 @@ import { leaderboardTopHandler } from "./routes/leaderboard.js";
 import { tagsHandler } from "./routes/tags.js";
 import { contestsHandler } from "./routes/contests.js";
 import { problemsListHandler, problemDetailHandler } from "./routes/problems.js";
+import { trendingHandler, randomHandler } from "./routes/trending.js";
 
 /**
  * LeetRank API service.
@@ -57,6 +58,10 @@ app.get("/leaderboard/top", leaderboardTopHandler);
 app.get("/tags", tagsHandler);
 app.get("/contests", contestsHandler);
 app.get("/problems", problemsListHandler);
+// Static sub-paths must register before the :slug catch-all so they
+// don't get swallowed as values for the slug param.
+app.get("/problems/trending", trendingHandler);
+app.get("/problems/random", randomHandler);
 app.get("/problems/:slug", problemDetailHandler);
 
 const port = Number(process.env.API_PORT ?? 4000);
