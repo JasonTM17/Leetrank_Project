@@ -3,6 +3,8 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { leaderboardTopHandler } from "./routes/leaderboard.js";
+import { tagsHandler } from "./routes/tags.js";
+import { contestsHandler } from "./routes/contests.js";
 
 /**
  * LeetRank API service.
@@ -51,6 +53,8 @@ app.get("/health", (c) =>
 );
 
 app.get("/leaderboard/top", leaderboardTopHandler);
+app.get("/tags", tagsHandler);
+app.get("/contests", contestsHandler);
 
 const port = Number(process.env.API_PORT ?? 4000);
 
