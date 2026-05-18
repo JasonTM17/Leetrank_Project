@@ -115,6 +115,73 @@
       "kind": "interpreted",
       "runCmd": ["sqlite3", ":memory:", ".read {src}"],
       "category": "data"
+    },
+    {
+      "id": "kotlin",
+      "label": "Kotlin",
+      "extension": ".kt",
+      "monacoLanguage": "kotlin",
+      "kind": "compiled",
+      "compileCmd": ["kotlinc", "{src}", "-include-runtime", "-d", "{workdir}/main.jar"],
+      "runCmd": ["java", "-jar", "{workdir}/main.jar"],
+      "category": "jvm"
+    },
+    {
+      "id": "csharp",
+      "label": "C# (Mono)",
+      "extension": ".cs",
+      "monacoLanguage": "csharp",
+      "kind": "compiled",
+      "compileCmd": ["mcs", "-out:{workdir}/main.exe", "{src}"],
+      "runCmd": ["mono", "{workdir}/main.exe"],
+      "category": "compiled"
+    },
+    {
+      "id": "r",
+      "label": "R",
+      "extension": ".r",
+      "monacoLanguage": "r",
+      "kind": "interpreted",
+      "runCmd": ["Rscript", "{src}"],
+      "category": "data"
+    },
+    {
+      "id": "lua",
+      "label": "Lua",
+      "extension": ".lua",
+      "monacoLanguage": "lua",
+      "kind": "interpreted",
+      "runCmd": ["lua5.4", "{src}"],
+      "category": "scripting"
+    },
+    {
+      "id": "perl",
+      "label": "Perl",
+      "extension": ".pl",
+      "monacoLanguage": "perl",
+      "kind": "interpreted",
+      "runCmd": ["perl", "{src}"],
+      "category": "scripting"
+    },
+    {
+      "id": "scala",
+      "label": "Scala",
+      "extension": ".scala",
+      "monacoLanguage": "scala",
+      "kind": "compiled",
+      "compileCmd": ["scalac", "-d", "{workdir}", "{src}"],
+      "runCmd": ["scala", "-cp", "{workdir}", "Main"],
+      "mainClass": "Main",
+      "category": "jvm"
+    },
+    {
+      "id": "elixir",
+      "label": "Elixir",
+      "extension": ".ex",
+      "monacoLanguage": "elixir",
+      "kind": "interpreted",
+      "runCmd": ["elixir", "{src}"],
+      "category": "scripting"
     }
   ]
 }
