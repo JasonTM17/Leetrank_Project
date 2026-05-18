@@ -73,3 +73,19 @@ Thumbs.db
 .claude/worktrees/
 DOCUMENTATION_MASTER.md
 /scripts/
+
+# private notes — never commit personal plans, drafts, or scratch docs
+PLAN*.md
+plan*.md
+NOTES*.md
+notes*.md
+TODO*.md
+todo*.md
+ROADMAP*.md
+roadmap*.md
+DRAFT*.md
+draft*.md
+*.private.md
+*.local.md
+.claude-private/
+.private/
