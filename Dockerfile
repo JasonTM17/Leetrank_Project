@@ -1,20 +1,29 @@
 # Stage 1: Install dependencies
-FROM node:20-alpine AS deps
+# node:20-slim (Debian) instead of alpine: Prisma's musl-openssl-3 engine
+# detection is unreliable on Alpine 3.18+ (libssl.so.1.1 removed, the
+# legacy `linux-musl` engine still tries to dlopen it). Debian slim ships
+# OpenSSL 3 that Prisma natively recognises as `debian-openssl-3.0.x`.
+FROM node:20-slim AS deps
 WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    openssl ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
 
 # pnpm-lock.yaml is the canonical workspace lockfile; package-lock.json is
 # gitignored. Use `npm install` here (not `npm ci`) so the build doesn't
 # require a lockfile present in the build context. Migrating to
 # `pnpm install --frozen-lockfile` is tracked in the DX audit (F-21/F-22).
 COPY package.json ./
-# Install with optional deps so native bindings (lightningcss-linux-x64-musl
-# for Tailwind v4, sharp, etc.) land. --omit=optional skipped them and
-# Turbopack build fails to find lightningcss at compile time.
 RUN npm install --no-audit --no-fund
 
 # Stage 2: Build the application
-FROM node:20-alpine AS build
+FROM node:20-slim AS build
 WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    openssl ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
@@ -32,14 +41,18 @@ ENV NEXT_TELEMETRY_DISABLED=1 \
 RUN npm run build
 
 # Stage 3: Production runner
-FROM node:20-alpine AS runner
+FROM node:20-slim AS runner
 WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    openssl ca-certificates wget \
+ && rm -rf /var/lib/apt/lists/*
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 nextjs
+RUN groupadd --system --gid 1001 nodejs && \
+    useradd --system --uid 1001 --gid nodejs nextjs
 
 # Copy built assets
 COPY --from=build /app/public ./public
