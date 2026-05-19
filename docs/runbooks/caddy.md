@@ -17,7 +17,7 @@ All routing is defined in [`infra/caddy/Caddyfile`](../../infra/caddy/Caddyfile)
 | Path pattern | Backend | Notes |
 |---|---|---|
 | `/healthz` | Caddy itself | Returns `ok 200` — no backend involved |
-| `/api/v1/auth/*` | `auth:4001` | Phase 3.1 stubs; 501 until Phase 3.1.5 |
+| `/api/v1/auth/*` | `identity:4011` | Canonical auth (services/auth-go); apps/auth retired in ADR 0027 |
 | `/api/v1/*` | `api:4000` | Ported REST API endpoints |
 | `/*` (catch-all) | `app:3000` | Next.js frontend + legacy API routes |
 
@@ -83,7 +83,7 @@ Defined in the Caddyfile:
 |---|---|---|---|
 | `auth_zone` | `path /api/auth/* /api/admin/*` | 30 requests | 1 minute per IP |
 
-This is a first-line defense. Per-IP rate limiting is also enforced inside `apps/api` and `apps/auth`.
+This is a first-line defense. Per-IP rate limiting is also enforced inside `apps/api` and `services/auth-go` (identity).
 
 > **Note:** The Caddyfile matcher uses `/api/auth/*` and `/api/admin/*`. The auth service is routed via `/api/v1/auth/*`. These are different paths — the rate limit currently applies to legacy paths, not the new `/api/v1/auth/*` path. This should be reconciled when Phase 3.1.5 completes.
 

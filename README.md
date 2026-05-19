@@ -69,7 +69,7 @@ Full instructions, port matrix, and native-dev workflow are in [Run locally](#ru
 ## Highlights
 
 - **30+ languages judged in isolation.** Python, Go, Rust, C/C++, Java, Kotlin, Scala, JS/TS, Ruby, PHP, C#, Lua, R, SQL — every submission runs in a per-process [nsjail](https://github.com/google/nsjail) (Linux namespaces + cgroups + seccomp + capability drop) with strict CPU/memory/process/file-descriptor caps. Pattern blocklists are pre-flight defence-in-depth, not the boundary. See [ADR 0020](docs/adr/0020-judge-sandbox-model.md).
-- **True microservices.** Frontend (Next.js 16) and backend are split into independently deployable services: `apps/api` (read API), `apps/auth` + `services/auth-go` (auth cutover), `services/problems-go` and `services/submissions-go` (Go rewrites), `judge-service` (Go sandbox runner). Each has its own Dockerfile, port, and lifecycle.
+- **True microservices.** Frontend (Next.js 16) and backend are split into independently deployable services: `apps/api` (read API), `services/auth-go` (identity — sole canonical auth issuer), `services/problems-go` and `services/submissions-go` (Go rewrites), `judge-service` (Go sandbox runner). Each has its own Dockerfile, port, and lifecycle.
 - **Real-time leaderboards.** Redis sorted sets for `O(log N)` rank-by-score lookups; Postgres remains the source of truth. See [ADR 0022](docs/adr/0022-leaderboard-caching-strategy.md).
 - **Glicko-2 rating.** Per-user skill rating with confidence intervals — picked over plain Elo because contests are sparse and bursty. See [ADR 0021](docs/adr/0021-rating-algorithm.md).
 - **Production-grade observability.** zerolog structured JSON logs, Prometheus metrics, OpenTelemetry tracing, Grafana dashboards. See [ADR 0024](docs/adr/0024-observability-stack.md).
@@ -83,7 +83,7 @@ flowchart LR
 
     Caddy --> Web[apps/web<br/>Next.js 16 SSR]
     Caddy --> API[apps/api<br/>Hono - read API]
-    Caddy --> Auth[apps/auth + services/auth-go<br/>JWT issuer]
+    Caddy --> Auth[services/auth-go<br/>identity — JWT issuer + JWKS]
     Caddy --> Problems[services/problems-go<br/>problems read API]
     Caddy --> Submissions[services/submissions-go<br/>submissions read/write]
 
@@ -136,8 +136,7 @@ Once the stack is healthy:
 |-----|---------|
 | http://localhost:3000 | Web frontend (`app` container) |
 | http://localhost:4000 | Read API (`apps/api`) |
-| http://localhost:4001 | Auth (TypeScript) |
-| http://localhost:4011 | Auth (Go) |
+| http://localhost:4011 | Identity (`services/auth-go`) |
 | http://localhost:4012 | Submissions (Go) |
 | http://localhost:4013 | Problems (Go) |
 | http://localhost:9090 | Judge service |
@@ -197,8 +196,7 @@ Demo accounts after seeding: `admin@leetrank.local` / `Admin123!` and `demo@leet
 |------|-------|------|--------|--------|
 | `apps/web` (root `src/`) | `nguyenson1710/leetrank-app` | 3000 | Active | — |
 | `apps/api` | `nguyenson1710/leetrank-api` | 4000 | Active | [README](apps/api/README.md) |
-| `apps/auth` | `nguyenson1710/leetrank-auth` | 4001 | Cutover (TS) | [README](apps/auth/README.md) |
-| `services/auth-go` | `nguyenson1710/leetrank-auth-go` | 4011 | Cutover (Go) | [README](services/auth-go/README.md) |
+| `services/auth-go` | `nguyenson1710/leetrank-identity` | 4011 | Active (canonical auth) | [README](services/auth-go/README.md) |
 | `services/problems-go` | `nguyenson1710/leetrank-problems-go` | 4013 | Active | [README](services/problems-go/README.md) |
 | `services/submissions-go` | `nguyenson1710/leetrank-submissions-go` | 4012 | Active | [README](services/submissions-go/README.md) |
 | `judge-service` | `nguyenson1710/leetrank-judge` | 9090 | Active | [README](judge-service/README.md) |
@@ -236,6 +234,8 @@ Each service has a runbook in its README covering local dev, production deploy, 
 | [0023](docs/adr/0023-multi-region-readiness.md) | Multi-region readiness plan |
 | [0024](docs/adr/0024-observability-stack.md) | Observability stack |
 | [0025](docs/adr/0025-secret-management.md) | Secret management |
+| [0026](docs/adr/0026-dual-registry-publish.md) | Dual registry publish |
+| [0027](docs/adr/0027-retire-apps-auth.md) | Retire apps/auth in favor of identity service |
 
 ### Runbooks and reference
 

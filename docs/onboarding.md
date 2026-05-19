@@ -50,7 +50,7 @@ Open `.env` and fill in at minimum:
 npm install
 ```
 
-This installs workspace dependencies for `apps/web`, `apps/api`, `apps/auth`, and all packages in one pass.
+This installs workspace dependencies for `apps/web`, `apps/api`, and all packages in one pass.
 
 ### 4. Push the database schema
 
@@ -71,7 +71,7 @@ This runs `prisma/seed-bulk.ts` with a deterministic RNG — the same command al
 ### 6. Start the full local stack
 
 ```bash
-docker compose up postgres redis app api auth judge
+docker compose up postgres redis app api identity judge
 ```
 
 This starts:

@@ -6,7 +6,7 @@ Quick reference for operating the LeetRank API service in production.
 
 ## What it does
 
-`apps/api` is a standalone Hono HTTP server (Node.js) that exposes the LeetRank REST API on port 4000. It serves problem listings, contest data, leaderboards, tags, stats, and trending/random problem endpoints. It reads from Postgres via Prisma and is the primary backend consumed by `apps/web` (via Caddy at `/api/v1/*`) and by external clients. It does not handle authentication — that is `apps/auth`.
+`apps/api` is a standalone Hono HTTP server (Node.js) that exposes the LeetRank REST API on port 4000. It serves problem listings, contest data, leaderboards, tags, stats, and trending/random problem endpoints. It reads from Postgres via Prisma and is the primary backend consumed by `apps/web` (via Caddy at `/api/v1/*`) and by external clients. It does not handle authentication — that is `services/auth-go` (identity).
 
 ---
 

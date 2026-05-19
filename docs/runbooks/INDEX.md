@@ -9,7 +9,7 @@ All operational runbooks for the LeetRank stack.
 | Runbook | Service | Port | Description |
 |---|---|---|---|
 | [`api.md`](api.md) | `apps/api` | 4000 | Hono REST API — alerts, triage, failure modes, useful commands |
-| [`auth.md`](auth.md) | `apps/auth` | 4001 | Auth service — Phase 3.1 scaffold; JWKS endpoint, 501 stubs, startup failures |
+| [`auth.md`](auth.md) | `services/auth-go` (identity) | 4011 | Identity service — JWKS, login/register/me, alerts, rotation |
 | [`judge.md`](judge.md) | `judge-service` | 9090 | Go code-execution judge — timeouts, concurrency, sandbox, toolchain failures |
 | [`postgres.md`](postgres.md) | `postgres` | 5432 | Postgres 16 — connection pool budget, slow queries, backup, restore, VACUUM |
 | [`redis.md`](redis.md) | `redis` | 6379 | Redis 7 — memory cap, AOF persistence, keyspace conventions, eviction |
@@ -35,14 +35,14 @@ All operational runbooks for the LeetRank stack.
 docker compose ps
 curl http://localhost/healthz
 curl http://localhost:4000/readyz | jq
-curl http://localhost:4001/readyz | jq
+curl http://localhost:4011/readyz | jq
 curl http://localhost:9090/health | jq
 ```
 
 ### Tail all logs
 
 ```bash
-docker compose logs -f --tail=50 app api auth judge postgres redis caddy
+docker compose logs -f --tail=50 app api identity judge postgres redis caddy
 ```
 
 ### Restart a service
@@ -64,7 +64,7 @@ docker compose -f docker-compose.yml -f docker-compose.observability.yml up
 | Alert | Runbook section |
 |---|---|
 | `ServiceDown` (job=api) | [`api.md` — ServiceDown](api.md) |
-| `ServiceDown` (job=auth) | [`auth.md` — ServiceDown](auth.md) |
+| `ServiceDown` (job=identity) | [`auth.md` — ServiceDown](auth.md) |
 | `ServiceDown` (job=judge) | [`judge.md` — ServiceDown](judge.md) |
 | `ApiHighErrorRate` | [`api.md` — ApiHighErrorRate](api.md) |
 | `ApiSlowP99` | [`api.md` — ApiSlowP99](api.md) |

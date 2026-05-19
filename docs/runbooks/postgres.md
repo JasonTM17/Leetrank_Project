@@ -16,7 +16,7 @@ Each service uses Prisma's built-in connection pool. Postgres `max_connections` 
 
 | Service | Pool size | Notes |
 |---|---|---|
-| `apps/auth` | 5 | Low traffic; mostly health probes today |
+| `services/auth-go` (identity) | 5 | Sole auth issuer; login/register + JWKS |
 | `apps/api` | 10 | Read-heavy; problems, contests, leaderboard |
 | `apps/web` (`app`) | 10 | Next.js server actions + API routes |
 | **Total target** | **≤ 25 active** | Leave headroom; target ≤ 80 of 100 max |

@@ -1,14 +1,14 @@
-# Auth Service Runbook (`apps/auth`)
+# Identity Service Runbook (`services/auth-go`)
 
-Quick reference for operating the LeetRank auth service in production.
+Quick reference for operating the LeetRank identity service in production.
 
 ---
 
 ## What it does
 
-`apps/auth` is a standalone Hono HTTP server (Node.js) on port 4001. It is the future home of all authentication logic: login, logout, token refresh, and JWKS key distribution. As of Phase 3.1 (scaffold), most endpoints return `501 Not Implemented`. The only live endpoint is the JWKS endpoint, which currently returns an empty key set (Phase 3.1.1 not yet complete). Real auth logic migrates from `apps/web` in Phase 3.1.5. See [`docs/adr/0016-leetrank-auth-service.md`](../adr/0016-leetrank-auth-service.md) for the full plan.
+`services/auth-go` (a.k.a. `identity`, image `nguyenson1710/leetrank-identity`) is a Go HTTP server on port `4011`. It is the **sole canonical issuer** for LeetRank authentication: register, login, logout, password change, session inspection (`/me`), and JWKS key distribution (`/.well-known/jwks.json`). It signs tokens with Ed25519 and publishes the public set so every other service verifies locally without round-tripping. The legacy TypeScript service at `apps/auth` was retired in [ADR 0027](../adr/0027-retire-apps-auth.md).
 
-> **Note:** Because most endpoints are stubs, the primary operational concern today is keeping the service reachable so that Caddy can proxy `/api/v1/auth/*` without 502 errors, and ensuring the JWKS endpoint responds correctly for future token verification.
+> **Operational baseline:** Caddy proxies `/api/v1/auth/*` straight to `identity:4011`. If identity is down, login flow fails everywhere — frontend, API workers, and any service that defers verification to JWKS.
 
 ---
 
@@ -18,23 +18,22 @@ Quick reference for operating the LeetRank auth service in production.
 |---|---|---|
 | `GET /healthz` | Cheap liveness — no DB call | `200 {"status":"ok"}` |
 | `GET /readyz` | Readiness — includes DB probe | `200` if DB reachable; `503` if not |
-| `GET /health` | Alias for `/readyz` | Same as above |
 | `GET /metrics` | Prometheus metrics | `200` text/plain exposition format |
-| `GET /jwks` | JWKS key set | `200 {"keys":[]}` (empty until Phase 3.1.1) |
+| `GET /jwks` | JWKS key set | `200 {"keys":[...]}` (Ed25519, served from keystore) |
 | `GET /.well-known/jwks.json` | JWKS alias (RFC 7517) | Same as above |
 
 ```bash
 # Liveness
-curl http://localhost:4001/healthz
+curl http://localhost:4011/healthz
 
 # Readiness
-curl http://localhost:4001/readyz | jq
+curl http://localhost:4011/readyz | jq
 
 # JWKS endpoint
-curl http://localhost:4001/jwks | jq
+curl http://localhost:4011/.well-known/jwks.json | jq
 
 # Prometheus metrics
-curl http://localhost:4001/metrics | grep leetrank
+curl http://localhost:4011/metrics | grep leetrank
 ```
 
 ---

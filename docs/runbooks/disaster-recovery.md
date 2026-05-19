@@ -8,10 +8,12 @@ Procedures for recovering the LeetRank stack from data loss, service compromise,
 
 | Target | Value | Notes |
 |---|---|---|
-| RTO (Recovery Time Objective) | 4 hours | Time from incident declaration to service restored |
-| RPO (Recovery Point Objective) | 24 hours | Maximum acceptable data loss |
+| RTO (Recovery Time Objective) | **30 minutes** | Time from incident declaration to service restored. Achievable when (a) latest dump is local + decrypted, (b) Docker Hub images are reachable, (c) DNS TTL ≤ 300s. |
+| RPO (Recovery Point Objective) | **24 hours** | Maximum acceptable data loss. Anchored to the daily 03:00 UTC `postgres-backup` workflow (`.github/workflows/postgres-backup.yml`, ADR 0029). Tighten to 1h once WAL archiving / PITR (F-009) lands. |
 
-These are initial targets. They assume a single-host Docker Compose deployment with manual recovery steps. Automated backup (F-008) and a staging environment (F-051) are prerequisites for reliably meeting these targets.
+These are the operational targets after ADR 0029. They assume a single-host Docker Compose deployment with the daily GH Actions backup. Automated backup (F-008 — addressed) and a staging environment (F-051) are prerequisites for reliably meeting these targets.
+
+**Last restore drill:** _pending_ — file the result at `docs/post-mortems/YYYY-MM-DD-dr-drill.md` and update this line.
 
 ---
 
@@ -205,6 +207,49 @@ Next update: <time of next update>
 ```
 
 > **Gap (F-041):** No public status page is configured. Until one exists, communicate via GitHub Issues or direct contact.
+
+---
+
+## Restore drill — step by step
+
+Run quarterly (or after any major schema change). The drill must hit RTO=30min wall-clock from the moment you start the timer.
+
+```bash
+# 0. Start the timer.
+date -u +%Y-%m-%dT%H:%M:%SZ | tee /tmp/dr-drill-start.txt
+
+# 1. Pull the latest dump artifact from the postgres-backup workflow.
+gh run list --workflow=postgres-backup.yml --limit 1 --json databaseId -q '.[0].databaseId'
+gh run download <RUN_ID> -n postgres-backup-<RUN_ID> -D /tmp/dr-drill
+
+# 2. Spin up an isolated drill stack on a test compose project name to avoid
+#    clobbering the live volumes.
+COMPOSE_PROJECT_NAME=leetrank-drill docker compose -f docker-compose.yml up -d postgres
+COMPOSE_PROJECT_NAME=leetrank-drill docker compose exec postgres pg_isready -U leetrank -d leetrank
+
+# 3. Restore from the dump using the helper script.
+DATABASE_URL="postgresql://leetrank:leetrank-dev@127.0.0.1:5432/leetrank?schema=public" \
+  RESTORE_CLEAN=1 \
+  bash scripts/restore-postgres.sh /tmp/dr-drill/leetrank-*.dump
+
+# 4. Boot the rest of the stack against the restored DB and run smoke checks.
+COMPOSE_PROJECT_NAME=leetrank-drill docker compose up -d
+curl -fsS http://localhost:4000/readyz | jq
+curl -fsS http://localhost:4011/readyz | jq
+curl -fsS http://localhost:4013/readyz | jq
+
+# 5. Spot-check user counts and recent submissions match the source dump.
+COMPOSE_PROJECT_NAME=leetrank-drill docker compose exec postgres \
+  psql -U leetrank -d leetrank -c "select count(*) from \"User\"; select max(\"createdAt\") from \"Submission\";"
+
+# 6. Stop the timer; record duration in the post-mortem.
+date -u +%Y-%m-%dT%H:%M:%SZ | tee /tmp/dr-drill-end.txt
+
+# 7. Tear down the drill stack and free the volumes.
+COMPOSE_PROJECT_NAME=leetrank-drill docker compose down -v
+```
+
+If wall-clock exceeded RTO=30min, file a finding in the post-mortem with the slow step (download? restore? schema migrate? smoke?) and add a follow-up issue.
 
 ---
 

@@ -143,7 +143,7 @@ The repo is single-contributor today. Commits are signed off by `Nguyen Tien Son
 | Web unit + component | `pnpm test` |
 | Web e2e (Playwright) | `pnpm test:e2e` |
 | API workspace | `pnpm --filter apps/api test` |
-| Auth workspace | `pnpm --filter apps/auth test` |
+| Auth (Go identity) | `cd services/auth-go && go test ./...` |
 | Go services | `cd services/<svc> && go test ./...` |
 | Judge | `cd judge-service && go test ./...` |
 

@@ -6,7 +6,7 @@ Quick reference for operating the LeetRank Redis 7 instance in production.
 
 ## What it does
 
-Redis serves as the cache and future queue/stream backend for LeetRank. It is configured with AOF persistence (`--appendonly yes`) and password authentication. The `apps/web` service connects via `REDIS_URL`. As of today, Redis is provisioned but the application cache layer (F-056 in the prod-readiness audit) is not yet wired — `apps/api` and `apps/auth` do not use Redis directly.
+Redis serves as the cache and future queue/stream backend for LeetRank. It is configured with AOF persistence (`--appendonly yes`) and password authentication. The `apps/web` service connects via `REDIS_URL`. As of today, Redis is provisioned but the application cache layer (F-056 in the prod-readiness audit) is not yet wired — `apps/api` and `services/auth-go` (identity) do not use Redis directly.
 
 ---
 
