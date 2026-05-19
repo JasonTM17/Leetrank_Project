@@ -48,7 +48,10 @@ export async function GET(request: NextRequest) {
       prisma.submission.count({ where }),
     ]);
 
-    return Response.json({ submissions, total, page, limit });
+    return Response.json(
+      { submissions, total, page, limit },
+      { headers: { "Cache-Control": "private, no-store" } }
+    );
   } catch (err) {
     logger.error("submissions GET failed", { scope: "api/submissions", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });

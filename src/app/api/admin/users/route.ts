@@ -20,7 +20,10 @@ export async function GET() {
       },
     });
 
-    return Response.json({ users });
+    return Response.json(
+      { users },
+      { headers: { "Cache-Control": "private, no-store" } }
+    );
   } catch (err) {
     logger.error("admin/users GET failed", { scope: "api/admin/users", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
