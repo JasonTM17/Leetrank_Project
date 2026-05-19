@@ -10,7 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useAuth } from "@/hooks/useAuth";
-import { Plus, Trash2, Edit, Users, BookOpen, Loader2, ShieldAlert } from "lucide-react";
+import { Plus, Trash2, Edit, Users, BookOpen, Loader2, ShieldAlert, BarChart3 } from "lucide-react";
+import Link from "next/link";
 import { getDifficultyBg } from "@/lib/utils";
 
 interface Problem {
@@ -156,6 +157,13 @@ export default function AdminPage() {
                 {tab.label}
               </button>
             ))}
+            <Link
+              href="/admin/analytics"
+              className="ml-auto flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 border-transparent text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <BarChart3 className="h-4 w-4" />
+              Analytics
+            </Link>
           </div>
 
           {loading ? (
