@@ -89,6 +89,20 @@
     "ctaFinalBody": "Tham gia cùng hàng nghìn developer rèn luyện kỹ năng. Miễn phí trọn đời cho cá nhân.",
     "ctaCreateFree": "Tạo tài khoản miễn phí"
   },
+  "recommendations": {
+    "eyebrow": "Gợi ý cho bạn",
+    "headline": "Thử thách",
+    "headlineAccent": "tiếp theo",
+    "subtitle": "Năm bài tập được chọn theo lịch sử giải, chủ đề bạn đang luyện và lộ trình tăng độ khó. Làm mới mỗi 30 phút.",
+    "emptyBody": "Cần thêm vài bài đã giải để cá nhân hóa danh sách. Hãy bắt đầu với một bài bất kỳ.",
+    "emptyCta": "Xem bài tập",
+    "solveCta": "Giải",
+    "reasonSameTopic": "Cùng chủ đề {tag}",
+    "reason_next-step-up": "Bước tiếp theo",
+    "reason_freshness": "Mới trên LeetRank",
+    "reason_trending": "Đang hot",
+    "reason_general": "Đề xuất"
+  },
   "auth": {
     "loginTitle": "Chào mừng trở lại",
     "loginSubtitle": "Đăng nhập để duy trì chuỗi ngày luyện tập.",

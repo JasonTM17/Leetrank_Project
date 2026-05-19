@@ -89,6 +89,20 @@
     "ctaFinalBody": "Join thousands of developers sharpening their skills. Free forever for individuals.",
     "ctaCreateFree": "Create free account"
   },
+  "recommendations": {
+    "eyebrow": "Picked for you",
+    "headline": "Your next",
+    "headlineAccent": "challenge",
+    "subtitle": "Five problems chosen from your solve history, topic momentum, and difficulty progression. Refreshed every 30 minutes.",
+    "emptyBody": "We need a few accepted solves to tailor your list. Try a problem to get started.",
+    "emptyCta": "Browse problems",
+    "solveCta": "Solve",
+    "reasonSameTopic": "Same topic as {tag}",
+    "reason_next-step-up": "Next step up",
+    "reason_freshness": "New on LeetRank",
+    "reason_trending": "Trending",
+    "reason_general": "Recommended"
+  },
   "auth": {
     "loginTitle": "Welcome back",
     "loginSubtitle": "Log in to continue your streak.",
