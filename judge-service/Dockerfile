@@ -3,10 +3,10 @@ FROM golang:1.22-alpine AS builder
 
 WORKDIR /build
 
-# Copy module files + source together so `go build -mod=mod` can repair
-# the module graph in one pass. Splitting them caused tidy to prune
-# gorilla/mux before the source was visible.
-COPY go.mod go.sum ./
+# Copy module declaration + source. Don't copy the existing go.sum: it was
+# generated against an older proxy state and trips "SECURITY ERROR" in CI.
+# `go build -mod=mod` regenerates the hashes from the proxy on the fly.
+COPY go.mod ./
 COPY main.go languages.go exec.go scheduler.go ./
 
 RUN CGO_ENABLED=0 GOOS=linux go build -mod=mod -ldflags="-s -w" -o judge-service .
