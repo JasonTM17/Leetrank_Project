@@ -1,10 +1,10 @@
 # ADR 0016 — LeetRank Auth Service (Phase 3.1)
 
-**Status:** Accepted  
+**Status:** Superseded by [ADR 0027](0027-retire-apps-auth.md)
 **Date:** 2026-05-18  
 **Deciders:** JasonTM17  
 **Supersedes:** —  
-**Related:** ADR-0013 (service-to-service auth), Plan 04 G3.1
+**Related:** ADR-0013 (service-to-service auth), ADR-0017 (auth-go rewrite), ADR-0027 (retire apps/auth), Plan 04 G3.1
 
 ---
 

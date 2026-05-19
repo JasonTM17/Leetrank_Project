@@ -4,7 +4,9 @@ Date: 2026-05-19
 
 ## Status
 
-Proposed
+Accepted. Implemented in Phase 3.1.5; the TS scaffold from
+[ADR 0016](0016-leetrank-auth-service.md) was retired by
+[ADR 0027](0027-retire-apps-auth.md).
 
 ## Context
 

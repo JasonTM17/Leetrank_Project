@@ -1,6 +1,8 @@
 # ADR 0018 — Go services buildout: submissions and problems
 
-**Status:** Proposed
+**Status:** Accepted (Phase 3.2 shipped — services run on ports 4012/4013 in
+production compose; cross-link [ADR 0026](0026-dual-registry-publish.md) for
+the published image set).
 
 **Date:** 2026-05-19
 

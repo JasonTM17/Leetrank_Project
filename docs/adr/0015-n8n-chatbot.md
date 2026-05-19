@@ -4,7 +4,8 @@ Date: 2026-05-18
 
 ## Status
 
-Accepted
+Superseded by [ADR 0019](0019-n8n-integration.md), which expands the n8n
+integration beyond the chatbot-only scope captured here.
 
 ## Context
 
