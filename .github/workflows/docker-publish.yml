@@ -89,12 +89,8 @@ jobs:
       - name: Verify image tag landed on Docker Hub
         run: docker manifest inspect ${{ matrix.image }}:latest
 
-      - name: Update Docker Hub description
-        uses: peter-evans/dockerhub-description@v4
-        if: matrix.service == 'app'
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-          repository: ${{ matrix.image }}
-          short-description: "LeetRank web app — Next.js 16 + Prisma + JWT auth"
-          readme-filepath: ./README.md
+      # Note: peter-evans/dockerhub-description was removed — the access
+      # token used by CI doesn't carry the legacy "Repository Admin"
+      # scope required to update repo descriptions, and the new fine-
+      # grained scope model needs a separate password-based login.
+      # Update descriptions manually on Docker Hub when needed.
