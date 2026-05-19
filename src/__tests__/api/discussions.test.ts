@@ -21,8 +21,9 @@ describe("GET /api/discussions", () => {
       },
     ] as never);
     prismaMock.discussion.count.mockResolvedValue(1);
+    prismaMock.discussionVote.groupBy.mockResolvedValue([] as never);
 
-    const res = await GET(asNextRequest(new Request("http://x/api/discussions?problemId=p1")));
+    const res = await GET(asNextRequest(new Request("http://x/api/discussions?problemId=p1&sort=new")));
     const data = await res.json();
     expect(res.status).toBe(200);
     expect(data.discussions).toHaveLength(1);
@@ -33,8 +34,9 @@ describe("GET /api/discussions", () => {
   it("clamps limit to MAX_LIMIT", async () => {
     prismaMock.discussion.findMany.mockResolvedValue([]);
     prismaMock.discussion.count.mockResolvedValue(0);
+    prismaMock.discussionVote.groupBy.mockResolvedValue([] as never);
 
-    const res = await GET(asNextRequest(new Request("http://x/api/discussions?problemId=p1&limit=999")));
+    const res = await GET(asNextRequest(new Request("http://x/api/discussions?problemId=p1&limit=999&sort=new")));
     const data = await res.json();
     expect(data.limit).toBe(50);
   });

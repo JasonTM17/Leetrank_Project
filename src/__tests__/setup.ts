@@ -55,6 +55,7 @@ function makeModel() {
     delete: vi.fn(),
     count: vi.fn(),
     groupBy: vi.fn(),
+    aggregate: vi.fn(),
   };
 }
 
@@ -69,6 +70,10 @@ export const prismaMock = {
   contestEntry: makeModel(),
   discussion: makeModel(),
   discussionComment: makeModel(),
+  // Bug-sweep 2026-05: votes are queried via groupBy/aggregate from
+  // discussions list + detail routes; without this mock the routes throw
+  // "Cannot read properties of undefined (reading 'groupBy')" in tests.
+  discussionVote: makeModel(),
   bookmark: makeModel(),
   $queryRaw: vi.fn(),
   $transaction: vi.fn(),
