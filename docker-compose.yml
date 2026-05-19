@@ -83,31 +83,10 @@ services:
       retries: 3
       start_period: 15s
 
-  auth:
-    build:
-      context: .
-      dockerfile: apps/auth/Dockerfile
-    ports:
-      - "4001:4001"
-    environment:
-      - NODE_ENV=production
-      - API_PORT=4001
-      - DATABASE_URL=${DATABASE_URL:-postgresql://leetrank:leetrank-dev@postgres:5432/leetrank?schema=public}
-      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set}
-      - CORS_ALLOWED_ORIGINS=${API_CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://web:3000}
-    depends_on:
-      postgres:
-        condition: service_healthy
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4001/healthz"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 15s
-
-  # Identity service (Go) — owns user accounts, sessions, JWTs.
-  # Replaces the legacy `auth` TS service in apps/auth (ADR 0017).
+  # Identity service (Go) — sole canonical auth issuer. Owns user accounts,
+  # sessions, JWTs, and the Ed25519 keystore exposed via JWKS at
+  # /.well-known/jwks.json. Replaced the legacy `apps/auth` (TS) service
+  # once Ed25519 + JWKS landed here. See ADR 0027.
   identity:
     build:
       context: ./services/auth-go
@@ -130,6 +109,9 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
+    mem_limit: 512m
+    cpus: 1.0
+    pids_limit: 512
 
 
   # Submissions service (Go) — accepts code submissions, dispatches to judge.
@@ -154,6 +136,9 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
+    mem_limit: 512m
+    cpus: 1.0
+    pids_limit: 512
 
   # Problems read service (Go) — catalogue + tag listings.
   problems:
@@ -176,6 +161,9 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
+    mem_limit: 512m
+    cpus: 1.0
+    pids_limit: 512
 
   # Rust leaderboard service (port 4014). Reads `leaderboard:global` ZSET
   # from redis and serves paginated rankings; admin recompute pulls from pg.
@@ -321,6 +309,9 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
+    mem_limit: 1g
+    cpus: 2.0
+    pids_limit: 1024
 
   caddy:
     image: caddy:2-alpine
@@ -339,6 +330,12 @@ services:
       web:
         condition: service_healthy
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:80/healthz || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
 
   n8n:
     image: n8nio/n8n:1.70.0

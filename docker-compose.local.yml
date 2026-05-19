@@ -9,9 +9,9 @@
 #
 # Usage:
 #   docker compose -f docker-compose.yml -f docker-compose.local.yml \
-#     up -d --build postgres redis app api auth judge
+#     up -d --build postgres redis app api identity judge
 #
-# Then open: http://localhost:13000 (app), :14000 (api), :14001 (auth),
+# Then open: http://localhost:13000 (app), :14000 (api), :14011 (identity),
 # :19090 (judge). Internals: postgres :15432, redis :16379.
 
 x-postgres-url: &postgres-url
@@ -35,12 +35,6 @@ services:
   api:
     ports: !override
       - "14000:4000"
-    environment:
-      <<: *postgres-url
-
-  auth:
-    ports: !override
-      - "14001:4001"
     environment:
       <<: *postgres-url
 

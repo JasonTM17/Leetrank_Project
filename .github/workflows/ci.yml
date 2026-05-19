@@ -15,28 +15,32 @@ jobs:
     name: Web — typecheck, lint, test, build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - uses: actions/setup-node@v6
+      - uses: pnpm/action-setup@0c17529a66aca453f9227af23103ed11469b1e47 # v4.0.0
+        with:
+          version: 9
+
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: 20
-# cache disabled — pnpm-lock not in CI workspace yet
+          cache: pnpm
 
       - name: Install dependencies
-        run: npm install --no-audit --no-fund --legacy-peer-deps
+        run: pnpm install --frozen-lockfile
 
       - name: Typecheck
-        run: npm run typecheck
+        run: pnpm run typecheck
 
       - name: Lint
-        run: npm run lint
+        run: pnpm run lint
 
       - name: Test (with coverage)
-        run: npm run test:coverage
+        run: pnpm run test:coverage
 
       - name: Upload coverage artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: coverage-${{ github.run_id }}
           path: coverage/
@@ -44,16 +48,18 @@ jobs:
 
       - name: Upload coverage to Codecov
         if: always()
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@4650159d642e33fdc30954ca22638caf0df6cac8 # v5.4.3
         with:
           files: ./coverage/lcov.info
           flags: unittests
-          fail_ci_if_error: false
+          # Hard gate: codecov upload failures must surface so the
+          # codecov.yml status check (project/patch 80%) is reliable.
+          fail_ci_if_error: true
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Build
-        run: npm run build
+        run: pnpm run build
         env:
           DATABASE_URL: file:./dev.db
           JWT_SECRET: ci-build-only-secret-32-chars-aaaa
@@ -62,14 +68,17 @@ jobs:
     name: Web — npm audit (high)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: pnpm/action-setup@0c17529a66aca453f9227af23103ed11469b1e47 # v4.0.0
+        with:
+          version: 9
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: 20
-# cache disabled — pnpm-lock not in CI workspace yet
-      - run: npm install --no-audit --no-fund
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
       - name: Audit (fail on high or critical, production deps only)
-        run: npm audit --omit=dev --audit-level=high
+        run: pnpm audit --prod --audit-level=high
 
   api:
     name: API — typecheck, build
@@ -78,9 +87,9 @@ jobs:
       run:
         working-directory: apps/api
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: 20
 
@@ -93,27 +102,12 @@ jobs:
       - name: Build
         run: npx tsc
 
-  auth:
-    name: Auth — typecheck, build
+  auth-go:
+    name: Auth (Go) — see go-tests matrix
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: apps/auth
+    if: false
     steps:
-      - uses: actions/checkout@v6
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 20
-
-      - name: Install (no lockfile yet — will add when workspace install lands)
-        run: npm install --no-package-lock
-
-      - name: Typecheck
-        run: npx tsc --noEmit
-
-      - name: Build
-        run: npx tsc
+      - run: echo "auth-go is covered by the go-tests matrix; legacy apps/auth (TS) was retired in ADR 0027"
 
   judge:
     name: Judge — go vet, build, test
@@ -122,9 +116,9 @@ jobs:
       run:
         working-directory: judge-service
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
         with:
           go-version: '1.22'
 
@@ -277,7 +271,7 @@ jobs:
   docker:
     name: Docker — image builds
     runs-on: ubuntu-latest
-    needs: [web, api, auth, judge]
+    needs: [web, api, judge]
     steps:
       - uses: actions/checkout@v6
 
@@ -296,13 +290,6 @@ jobs:
           context: ./apps/api
           push: false
           tags: leetrank-api:ci
-
-      - name: Build auth image
-        uses: docker/build-push-action@v7
-        with:
-          context: ./apps/auth
-          push: false
-          tags: leetrank-auth:ci
 
       - name: Build judge image
         uses: docker/build-push-action@v7

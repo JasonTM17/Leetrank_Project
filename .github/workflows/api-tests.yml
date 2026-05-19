@@ -7,7 +7,6 @@ on:
       - "tests/api/**"
       - "src/app/api/**"
       - "apps/api/**"
-      - "apps/auth/**"
       - "services/**"
       - "judge-service/**"
       - "docker-compose*.yml"
@@ -43,15 +42,15 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Boot core stack (postgres, redis, web, api, auth, judge)
+      - name: Boot core stack (postgres, redis, web, api, identity, judge)
         run: |
-          # The Go services (identity/submissions/problems) are expected
-          # to fail their build today — see docs/testing/2026-05-API-TEST-REPORT.md.
-          # We boot the rest of the stack and let the smoke runner skip
-          # the Go services if they're unreachable.
+          # Identity (services/auth-go) is the canonical auth issuer; the
+          # legacy apps/auth (TS) was retired in ADR 0027. Other Go services
+          # may still fail to build today — see docs/testing/2026-05-API-TEST-REPORT.md.
+          # We boot the core stack and let the smoke runner skip unreachable services.
           docker compose \
             -f docker-compose.yml -f docker-compose.local.yml \
-            up -d --build postgres redis web api auth judge \
+            up -d --build postgres redis web api identity judge \
             || true
 
       - name: Wait for healthchecks
@@ -92,7 +91,6 @@ jobs:
           node tests/api/smoke.mjs \
             --web=http://localhost:13000 \
             --api=http://localhost:14000 \
-            --auth=http://localhost:14001 \
             --identity=http://localhost:14011 \
             --submissions=http://localhost:14012 \
             --problems=http://localhost:14013 \

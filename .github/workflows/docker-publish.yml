@@ -33,10 +33,6 @@ jobs:
             context: .
             dockerfile: apps/api/Dockerfile
             slug: api
-          - service: auth
-            context: .
-            dockerfile: apps/auth/Dockerfile
-            slug: auth
           - service: identity
             context: ./services/auth-go
             dockerfile: services/auth-go/Dockerfile

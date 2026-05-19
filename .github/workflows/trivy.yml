@@ -44,7 +44,7 @@ jobs:
         image:
           - nguyenson1710/leetrank-app:latest
           - nguyenson1710/leetrank-api:latest
-          - nguyenson1710/leetrank-auth:latest
+          - nguyenson1710/leetrank-identity:latest
           - nguyenson1710/leetrank-judge:latest
           - nguyenson1710/leetrank-submissions-go:latest
           - nguyenson1710/leetrank-problems-go:latest
