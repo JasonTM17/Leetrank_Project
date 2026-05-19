@@ -1,0 +1,63 @@
+name: daily-challenge
+
+# Picks a random problem and writes a DailyChallenge row for the new UTC day.
+# Runs at 00:05 UTC so the row exists by the time anyone in the earliest
+# timezone wakes up on the new day. Idempotent — `date UNIQUE` plus `ON
+# CONFLICT DO NOTHING` make a re-run a no-op.
+
+on:
+  schedule:
+    - cron: '5 0 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: daily-challenge
+  cancel-in-progress: false
+
+jobs:
+  pick:
+    name: Pick today's problem
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      PGSSLMODE: require
+    steps:
+      - name: Pick + insert via psql
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "DATABASE_URL secret is not configured; skipping."
+            exit 0
+          fi
+          # ON CONFLICT (date) keeps re-runs idempotent; cuid-style id is
+          # generated in psql via gen_random_uuid() (pgcrypto) since we
+          # don't have node here.
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          CREATE EXTENSION IF NOT EXISTS pgcrypto;
+          WITH today AS (
+            SELECT date_trunc('day', now() AT TIME ZONE 'UTC')::timestamp AS d
+          ),
+          pick AS (
+            SELECT p.id AS problem_id
+            FROM "Problem" p
+            WHERE p.id NOT IN (
+              SELECT "problemId" FROM "DailyChallenge"
+              WHERE "date" >= (SELECT d FROM today) - interval '90 days'
+            )
+            ORDER BY random()
+            LIMIT 1
+          )
+          INSERT INTO "DailyChallenge" ("id", "problemId", "date", "createdAt", "completionCount")
+          SELECT
+            replace(gen_random_uuid()::text, '-', ''),
+            pick.problem_id,
+            (SELECT d FROM today),
+            now(),
+            0
+          FROM pick
+          ON CONFLICT ("date") DO NOTHING;
+          SQL
