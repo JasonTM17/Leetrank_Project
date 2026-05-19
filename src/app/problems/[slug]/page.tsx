@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef, use } from "react";
+import { useTranslations } from "next-intl";
 import { Navbar } from "@/components/layout/navbar";
 import { Button } from "@/components/ui/button";
 import { ProblemDescription } from "@/components/problem/problem-description";
@@ -65,15 +66,6 @@ const CATEGORY_ORDER: LanguageDef["category"][] = [
   "esoteric",
 ];
 
-const CATEGORY_LABELS: Record<LanguageDef["category"], string> = {
-  scripting: "Scripting",
-  compiled: "Compiled",
-  jvm: "JVM",
-  functional: "Functional",
-  data: "Data / Numeric",
-  esoteric: "Esoteric",
-};
-
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 export default function ProblemDetailPage({
@@ -81,9 +73,19 @@ export default function ProblemDetailPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
+  const t = useTranslations("problems");
   const { slug } = use(params);
   const { user, isAuthenticated, isLoading: authLoading, setUser } = useAuth();
   const isAdmin = user?.role === "admin";
+
+  const CATEGORY_LABELS: Record<LanguageDef["category"], string> = {
+    scripting: t("categoryScripting"),
+    compiled: t("categoryCompiled"),
+    jvm: t("categoryJvm"),
+    functional: t("categoryFunctional"),
+    data: t("categoryData"),
+    esoteric: t("categoryEsoteric"),
+  };
 
   const [problem, setProblem] = useState<Problem | null>(null);
   const [loading, setLoading] = useState(true);
@@ -199,29 +201,29 @@ export default function ProblemDetailPage({
         }
         if (res.status === 403) {
           toast.error(
-            "Permission denied",
-            "You don't have permission to submit. Contact support if this is wrong."
+            t("toastPermissionDenied"),
+            t("toastPermissionDeniedBody")
           );
           setSubmitStatus("error");
           return;
         }
         if (res.status === 429) {
           toast.warning(
-            "Too many submissions",
-            "Wait a moment and try again."
+            t("toastTooMany"),
+            t("toastTooManyBody")
           );
           setSubmitStatus("error");
           return;
         }
         if (res.status >= 500) {
           toast.error(
-            "Couldn't reach the judge",
-            "The judge service is unavailable. Try again in a moment."
+            t("toastJudgeUnavailable"),
+            t("toastJudgeUnavailableBody")
           );
           setSubmitStatus("error");
           return;
         }
-        toast.error("Submission failed", errMsg || `Request failed (${res.status})`);
+        toast.error(t("toastSubmitFailed"), errMsg || t("toastRequestFailed", { status: res.status }));
         setSubmitStatus("error");
         return;
       }
@@ -232,8 +234,8 @@ export default function ProblemDetailPage({
       // Network-level failure (DNS, offline, CORS) — distinct from any
       // HTTP status the server returned.
       toast.error(
-        "Couldn't reach the judge",
-        "Network error. Check your connection and try again."
+        t("toastJudgeUnavailable"),
+        t("toastNetworkBody")
       );
       setSubmitStatus("error");
     } finally {
@@ -259,7 +261,7 @@ export default function ProblemDetailPage({
       <>
         <Navbar />
         <div className="flex items-center justify-center min-h-[60vh]">
-          <p className="text-muted-foreground">Problem not found</p>
+          <p className="text-muted-foreground">{t("notFound")}</p>
         </div>
       </>
     );
@@ -322,39 +324,39 @@ export default function ProblemDetailPage({
       <div className="flex items-center gap-2">
         <BookmarkButton problemId={problem.id} isAuthenticated={!!user} />
 
-        <Tooltip content="Reset to starter code" side="top">
+        <Tooltip content={t("resetTooltip")} side="top">
           <Button
             size="sm"
             variant="ghost"
             onClick={handleReset}
-            aria-label="Reset code to starter"
+            aria-label={t("resetAria")}
           >
             <RotateCcw className="h-4 w-4" />
           </Button>
         </Tooltip>
 
-        <Tooltip content="Run against examples" side="top">
+        <Tooltip content={t("runTooltip")} side="top">
           <Button
             size="sm"
             variant="outline"
             onClick={handleRun}
             disabled={running}
-            aria-label="Run code"
+            aria-label={t("runAria")}
           >
             {running ? (
               <Loader2 className="h-4 w-4 animate-spin mr-1" />
             ) : (
               <Play className="h-4 w-4 mr-1" />
             )}
-            Run
+            {t("run")}
           </Button>
         </Tooltip>
 
         <Tooltip
           content={
             !authLoading && !isAuthenticated
-              ? "Sign in to submit"
-              : "Submit solution"
+              ? t("signInTooltip")
+              : t("submitTooltip")
           }
           side="top"
         >
@@ -364,8 +366,8 @@ export default function ProblemDetailPage({
             disabled={submitting}
             aria-label={
               !authLoading && !isAuthenticated
-                ? "Sign in to submit solution"
-                : "Submit solution"
+                ? t("signInSubmitAria")
+                : t("submitAria")
             }
           >
             {submitting ? (
@@ -375,7 +377,7 @@ export default function ProblemDetailPage({
             ) : (
               <Send className="h-4 w-4 mr-1" />
             )}
-            Submit
+            {t("submit")}
           </Button>
         </Tooltip>
       </div>
@@ -418,10 +420,10 @@ export default function ProblemDetailPage({
         <Tabs defaultValue="problem" className="flex flex-col flex-1">
           <TabsList className="w-full rounded-none border-b bg-background justify-start px-4 h-10">
             <TabsTrigger value="problem" className="text-sm">
-              Problem
+              {t("tabProblem")}
             </TabsTrigger>
             <TabsTrigger value="code" className="text-sm">
-              Code
+              {t("tabCode")}
             </TabsTrigger>
           </TabsList>
 
@@ -459,13 +461,13 @@ export default function ProblemDetailPage({
         onClose={() => setAuthPromptOpen(false)}
         title={
           authPromptExpired
-            ? "Your session expired"
-            : "Sign in to submit your solution"
+            ? t("modalExpiredTitle")
+            : t("modalSignInTitle")
         }
         description={
           authPromptExpired
-            ? "Sign in again to submit your solution."
-            : "Track your progress, climb the leaderboard, and join contests."
+            ? t("modalExpiredBody")
+            : t("modalSignInBody")
         }
         size="sm"
       >
@@ -475,7 +477,7 @@ export default function ProblemDetailPage({
             className="inline-flex items-center justify-center h-10 px-4 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors motion-safe:duration-200"
             onClick={() => setAuthPromptOpen(false)}
           >
-            Sign in
+            {t("modalSignIn")}
           </Link>
           {!authPromptExpired && (
             <Link
@@ -483,7 +485,7 @@ export default function ProblemDetailPage({
               className="inline-flex items-center justify-center h-10 px-4 rounded-md border border-input bg-background text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors motion-safe:duration-200"
               onClick={() => setAuthPromptOpen(false)}
             >
-              Create account
+              {t("modalCreateAccount")}
             </Link>
           )}
         </div>

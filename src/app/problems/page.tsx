@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { Badge } from "@/components/ui/badge";
@@ -22,15 +23,10 @@ interface ProblemItem {
   solved?: boolean;
 }
 
-const DIFFICULTY_TABS = [
-  { value: "", label: "All" },
-  { value: "Easy", label: "Easy" },
-  { value: "Medium", label: "Medium" },
-  { value: "Hard", label: "Hard" },
-];
+const DIFFICULTY_VALUES = ["", "Easy", "Medium", "Hard"] as const;
 
 /** Dot-prefix difficulty badge — coloured dot + label */
-function DifficultyBadge({ difficulty }: { difficulty: string }) {
+function DifficultyBadge({ difficulty, label }: { difficulty: string; label: string }) {
   const lower = difficulty.toLowerCase();
   const dotColor =
     lower === "easy"
@@ -44,7 +40,7 @@ function DifficultyBadge({ difficulty }: { difficulty: string }) {
   return (
     <Badge className={getDifficultyBg(difficulty)}>
       <span className={`mr-1.5 h-1.5 w-1.5 rounded-full shrink-0 ${dotColor}`} aria-hidden="true" />
-      {difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}
+      {label}
     </Badge>
   );
 }
@@ -67,12 +63,21 @@ function ProblemRowSkeleton() {
 }
 
 export default function ProblemsPage() {
+  const t = useTranslations("problems");
+  const tCommon = useTranslations("common");
   const [problems, setProblems] = useState<ProblemItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [difficulty, setDifficulty] = useState("");
   const [selectedTag, setSelectedTag] = useState("");
   const [tags, setTags] = useState<{ slug: string; name: string }[]>([]);
+
+  const tabLabels: Record<string, string> = {
+    "": tCommon("all"),
+    Easy: t("easy"),
+    Medium: t("medium"),
+    Hard: t("hard"),
+  };
 
   useEffect(() => {
     fetch("/api/tags")
@@ -116,10 +121,10 @@ export default function ProblemsPage() {
           {/* Page header */}
           <div className="mb-8 animate-fade-in-up">
             <h1 className="text-3xl font-bold tracking-tight">
-              Problems
+              {t("title")}
             </h1>
             <p className="text-muted-foreground mt-1">
-              Practice makes perfect. Choose a problem to solve.
+              {t("headerSubtitle")}
             </p>
           </div>
 
@@ -131,9 +136,9 @@ export default function ProblemsPage() {
               onValueChange={setDifficulty}
             >
               <TabsList className="h-9">
-                {DIFFICULTY_TABS.map((tab) => (
-                  <TabsTrigger key={tab.value} value={tab.value} className="px-4 text-xs font-semibold">
-                    {tab.label}
+                {DIFFICULTY_VALUES.map((value) => (
+                  <TabsTrigger key={value || "all"} value={value} className="px-4 text-xs font-semibold">
+                    {tabLabels[value]}
                   </TabsTrigger>
                 ))}
               </TabsList>
@@ -147,11 +152,11 @@ export default function ProblemsPage() {
               />
               <Input
                 type="search"
-                placeholder="Search problems…"
+                placeholder={t("searchPlaceholder")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-9"
-                aria-label="Search problems"
+                aria-label={t("searchAriaLabel")}
               />
             </div>
           </div>
@@ -177,7 +182,7 @@ export default function ProblemsPage() {
 
           {/* Problem list */}
           {loading ? (
-            <div className="space-y-2" aria-busy="true" aria-label="Loading problems">
+            <div className="space-y-2" aria-busy="true" aria-label={t("loadingAriaLabel")}>
               {Array.from({ length: 8 }).map((_, i) => (
                 <ProblemRowSkeleton key={i} />
               ))}
@@ -185,8 +190,8 @@ export default function ProblemsPage() {
           ) : problems.length === 0 ? (
             <EmptyState
               icon={SearchX}
-              title="No problems found"
-              description="Try adjusting your search or filters to find what you're looking for."
+              title={t("noProblemsTitle")}
+              description={t("noProblemsBody")}
               action={
                 <button
                   onClick={() => {
@@ -196,7 +201,7 @@ export default function ProblemsPage() {
                   }}
                   className="text-sm text-primary hover:underline font-medium"
                 >
-                  Clear all filters
+                  {t("clearAllFilters")}
                 </button>
               }
             />
@@ -209,7 +214,7 @@ export default function ProblemsPage() {
                   className="group flex items-center gap-4 rounded-xl border bg-card px-5 py-4 hover:border-primary/30 hover:shadow-elevated hover:-translate-y-0.5 motion-safe:transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   {/* Solved indicator */}
-                  <span className="shrink-0" aria-label={problem.solved ? "Solved" : "Not solved"}>
+                  <span className="shrink-0" aria-label={problem.solved ? t("solved") : t("notSolved")}>
                     {problem.solved ? (
                       <CheckCircle2 className="h-5 w-5 text-success" aria-hidden="true" />
                     ) : (
@@ -241,13 +246,16 @@ export default function ProblemsPage() {
                   {/* Submission count */}
                   {problem._count && problem._count.submissions > 0 && (
                     <span className="hidden lg:block text-xs text-muted-foreground shrink-0">
-                      {problem._count.submissions.toLocaleString()} submissions
+                      {t("submissionsCount", { count: problem._count.submissions.toLocaleString() })}
                     </span>
                   )}
 
                   {/* Difficulty badge */}
                   <span className="shrink-0">
-                    <DifficultyBadge difficulty={problem.difficulty} />
+                    <DifficultyBadge
+                      difficulty={problem.difficulty}
+                      label={tabLabels[problem.difficulty.charAt(0).toUpperCase() + problem.difficulty.slice(1)] ?? problem.difficulty}
+                    />
                   </span>
                 </Link>
               ))}
