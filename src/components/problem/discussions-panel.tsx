@@ -47,13 +47,15 @@ export function DiscussionsPanel({ problemId, isAuthenticated }: DiscussionsPane
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!title.trim() || !body.trim()) return;
+    const trimmedTitle = title.trim();
+    const trimmedBody = body.trim();
+    if (!trimmedTitle || !trimmedBody) return;
     setSubmitting(true);
     try {
       const res = await fetch("/api/discussions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ problemId, title, body }),
+        body: JSON.stringify({ problemId, title: trimmedTitle, body: trimmedBody }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));

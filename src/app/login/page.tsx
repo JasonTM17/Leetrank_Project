@@ -65,10 +65,13 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
+      // Trim email so users with a stray space (autofill artifact, copy
+      // from password manager) still match the row in the DB.
+      const trimmedEmail = email.trim();
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: trimmedEmail, password }),
       });
 
       const data = await res.json();
