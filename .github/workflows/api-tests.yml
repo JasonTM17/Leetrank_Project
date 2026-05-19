@@ -1,0 +1,106 @@
+name: api-tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "tests/api/**"
+      - "src/app/api/**"
+      - "apps/api/**"
+      - "apps/auth/**"
+      - "services/**"
+      - "judge-service/**"
+      - "docker-compose*.yml"
+      - ".github/workflows/api-tests.yml"
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# Test runs are independent — cancel older runs when a new commit lands.
+concurrency:
+  group: api-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    name: HTTP smoke against compose stack
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      # Compose .env requirements — see docker-compose.yml :43, :223.
+      JWT_SECRET: ci-test-jwt-secret-not-real
+      N8N_PASSWORD: ci-test-n8n-not-real
+      POSTGRES_USER: leetrank
+      POSTGRES_PASSWORD: leetrank-dev
+      POSTGRES_DB: leetrank
+      REDIS_PASSWORD: leetrank-dev
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Boot core stack (postgres, redis, web, api, auth, judge)
+        run: |
+          # The Go services (identity/submissions/problems) are expected
+          # to fail their build today — see docs/testing/2026-05-API-TEST-REPORT.md.
+          # We boot the rest of the stack and let the smoke runner skip
+          # the Go services if they're unreachable.
+          docker compose \
+            -f docker-compose.yml -f docker-compose.local.yml \
+            up -d --build postgres redis web api auth judge \
+            || true
+
+      - name: Wait for healthchecks
+        run: |
+          for i in {1..30}; do
+            statuses=$(docker compose \
+              -f docker-compose.yml -f docker-compose.local.yml \
+              ps --format json | jq -r '.[].Health' || true)
+            if echo "$statuses" | grep -qE 'starting|unhealthy'; then
+              echo "still warming up..."
+              sleep 5
+            else
+              echo "all containers stable"
+              break
+            fi
+          done
+          docker compose \
+            -f docker-compose.yml -f docker-compose.local.yml ps
+
+      - name: Run smoke suite
+        run: |
+          node tests/api/smoke.mjs \
+            --web=http://localhost:13000 \
+            --api=http://localhost:14000 \
+            --auth=http://localhost:14001 \
+            --identity=http://localhost:14011 \
+            --submissions=http://localhost:14012 \
+            --problems=http://localhost:14013 \
+            --judge=http://localhost:19090 \
+            --budget=2000
+
+      - name: Upload smoke report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-smoke-report
+          path: docs/testing/smoke-report.json
+          if-no-files-found: warn
+
+      - name: Dump container logs on failure
+        if: failure()
+        run: |
+          docker compose \
+            -f docker-compose.yml -f docker-compose.local.yml \
+            logs --tail=200
+
+      - name: Tear down compose
+        if: always()
+        run: |
+          docker compose \
+            -f docker-compose.yml -f docker-compose.local.yml \
+            down -v --remove-orphans
