@@ -36,6 +36,10 @@ export default function AdminPage() {
   const [problems, setProblems] = useState<Problem[]>([]);
   const [users, setUsers] = useState<UserItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
+  // Track per-row delete pending state so the spinner pins to the
+  // exact row the user clicked instead of disabling every button.
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
     title: "", slug: "", description: "", difficulty: "easy",
@@ -70,6 +74,7 @@ export default function AdminPage() {
 
   async function handleCreateProblem(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    setCreating(true);
     try {
       const res = await fetch("/api/admin/problems", {
         method: "POST",
@@ -85,12 +90,18 @@ export default function AdminPage() {
         fetchProblems();
       }
     } catch { /* ignore */ }
+    finally { setCreating(false); }
   }
 
   async function handleDeleteProblem(id: string) {
     if (!confirm("Delete this problem?")) return;
-    await fetch(`/api/admin/problems/${id}`, { method: "DELETE" });
-    fetchProblems();
+    setDeletingId(id);
+    try {
+      await fetch(`/api/admin/problems/${id}`, { method: "DELETE" });
+      fetchProblems();
+    } finally {
+      setDeletingId(null);
+    }
   }
 
   if (user && user.role !== "admin") {
@@ -176,8 +187,11 @@ export default function AdminPage() {
                       <Input placeholder="Constraints" value={formData.constraints} onChange={(e) => setFormData({...formData, constraints: e.target.value})} />
                       <Input placeholder="Hints" value={formData.hints} onChange={(e) => setFormData({...formData, hints: e.target.value})} />
                       <div className="md:col-span-2 flex gap-2">
-                        <Button type="submit" size="sm">Create</Button>
-                        <Button type="button" variant="outline" size="sm" onClick={() => setShowForm(false)}>Cancel</Button>
+                        <Button type="submit" size="sm" disabled={creating} className="gap-1">
+                          {creating && <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />}
+                          {creating ? "Creating…" : "Create"}
+                        </Button>
+                        <Button type="button" variant="outline" size="sm" onClick={() => setShowForm(false)} disabled={creating}>Cancel</Button>
                       </div>
                     </form>
                   </CardContent>
@@ -214,7 +228,9 @@ export default function AdminPage() {
                           <td className="px-4 py-3 text-right">
                             <div className="flex justify-end gap-1">
                               <Button variant="ghost" size="icon" className="h-8 w-8" aria-label={`Edit problem ${p.title}`}><Edit className="h-4 w-4" aria-hidden="true" /></Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" aria-label={`Delete problem ${p.title}`} onClick={() => handleDeleteProblem(p.id)}><Trash2 className="h-4 w-4" aria-hidden="true" /></Button>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" aria-label={`Delete problem ${p.title}`} onClick={() => handleDeleteProblem(p.id)} disabled={deletingId === p.id}>
+                                {deletingId === p.id ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Trash2 className="h-4 w-4" aria-hidden="true" />}
+                              </Button>
                             </div>
                           </td>
                         </tr>

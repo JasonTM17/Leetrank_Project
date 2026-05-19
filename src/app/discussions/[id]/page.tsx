@@ -64,13 +64,14 @@ export default function DiscussionPage({ params }: { params: Promise<{ id: strin
 
   async function handleComment(e: React.FormEvent) {
     e.preventDefault();
-    if (!comment.trim()) return;
+    const trimmed = comment.trim();
+    if (!trimmed) return;
     setSubmitting(true);
     try {
       const res = await fetch(`/api/discussions/${id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ body: comment }),
+        body: JSON.stringify({ body: trimmed }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
