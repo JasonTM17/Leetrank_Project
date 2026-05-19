@@ -1,0 +1,46 @@
+name: Stale issue + PR sweep
+
+# Closes inactive issues and PRs after 30 days of silence with a 7-day
+# warning. Runs daily on cron. The intent is housekeeping — anything
+# legitimately blocked should be labelled accordingly to opt out.
+
+on:
+  schedule:
+    - cron: "30 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: stale-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  stale:
+    name: Mark and close stale issues + PRs
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/stale@5bef64f19d7facfb25b37b414482c7164d639639 # v9.1.0
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          days-before-stale: 30
+          days-before-close: 7
+          stale-issue-label: stale
+          stale-pr-label: stale
+          exempt-issue-labels: 'pinned,security,blocked,roadmap'
+          exempt-pr-labels: 'pinned,security,blocked,wip'
+          stale-issue-message: |
+            This issue has been inactive for 30 days and is now marked stale.
+            It will be closed in 7 days unless there is further activity.
+            Add the `pinned` or `blocked` label to keep it open.
+          stale-pr-message: |
+            This pull request has been inactive for 30 days and is now marked stale.
+            It will be closed in 7 days unless there is further activity.
+            Add the `pinned` or `wip` label to keep it open.
+          close-issue-message: 'Closing as stale. Reopen if still relevant.'
+          close-pr-message: 'Closing as stale. Reopen and rebase if still wanted.'
+          remove-stale-when-updated: true
+          operations-per-run: 100
