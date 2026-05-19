@@ -3,6 +3,8 @@
 import { Badge } from "@/components/ui/badge";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { Accordion, AccordionItem } from "@/components/ui/accordion";
+import { HintsProgressive } from "@/components/problem/hints-progressive";
+import { EditorialTab } from "@/components/problem/editorial-tab";
 
 interface TestCase {
   id: string;
@@ -20,20 +22,23 @@ interface ProblemDescriptionProps {
   testCases: TestCase[];
   tags: { id: string; name: string }[];
   title: string;
+  slug: string;
   difficulty: string;
   isAdmin?: boolean;
+  isAuthenticated?: boolean;
 }
 
 export function ProblemDescription({
   description,
   constraints,
   hints,
-  editorial,
   testCases,
   tags,
   title,
+  slug,
   difficulty,
   isAdmin = false,
+  isAuthenticated = false,
 }: ProblemDescriptionProps) {
   const difficultyBg =
     difficulty === "easy"
@@ -153,16 +158,11 @@ export function ProblemDescription({
         {/* ── Hints ── */}
         {parsedHints.length > 0 && (
           <AccordionItem value="hints" title="Hints">
-            <ol className="space-y-2 list-none">
-              {parsedHints.map((h, i) => (
-                <li key={i} className="flex gap-2">
-                  <span className="shrink-0 font-semibold text-foreground/60">
-                    {i + 1}.
-                  </span>
-                  <span>{h}</span>
-                </li>
-              ))}
-            </ol>
+            <HintsProgressive
+              slug={slug}
+              hints={parsedHints}
+              isAuthenticated={isAuthenticated}
+            />
           </AccordionItem>
         )}
 
