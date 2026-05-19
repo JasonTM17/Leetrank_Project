@@ -51,6 +51,31 @@ async function verifyAny(token: string) {
 const protectedRoutes = ["/dashboard", "/admin"];
 const adminRoutes = ["/admin"];
 
+// Request-ID propagation: edge runtime has no `crypto.randomUUID` guarantee
+// across all Node versions, so use the standard Web Crypto API which Next's
+// edge runtime always exposes. Falls back to a Math.random shim only when
+// neither is available (test environments mocking globals).
+function generateRequestId(): string {
+  const c = (globalThis as { crypto?: { randomUUID?: () => string } }).crypto;
+  if (c && typeof c.randomUUID === "function") return c.randomUUID();
+  // RFC4122-ish fallback. Good enough for log correlation; never used as a
+  // security token.
+  const rand = () => Math.floor(Math.random() * 0xffffffff).toString(16).padStart(8, "0");
+  return `${rand()}-${rand().slice(0, 4)}-4${rand().slice(0, 3)}-${rand().slice(0, 4)}-${rand()}${rand().slice(0, 4)}`;
+}
+
+// Attach X-Request-Id to both the inbound request (so downstream handlers can
+// read it via headers().get("x-request-id")) and the outbound response (for
+// client-side correlation). Honours an existing X-Request-Id from a trusted
+// upstream proxy if present.
+function withRequestId(request: NextRequest, response: NextResponse): NextResponse {
+  const incoming = request.headers.get("x-request-id");
+  const id = incoming && incoming.length > 0 ? incoming : generateRequestId();
+  request.headers.set("x-request-id", id);
+  response.headers.set("x-request-id", id);
+  return response;
+}
+
 // CORS policy (Bug #26): /api is intentionally first-party-only. We DO NOT
 // emit Access-Control-Allow-* headers, so cross-origin browsers preflighting
 // OPTIONS get an opaque 204 and the browser refuses to send the real request.
@@ -62,30 +87,34 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const isProtected = protectedRoutes.some((route) => pathname.startsWith(route));
-  if (!isProtected) return NextResponse.next();
+  if (!isProtected) return withRequestId(request, NextResponse.next());
 
   const token = request.cookies.get("token")?.value;
   if (!token) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("from", pathname);
-    return NextResponse.redirect(loginUrl);
+    return withRequestId(request, NextResponse.redirect(loginUrl));
   }
 
   const verified = await verifyAny(token);
   if (!verified) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("from", pathname);
-    return NextResponse.redirect(loginUrl);
+    return withRequestId(request, NextResponse.redirect(loginUrl));
   }
 
   const isAdmin = adminRoutes.some((route) => pathname.startsWith(route));
   if (isAdmin && verified.payload.role !== "admin") {
-    return NextResponse.redirect(new URL("/forbidden", request.url));
+    return withRequestId(request, NextResponse.redirect(new URL("/forbidden", request.url)));
   }
 
-  return NextResponse.next();
+  return withRequestId(request, NextResponse.next());
 }
 
+// Matcher widened from /dashboard + /admin to also include /api, so every
+// API route response carries X-Request-Id. The auth gate above only fires
+// for the original protected routes; /api passes through untouched apart
+// from the request-id stamp.
 export const config = {
-  matcher: ["/dashboard/:path*", "/admin/:path*"],
+  matcher: ["/dashboard/:path*", "/admin/:path*", "/api/:path*"],
 };
