@@ -3,7 +3,7 @@
 
 # --- Build stage ---
 # node:20-slim (Debian) — see apps/api/Dockerfile for why we left Alpine.
-FROM node:20-slim AS builder
+FROM node:26-slim AS builder
 
 WORKDIR /app
 
@@ -20,7 +20,7 @@ RUN npm install --no-audit --no-fund \
  && npx tsc
 
 # --- Runtime stage ---
-FROM node:20-slim AS runtime
+FROM node:26-slim AS runtime
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     openssl ca-certificates wget \
