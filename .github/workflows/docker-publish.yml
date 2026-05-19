@@ -28,16 +28,16 @@ jobs:
             dockerfile: Dockerfile
             image: jasontm17/leetrank-app
           - service: api
-            context: ./apps/api
-            dockerfile: Dockerfile
+            context: .
+            dockerfile: apps/api/Dockerfile
             image: jasontm17/leetrank-api
           - service: auth
-            context: ./apps/auth
-            dockerfile: Dockerfile
+            context: .
+            dockerfile: apps/auth/Dockerfile
             image: jasontm17/leetrank-auth
           - service: judge
             context: ./judge-service
-            dockerfile: Dockerfile
+            dockerfile: judge-service/Dockerfile
             image: jasontm17/leetrank-judge
 
     steps:
@@ -68,7 +68,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ${{ matrix.context }}
-          file: ${{ matrix.context }}/${{ matrix.dockerfile }}
+          file: ${{ matrix.dockerfile }}
           push: true
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}

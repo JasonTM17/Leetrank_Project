@@ -62,8 +62,8 @@ services:
 
   api:
     build:
-      context: ./apps/api
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/api/Dockerfile
     ports:
       - "4000:4000"
     environment:
@@ -85,8 +85,8 @@ services:
 
   auth:
     build:
-      context: ./apps/auth
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/auth/Dockerfile
     ports:
       - "4001:4001"
     environment:

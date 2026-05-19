@@ -2,8 +2,15 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 
-COPY package.json package-lock.json ./
-RUN npm ci
+# pnpm-lock.yaml is the canonical workspace lockfile; package-lock.json is
+# gitignored. Use `npm install` here (not `npm ci`) so the build doesn't
+# require a lockfile present in the build context. Migrating to
+# `pnpm install --frozen-lockfile` is tracked in the DX audit (F-21/F-22).
+COPY package.json ./
+# Install with optional deps so native bindings (lightningcss-linux-x64-musl
+# for Tailwind v4, sharp, etc.) land. --omit=optional skipped them and
+# Turbopack build fails to find lightningcss at compile time.
+RUN npm install --no-audit --no-fund
 
 # Stage 2: Build the application
 FROM node:20-alpine AS build
@@ -15,8 +22,13 @@ COPY . .
 # Generate Prisma client
 RUN npx prisma generate
 
-# Build Next.js
-ENV NEXT_TELEMETRY_DISABLED=1
+# Build Next.js. Routes import lib/auth which validates JWT_SECRET at module
+# load — Next collects page data during build and trips the validation, so
+# we feed a build-time placeholder. The runtime image gets the real secret
+# from the orchestrator env.
+ENV NEXT_TELEMETRY_DISABLED=1 \
+    JWT_SECRET=build-time-placeholder-not-a-real-secret-32-chars \
+    DATABASE_URL=postgresql://build:build@build:5432/build?schema=public
 RUN npm run build
 
 # Stage 3: Production runner
