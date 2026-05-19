@@ -78,6 +78,11 @@ export const prismaMock = {
   ratingChange: makeModel(),
   dailyChallenge: makeModel(),
   dailyChallengeStreak: makeModel(),
+  studyPlan: makeModel(),
+  studyPlanProblem: makeModel(),
+  // Routes use upsert + deleteMany on UserStudyPlan; the default makeModel
+  // surface omits both, so widen here.
+  userStudyPlan: { ...makeModel(), upsert: vi.fn(), deleteMany: vi.fn() },
   // Code-playback feature: SubmissionEvent rows are queried via
   // findMany / createMany from the playback routes. Stub the surface
   // so tests for those routes can drive prisma without binding to a
