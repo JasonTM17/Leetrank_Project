@@ -102,12 +102,20 @@ queue.on<JudgeSubmissionPayload>("judge-submission", async ({ submissionId }) =>
     const avgRuntime =
       results.reduce((sum, r) => sum + (r.runtime ?? 0), 0) /
       Math.max(1, results.length);
+    // bug-16: persist BOTH stdout (`actual`) and the error string on the
+    // submission row. Without this, /api/submissions/{id} shows null/null
+    // and the user can't self-diagnose. Accepted rows keep both null to
+    // avoid bloating the table; non-accepted rows pin the first failing
+    // test's stdout under `output`.
+    const firstFail = results.find((r) => !r.passed);
     const errorMsg = results.find((r) => r.error)?.error ?? null;
+    const outputStr =
+      status === "accepted" ? null : firstFail?.actual?.trim() || null;
     update = {
       status,
       runtime: Math.round(avgRuntime),
       error: errorMsg,
-      output: null,
+      output: outputStr,
     };
   } catch (err) {
     if (err instanceof JudgeUnavailableError) {

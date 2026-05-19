@@ -142,6 +142,14 @@ export async function POST(request: NextRequest) {
         results.reduce((sum, r) => sum + (r.runtime ?? 0), 0) /
         Math.max(1, results.length);
       const errorMsg = results.find((r) => r.error)?.error;
+      // bug-16: pin the first failing test's stdout to `output` so the
+      // verdict page can show what the user printed. Accepted rows skip
+      // it to keep the column small.
+      const firstFail = results.find((r) => !r.passed);
+      const outputStr =
+        status === "accepted"
+          ? undefined
+          : firstFail?.actual?.trim() || undefined;
 
       const submission = await prisma.submission.create({
         data: {
@@ -152,6 +160,7 @@ export async function POST(request: NextRequest) {
           status,
           runtime: Math.round(avgRuntime),
           error: errorMsg,
+          output: outputStr,
         },
       });
 
