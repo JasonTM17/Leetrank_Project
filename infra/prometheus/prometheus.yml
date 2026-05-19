@@ -13,7 +13,7 @@ scrape_configs:
     static_configs:
       - targets: ["localhost:9090"]
 
-  - job_name: app
+  - job_name: web
     metrics_path: /api/metrics
     static_configs:
       - targets: ["app:3000"]
@@ -27,6 +27,36 @@ scrape_configs:
     metrics_path: /metrics
     static_configs:
       - targets: ["identity:4011"]
+
+  - job_name: submissions
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["submissions:4012"]
+
+  - job_name: problems
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["problems:4013"]
+
+  - job_name: leaderboard
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["leaderboard-rust:4014"]
+
+  - job_name: notifications
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["notifications-ruby:4015"]
+
+  - job_name: analytics
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["analytics-python:4016"]
+
+  - job_name: realtime
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["realtime-go:4017"]
 
   - job_name: judge
     metrics_path: /metrics

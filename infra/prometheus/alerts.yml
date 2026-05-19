@@ -102,3 +102,144 @@ groups:
         annotations:
           summary: "Judge rejecting > 1 req/s due to busy scheduler"
           description: "Concurrency caps are biting. Consider raising JUDGE_GLOBAL_MAX or scaling judge replicas."
+
+      - alert: SandboxEscape
+        expr: increase(judge_sandbox_escape_blocked_total[5m]) > 0
+        labels:
+          severity: critical
+        annotations:
+          summary: "nsjail blocked a sandbox escape attempt"
+          description: "judge_sandbox_escape_blocked_total incremented. Inspect judge logs and quarantine the offending submission."
+
+      - alert: SandboxKillSpike
+        expr: |
+          sum(rate(judge_executions_total{status=~"timeout|killed|oom"}[5m])) > 0.5
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Judge sandbox kill rate elevated (>0.5/s)"
+          description: "Sustained kill rate over 10 minutes suggests resource limits too tight, infinite loops, or noisy-neighbour CPU pressure."
+
+  - name: leetrank-platform-red
+    interval: 30s
+    rules:
+      - alert: HighErrorRate
+        expr: |
+          (
+            sum(rate(http_requests_total{status=~"5.."}[5m])) by (job)
+            /
+            clamp_min(sum(rate(http_requests_total[5m])) by (job), 0.001)
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.job }} 5xx rate over 5%"
+          description: "Service {{ $labels.job }} has held a 5xx error rate above 5% for 5 minutes. Check recent deploys and downstream dependencies."
+
+      - alert: HighLatency
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum(rate(http_request_duration_seconds_bucket[5m])) by (le, job)
+          ) > 1.0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.job }} p95 latency over 1s"
+          description: "p95 request duration on {{ $labels.job }} has been above 1.0s for 5 minutes. Investigate slow handlers or downstream stalls."
+
+  - name: leetrank-submissions
+    interval: 30s
+    rules:
+      - alert: QueueBacklog
+        expr: submissions_queue_depth > 100
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Submissions queue depth > 100 for 10m"
+          description: "submissions_queue_depth has stayed above 100 for 10 minutes. Either dispatch is stalled or the judge fleet is undersized."
+
+      - alert: SubmissionsDLQGrowth
+        expr: increase(submissions_dlq_total[10m]) > 5
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Submissions DLQ growing (>5 in 10m)"
+          description: "The sweeper has moved more than 5 submissions to dead-letter in the last 10 minutes. Inspect judge errors."
+
+  - name: leetrank-auth-security
+    interval: 30s
+    rules:
+      - alert: LockoutSpike
+        expr: |
+          sum(rate(auth_account_lockouts_total[1m])) * 60 > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Account lockouts > 10/min"
+          description: "Lockout rate exceeded 10 per minute for 5 minutes. Possible credential-stuffing or distributed brute-force attack."
+
+      - alert: LoginFailureSpike
+        expr: |
+          sum(rate(auth_login_failures_total[5m])) > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Login failure rate > 5/s"
+          description: "Sustained login failures suggest brute-force or a broken auth dependency."
+
+  - name: leetrank-realtime
+    interval: 30s
+    rules:
+      - alert: RealtimeRejectSpike
+        expr: |
+          sum(rate(realtime_ws_rejected_total[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Realtime rejecting > 1 conn/s"
+          description: "Per-IP or per-user limiter is biting. Investigate abuse vs legit traffic spike."
+
+      - alert: RealtimeMessageDrops
+        expr: |
+          sum(rate(realtime_ws_messages_dropped_total[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Realtime dropping > 1 msg/s (slow consumers)"
+          description: "Client send buffers are full. Slow networks or stuck consumers; investigate top offenders."
+
+  - name: leetrank-infra
+    interval: 30s
+    rules:
+      - alert: DiskUsage
+        expr: |
+          (
+            (node_filesystem_size_bytes{mountpoint="/var/lib/postgresql/data"}
+              - node_filesystem_avail_bytes{mountpoint="/var/lib/postgresql/data"})
+            / node_filesystem_size_bytes{mountpoint="/var/lib/postgresql/data"}
+          ) > 0.80
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Postgres data volume > 80% full"
+          description: "Disk fill on the postgres volume. Plan a vacuum/expansion before write-amplification kicks in."
+
+      - alert: ServiceDownStrict
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.job }} target down"
+          description: "Prometheus scrape failed for {{ $labels.job }} ({{ $labels.instance }}) for 1 minute."
