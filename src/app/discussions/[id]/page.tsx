@@ -6,12 +6,13 @@ import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/useToast";
 import { formatRelativeTime } from "@/lib/utils";
-import { ArrowLeft, MessageSquare, Send, Trash2, Loader2 } from "lucide-react";
+import { MessageSquare, Send, Trash2, Loader2 } from "lucide-react";
 
 interface Comment {
   id: string;
@@ -140,15 +141,17 @@ export default function DiscussionPage({ params }: { params: Promise<{ id: strin
       <Navbar />
       <main id="main-content" className="flex-1">
         <div className="mx-auto max-w-3xl px-4 sm:px-6 py-8">
-          <Link
-            href={`/problems`}
-            className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4"
-          >
-            <ArrowLeft className="h-4 w-4" /> Back
-          </Link>
+          <Breadcrumb
+            className="mb-6"
+            items={[
+              { label: "Home", href: "/" },
+              { label: "Problems", href: "/problems" },
+              { label: "Discussion" },
+            ]}
+          />
 
           {/* Original post */}
-          <article className="rounded-lg border bg-card p-6">
+          <article className="rounded-lg border bg-card p-6 animate-fade-in-up">
             <h1 className="text-2xl font-bold leading-tight">{discussion.title}</h1>
             <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
               <Link href={`/users/${discussion.user.username}`} className="font-medium hover:text-primary">

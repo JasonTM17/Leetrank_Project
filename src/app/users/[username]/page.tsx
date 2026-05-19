@@ -1,15 +1,16 @@
 "use client";
 
 import { useEffect, useState, use } from "react";
+import Link from "next/link";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatRelativeTime, getDifficultyBg } from "@/lib/utils";
 import { Trophy, Target, Calendar, User as UserIcon } from "lucide-react";
-import Link from "next/link";
 
 interface ProfileData {
   user: {
@@ -100,9 +101,18 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
       <Navbar />
       <main id="main-content" className="flex-1">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-12">
+          <Breadcrumb
+            className="mb-6"
+            items={[
+              { label: "Home", href: "/" },
+              { label: "Users" },
+              { label: user.username },
+            ]}
+          />
+
           {/* Header */}
-          <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-            <div className="h-24 w-24 rounded-full bg-gradient-to-br from-primary to-primary/40 flex items-center justify-center shadow-glow">
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-6 animate-fade-in-up">
+            <div className="h-24 w-24 rounded-full bg-gradient-to-br from-primary to-primary/40 flex items-center justify-center shadow-glow shrink-0">
               <span className="text-3xl font-bold text-primary-foreground">
                 {user.username[0].toUpperCase()}
               </span>
@@ -122,7 +132,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
             <Card>
               <CardContent className="p-4">
                 <div className="text-xs text-muted-foreground uppercase tracking-wide">Solved</div>
-                <div className="mt-1 text-3xl font-bold">{stats.solved}</div>
+                <div className="mt-1 text-3xl font-bold gradient-text">{stats.solved}</div>
               </CardContent>
             </Card>
             <Card>

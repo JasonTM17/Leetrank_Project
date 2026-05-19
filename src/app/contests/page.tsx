@@ -36,8 +36,6 @@ export default function ContestsPage() {
   }, []);
 
   function getStatusBadge(status: string) {
-    // Coloured dot prefix doubles as the colour-blind a11y signal
-    // (matches the pattern in components/problem/problem-description.tsx).
     const dot = (cls: string) => (
       <span aria-hidden="true" className={`mr-1.5 inline-block h-2 w-2 rounded-full ${cls}`} />
     );
@@ -83,17 +81,29 @@ export default function ContestsPage() {
     <>
       <Navbar />
       <main className="flex-1">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-8">
-          <Breadcrumb
-            className="mb-4"
-            items={[{ label: "Home", href: "/" }, { label: "Contests" }]}
-          />
+        {/* Hero */}
+        <section className="relative overflow-hidden border-b">
+          <div className="absolute inset-0 bg-grid opacity-30" aria-hidden="true" />
+          <div className="absolute inset-0 bg-radial-fade" aria-hidden="true" />
+          <div className="absolute inset-x-0 -top-16 h-64 bg-gradient-to-b from-primary/15 to-transparent blur-3xl" aria-hidden="true" />
 
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold">Contests</h1>
-            <p className="text-muted-foreground mt-1">Compete with others and test your skills under pressure</p>
+          <div className="relative mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-12">
+            <Breadcrumb
+              className="mb-6"
+              items={[{ label: "Home", href: "/" }, { label: "Contests" }]}
+            />
+            <div className="animate-fade-in-up">
+              <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
+                <span className="gradient-text">Contests</span>
+              </h1>
+              <p className="mt-3 text-muted-foreground text-lg max-w-xl">
+                Compete with others and test your skills under pressure. Weekly rounds, live leaderboards, and ratings that follow you.
+              </p>
+            </div>
           </div>
+        </section>
 
+        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-8">
           {loading ? (
             <div className="flex items-center justify-center py-20">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -107,7 +117,7 @@ export default function ContestsPage() {
           ) : (
             <div className="space-y-4">
               {contests.map((contest) => (
-                <Card key={contest.id} className="hover:shadow-md transition-shadow">
+                <Card key={contest.id} className="hover:shadow-elevated hover:border-primary/20 transition-all duration-200">
                   <CardContent className="p-6">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                       <div className="flex-1">
@@ -131,7 +141,7 @@ export default function ContestsPage() {
                       </div>
                       <Tooltip content={ctaTooltip(contest.status, contest.startTime)} side="left">
                         <Link href={`/contests/${contest.slug}`}>
-                          <Button variant={contest.status === "active" ? "default" : "outline"} size="sm">
+                          <Button variant={contest.status === "active" ? "default" : "outline"} size="sm" className={contest.status === "active" ? "shadow-glow" : ""}>
                             {contest.status === "active" ? "Join Now" : contest.status === "upcoming" ? "View Details" : "View Results"}
                           </Button>
                         </Link>

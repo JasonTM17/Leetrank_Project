@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { Navbar } from "@/components/layout/navbar";
+import { Footer } from "@/components/layout/footer";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 
 const SWAGGER_VERSION = "5.20.7";
 
@@ -43,9 +46,27 @@ export default function ApiDocsPage() {
   }, []);
 
   return (
-    <main>
-      <style>{`body { margin: 0; } .topbar { display: none; }`}</style>
-      <div id="swagger-ui" />
-    </main>
+    <>
+      <Navbar />
+      <main id="main-content" className="flex-1">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+          <Breadcrumb
+            className="mb-6"
+            items={[{ label: "Home", href: "/" }, { label: "API Docs" }]}
+          />
+          <div className="mb-6 animate-fade-in-up">
+            <h1 className="text-3xl font-bold">
+              <span className="gradient-text">API</span> Reference
+            </h1>
+            <p className="mt-1 text-muted-foreground">
+              Interactive OpenAPI documentation for the LeetRank REST API.
+            </p>
+          </div>
+        </div>
+        <style>{`.topbar { display: none; } .swagger-ui .info { margin: 0; } .swagger-ui .scheme-container { padding: 0 1rem; }`}</style>
+        <div id="swagger-ui" className="px-4 sm:px-6 lg:px-8 pb-16" />
+      </main>
+      <Footer />
+    </>
   );
 }

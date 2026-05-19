@@ -33,15 +33,26 @@ export default function LeaderboardPage() {
   const top3 = entries.slice(0, 3);
   const rest = entries.slice(3);
 
-  function podiumCard(entry: LeaderboardEntry, accent: string, ring: string, icon: React.ReactNode) {
+  function podiumCard(
+    entry: LeaderboardEntry,
+    accent: string,
+    ring: string,
+    icon: React.ReactNode,
+    rankLabel: string,
+    heightClass: string,
+  ) {
     return (
       <div
-        className={`flex flex-col items-center gap-2 rounded-lg border bg-muted/40 p-5 ${ring}`}
+        className={`relative flex flex-col items-center gap-2 rounded-xl border bg-card p-5 ${ring} ${heightClass} justify-end transition-all duration-200 hover:shadow-elevated`}
       >
-        <div className={`rounded-full p-2 ${accent}`}>{icon}</div>
-        <div className="text-sm font-medium">{entry.username}</div>
+        {/* Rank number */}
+        <div className={`absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-2.5 py-0.5 text-xs font-bold border ${accent}`}>
+          {rankLabel}
+        </div>
+        <div className={`rounded-full p-3 ${accent} mb-1`}>{icon}</div>
+        <div className="text-sm font-semibold truncate max-w-full px-2">{entry.username}</div>
         <div className="text-xs text-muted-foreground">{entry.solved} solved</div>
-        <div className="text-base font-semibold text-primary">{entry.score} pts</div>
+        <div className="text-base font-bold gradient-text">{entry.score} pts</div>
       </div>
     );
   }
@@ -56,8 +67,10 @@ export default function LeaderboardPage() {
             items={[{ label: "Home", href: "/" }, { label: "Leaderboard" }]}
           />
 
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold">Leaderboard</h1>
+          <div className="mb-8 animate-fade-in-up">
+            <h1 className="text-3xl font-bold">
+              <span className="gradient-text">Leaderboard</span>
+            </h1>
             <p className="text-muted-foreground mt-1">Top performers on LeetRank</p>
           </div>
 
@@ -74,16 +87,39 @@ export default function LeaderboardPage() {
           ) : (
             <>
               {top3.length === 3 && (
-                <div className="mb-8 grid grid-cols-3 gap-4">
-                  {/* Visually rearrange so #1 sits in the middle (silver, gold, bronze). */}
-                  <div className="pt-6">
-                    {podiumCard(top3[1]!, "bg-slate-200 text-slate-800 dark:bg-slate-300", "ring-2 ring-slate-300/60", <Medal className="h-6 w-6" />)}
-                  </div>
+                <div className="mb-10 grid grid-cols-3 gap-3 items-end">
+                  {/* Silver — #2 left */}
                   <div>
-                    {podiumCard(top3[0]!, "bg-yellow-200 text-yellow-900", "ring-2 ring-yellow-400/70 shadow-glow", <Trophy className="h-7 w-7" />)}
+                    {podiumCard(
+                      top3[1]!,
+                      "bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-800 dark:text-slate-300",
+                      "ring-2 ring-slate-300/60",
+                      <Medal className="h-5 w-5" />,
+                      "#2",
+                      "min-h-[160px]",
+                    )}
                   </div>
-                  <div className="pt-6">
-                    {podiumCard(top3[2]!, "bg-amber-200 text-amber-900 dark:bg-amber-300", "ring-2 ring-amber-400/60", <Award className="h-6 w-6" />)}
+                  {/* Gold — #1 center, taller */}
+                  <div>
+                    {podiumCard(
+                      top3[0]!,
+                      "bg-warning/15 text-warning border-warning/40",
+                      "ring-2 ring-warning/50 shadow-glow",
+                      <Trophy className="h-6 w-6" />,
+                      "#1",
+                      "min-h-[200px]",
+                    )}
+                  </div>
+                  {/* Bronze — #3 right */}
+                  <div>
+                    {podiumCard(
+                      top3[2]!,
+                      "bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-900/30 dark:text-amber-400",
+                      "ring-2 ring-amber-400/50",
+                      <Award className="h-5 w-5" />,
+                      "#3",
+                      "min-h-[140px]",
+                    )}
                   </div>
                 </div>
               )}
@@ -97,7 +133,7 @@ export default function LeaderboardPage() {
                     {(top3.length === 3 ? rest : entries).map((entry) => (
                       <div
                         key={entry.rank}
-                        className={`flex items-center gap-4 rounded-lg px-4 py-3 transition-colors hover:bg-muted/30`}
+                        className="flex items-center gap-4 rounded-lg px-4 py-3 transition-colors hover:bg-muted/30"
                       >
                         <Tooltip content={SCORING_FORMULA} side="right">
                           <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-muted text-sm font-medium text-muted-foreground">

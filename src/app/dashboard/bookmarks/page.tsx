@@ -6,6 +6,7 @@ import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getDifficultyBg, formatRelativeTime } from "@/lib/utils";
@@ -36,7 +37,16 @@ export default function BookmarksPage() {
       <Navbar />
       <main id="main-content" className="flex-1">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-12">
-          <div className="mb-8">
+          <Breadcrumb
+            className="mb-6"
+            items={[
+              { label: "Home", href: "/" },
+              { label: "Dashboard", href: "/dashboard" },
+              { label: "Bookmarks" },
+            ]}
+          />
+
+          <div className="mb-8 animate-fade-in-up">
             <h1 className="text-3xl font-bold flex items-center gap-2">
               <Bookmark className="h-7 w-7 text-primary" /> Bookmarks
             </h1>

@@ -6,6 +6,7 @@ import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, FileCode, AlertTriangle } from "lucide-react";
@@ -107,14 +108,15 @@ export default function SubmissionDetailPage({ params }: { params: Promise<{ id:
       <Navbar />
       <main id="main-content" className="flex-1">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 py-8 space-y-6">
-          <Link
-            href="/dashboard"
-            className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-4 w-4" /> Back to dashboard
-          </Link>
+          <Breadcrumb
+            items={[
+              { label: "Home", href: "/" },
+              { label: "Dashboard", href: "/dashboard" },
+              { label: "Submission" },
+            ]}
+          />
 
-          <div className="space-y-2">
+          <div className="space-y-2 animate-fade-in-up">
             <div className="flex items-center gap-3">
               <Link
                 href={`/problems/${submission.problem.slug}`}
@@ -168,6 +170,15 @@ export default function SubmissionDetailPage({ params }: { params: Promise<{ id:
               </pre>
             </CardContent>
           </Card>
+
+          <div>
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+            >
+              <ArrowLeft className="h-4 w-4" /> Back to dashboard
+            </Link>
+          </div>
         </div>
       </main>
       <Footer />

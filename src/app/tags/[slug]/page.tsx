@@ -5,9 +5,10 @@ import Link from "next/link";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { Badge } from "@/components/ui/badge";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tag as TagIcon, ArrowLeft } from "lucide-react";
+import { Tag as TagIcon } from "lucide-react";
 import { getDifficultyBg } from "@/lib/utils";
 
 interface ProblemRow {
@@ -78,13 +79,16 @@ export default function TagPage({ params }: { params: Promise<{ slug: string }> 
       <Navbar />
       <main id="main-content" className="flex-1">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-12">
-          <Link
-            href="/problems"
-            className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4"
-          >
-            <ArrowLeft className="h-4 w-4" /> All problems
-          </Link>
-          <div className="mb-8">
+          <Breadcrumb
+            className="mb-6"
+            items={[
+              { label: "Home", href: "/" },
+              { label: "Problems", href: "/problems" },
+              { label: data.tag.name },
+            ]}
+          />
+
+          <div className="mb-8 animate-fade-in-up">
             <h1 className="text-3xl font-bold flex items-center gap-2">
               <TagIcon className="h-7 w-7 text-primary" />
               {data.tag.name}

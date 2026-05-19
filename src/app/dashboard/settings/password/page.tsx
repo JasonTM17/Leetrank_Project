@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { toast } from "@/hooks/useToast";
 import { Loader2, KeyRound } from "lucide-react";
 
@@ -50,16 +50,28 @@ export default function ChangePasswordPage() {
       <Navbar />
       <main id="main-content" className="flex-1">
         <div className="mx-auto max-w-md px-4 sm:px-6 py-12">
-          <div className="mb-6">
-            <Link href="/dashboard/settings" className="text-sm text-muted-foreground hover:text-foreground">
-              ← Settings
-            </Link>
+          <Breadcrumb
+            className="mb-6"
+            items={[
+              { label: "Home", href: "/" },
+              { label: "Dashboard", href: "/dashboard" },
+              { label: "Settings", href: "/dashboard/settings" },
+              { label: "Change Password" },
+            ]}
+          />
+
+          <div className="mb-6 animate-fade-in-up">
+            <h1 className="text-2xl font-bold flex items-center gap-2">
+              <KeyRound className="h-6 w-6 text-primary" /> Change password
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Choose a strong password you haven&apos;t used before.
+            </p>
           </div>
+
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <KeyRound className="h-4 w-4 text-primary" /> Change password
-              </CardTitle>
+              <CardTitle className="text-base">Update credentials</CardTitle>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -70,16 +82,39 @@ export default function ChangePasswordPage() {
                 )}
                 <div className="space-y-1">
                   <label htmlFor="current" className="text-sm font-medium">Current password</label>
-                  <Input id="current" type="password" autoComplete="current-password" value={currentPassword} onChange={(e) => setCurrent(e.target.value)} required />
+                  <Input
+                    id="current"
+                    type="password"
+                    autoComplete="current-password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrent(e.target.value)}
+                    required
+                  />
                 </div>
                 <div className="space-y-1">
                   <label htmlFor="new" className="text-sm font-medium">New password</label>
-                  <Input id="new" type="password" autoComplete="new-password" minLength={6} value={newPassword} onChange={(e) => setNew(e.target.value)} required />
+                  <Input
+                    id="new"
+                    type="password"
+                    autoComplete="new-password"
+                    minLength={6}
+                    value={newPassword}
+                    onChange={(e) => setNew(e.target.value)}
+                    required
+                  />
                   <p className="text-xs text-muted-foreground">At least 6 characters.</p>
                 </div>
                 <div className="space-y-1">
                   <label htmlFor="confirm" className="text-sm font-medium">Confirm new password</label>
-                  <Input id="confirm" type="password" autoComplete="new-password" minLength={6} value={confirm} onChange={(e) => setConfirm(e.target.value)} required />
+                  <Input
+                    id="confirm"
+                    type="password"
+                    autoComplete="new-password"
+                    minLength={6}
+                    value={confirm}
+                    onChange={(e) => setConfirm(e.target.value)}
+                    required
+                  />
                 </div>
                 <div className="flex justify-end">
                   <Button type="submit" disabled={submitting} className="gap-2">

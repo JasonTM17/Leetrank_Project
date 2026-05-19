@@ -8,6 +8,7 @@ import { Footer } from "@/components/layout/footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/useToast";
@@ -78,7 +79,16 @@ export default function SettingsPage() {
       <Navbar />
       <main id="main-content" className="flex-1">
         <div className="mx-auto max-w-2xl px-4 sm:px-6 py-12">
-          <div className="mb-8">
+          <Breadcrumb
+            className="mb-6"
+            items={[
+              { label: "Home", href: "/" },
+              { label: "Dashboard", href: "/dashboard" },
+              { label: "Settings" },
+            ]}
+          />
+
+          <div className="mb-8 animate-fade-in-up">
             <h1 className="text-3xl font-bold flex items-center gap-2">
               <SettingsIcon className="h-7 w-7 text-primary" /> Settings
             </h1>
@@ -97,7 +107,10 @@ export default function SettingsPage() {
                   <label className="text-sm font-medium">Username</label>
                   <Input value={user?.username ?? ""} disabled />
                   <p className="text-xs text-muted-foreground">
-                    Username can&apos;t be changed yet. <Link href={`/users/${user?.username ?? ""}`} className="text-primary hover:underline">View public profile</Link>.
+                    Username can&apos;t be changed yet.{" "}
+                    <Link href={`/users/${user?.username ?? ""}`} className="text-primary hover:underline">
+                      View public profile
+                    </Link>.
                   </p>
                 </div>
                 <div className="space-y-1">
@@ -125,7 +138,10 @@ export default function SettingsPage() {
                     Paste a URL to an image. Leave empty to remove the current avatar.
                   </p>
                 </div>
-                <div className="flex justify-end">
+                <div className="flex items-center justify-between pt-2">
+                  <Link href="/dashboard/settings/password" className="text-sm text-primary hover:underline">
+                    Change password
+                  </Link>
                   <Button type="submit" disabled={saving} className="gap-2">
                     {saving && <Loader2 className="h-4 w-4 animate-spin" />}
                     Save changes

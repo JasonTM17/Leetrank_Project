@@ -2,12 +2,15 @@
 
 import { useEffect, useState, startTransition } from "react";
 import { Navbar } from "@/components/layout/navbar";
+import { Footer } from "@/components/layout/footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
+import { EmptyState } from "@/components/ui/empty-state";
 import { useAuth } from "@/hooks/useAuth";
-import { Plus, Trash2, Edit, Users, BookOpen, Trophy, Loader2 } from "lucide-react";
+import { Plus, Trash2, Edit, Users, BookOpen, Trophy, Loader2, ShieldAlert } from "lucide-react";
 import { getDifficultyBg } from "@/lib/utils";
 
 interface Problem {
@@ -94,9 +97,14 @@ export default function AdminPage() {
     return (
       <>
         <Navbar />
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <p className="text-muted-foreground">Access denied. Admin only.</p>
-        </div>
+        <main id="main-content" className="flex-1 flex items-center justify-center px-4 py-16">
+          <EmptyState
+            icon={ShieldAlert}
+            title="Access denied"
+            description="This area is restricted to administrators only."
+          />
+        </main>
+        <Footer />
       </>
     );
   }
@@ -106,9 +114,16 @@ export default function AdminPage() {
       <Navbar />
       <main className="flex-1">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex items-center justify-between mb-8">
+          <Breadcrumb
+            className="mb-6"
+            items={[{ label: "Home", href: "/" }, { label: "Admin" }]}
+          />
+
+          <div className="flex items-center justify-between mb-8 animate-fade-in-up">
             <div>
-              <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+              <h1 className="text-3xl font-bold">
+                <span className="gradient-text">Admin</span> Dashboard
+              </h1>
               <p className="text-muted-foreground mt-1">Manage problems, users, and contests</p>
             </div>
           </div>
@@ -140,8 +155,8 @@ export default function AdminPage() {
           ) : activeTab === "problems" ? (
             <div>
               <div className="flex justify-end mb-4">
-                <Button onClick={() => setShowForm(!showForm)} size="sm">
-                  <Plus className="h-4 w-4 mr-1" /> Add Problem
+                <Button onClick={() => setShowForm(!showForm)} size="sm" className="gap-1">
+                  <Plus className="h-4 w-4" /> Add Problem
                 </Button>
               </div>
 
@@ -170,69 +185,83 @@ export default function AdminPage() {
                 </Card>
               )}
 
+              {problems.length === 0 ? (
+                <EmptyState
+                  icon={BookOpen}
+                  title="No problems yet"
+                  description="Add the first problem to get started."
+                />
+              ) : (
+                <div className="rounded-lg border overflow-hidden">
+                  <table className="w-full">
+                    <thead className="bg-muted/50">
+                      <tr>
+                        <th className="text-left px-4 py-3 text-sm font-medium">Title</th>
+                        <th className="text-left px-4 py-3 text-sm font-medium hidden md:table-cell">Tags</th>
+                        <th className="text-left px-4 py-3 text-sm font-medium">Difficulty</th>
+                        <th className="text-left px-4 py-3 text-sm font-medium">Submissions</th>
+                        <th className="text-right px-4 py-3 text-sm font-medium">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {problems.map((p) => (
+                        <tr key={p.id} className="hover:bg-muted/30">
+                          <td className="px-4 py-3 font-medium">{p.title}</td>
+                          <td className="px-4 py-3 hidden md:table-cell">
+                            <div className="flex gap-1">{p.tags.slice(0, 2).map(t => <Badge key={t.name} variant="secondary" className="text-xs">{t.name}</Badge>)}</div>
+                          </td>
+                          <td className="px-4 py-3"><Badge className={getDifficultyBg(p.difficulty)}>{p.difficulty}</Badge></td>
+                          <td className="px-4 py-3 text-sm text-muted-foreground">{p._count?.submissions || 0}</td>
+                          <td className="px-4 py-3 text-right">
+                            <div className="flex justify-end gap-1">
+                              <Button variant="ghost" size="icon" className="h-8 w-8"><Edit className="h-4 w-4" /></Button>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDeleteProblem(p.id)}><Trash2 className="h-4 w-4" /></Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          ) : activeTab === "users" ? (
+            users.length === 0 ? (
+              <EmptyState icon={Users} title="No users found" description="Users will appear here once they register." />
+            ) : (
               <div className="rounded-lg border overflow-hidden">
                 <table className="w-full">
                   <thead className="bg-muted/50">
                     <tr>
-                      <th className="text-left px-4 py-3 text-sm font-medium">Title</th>
-                      <th className="text-left px-4 py-3 text-sm font-medium hidden md:table-cell">Tags</th>
-                      <th className="text-left px-4 py-3 text-sm font-medium">Difficulty</th>
-                      <th className="text-left px-4 py-3 text-sm font-medium">Submissions</th>
-                      <th className="text-right px-4 py-3 text-sm font-medium">Actions</th>
+                      <th className="text-left px-4 py-3 text-sm font-medium">Username</th>
+                      <th className="text-left px-4 py-3 text-sm font-medium">Email</th>
+                      <th className="text-left px-4 py-3 text-sm font-medium">Role</th>
+                      <th className="text-left px-4 py-3 text-sm font-medium">Joined</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
-                    {problems.map((p) => (
-                      <tr key={p.id} className="hover:bg-muted/30">
-                        <td className="px-4 py-3 font-medium">{p.title}</td>
-                        <td className="px-4 py-3 hidden md:table-cell">
-                          <div className="flex gap-1">{p.tags.slice(0, 2).map(t => <Badge key={t.name} variant="secondary" className="text-xs">{t.name}</Badge>)}</div>
-                        </td>
-                        <td className="px-4 py-3"><Badge className={getDifficultyBg(p.difficulty)}>{p.difficulty}</Badge></td>
-                        <td className="px-4 py-3 text-sm text-muted-foreground">{p._count?.submissions || 0}</td>
-                        <td className="px-4 py-3 text-right">
-                          <div className="flex justify-end gap-1">
-                            <Button variant="ghost" size="icon" className="h-8 w-8"><Edit className="h-4 w-4" /></Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDeleteProblem(p.id)}><Trash2 className="h-4 w-4" /></Button>
-                          </div>
-                        </td>
+                    {users.map((u) => (
+                      <tr key={u.id} className="hover:bg-muted/30">
+                        <td className="px-4 py-3 font-medium">{u.username}</td>
+                        <td className="px-4 py-3 text-sm text-muted-foreground">{u.email}</td>
+                        <td className="px-4 py-3"><Badge variant={u.role === "admin" ? "default" : "secondary"}>{u.role}</Badge></td>
+                        <td className="px-4 py-3 text-sm text-muted-foreground">{new Date(u.createdAt).toLocaleDateString()}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-            </div>
-          ) : activeTab === "users" ? (
-            <div className="rounded-lg border overflow-hidden">
-              <table className="w-full">
-                <thead className="bg-muted/50">
-                  <tr>
-                    <th className="text-left px-4 py-3 text-sm font-medium">Username</th>
-                    <th className="text-left px-4 py-3 text-sm font-medium">Email</th>
-                    <th className="text-left px-4 py-3 text-sm font-medium">Role</th>
-                    <th className="text-left px-4 py-3 text-sm font-medium">Joined</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {users.map((u) => (
-                    <tr key={u.id} className="hover:bg-muted/30">
-                      <td className="px-4 py-3 font-medium">{u.username}</td>
-                      <td className="px-4 py-3 text-sm text-muted-foreground">{u.email}</td>
-                      <td className="px-4 py-3"><Badge variant={u.role === "admin" ? "default" : "secondary"}>{u.role}</Badge></td>
-                      <td className="px-4 py-3 text-sm text-muted-foreground">{new Date(u.createdAt).toLocaleDateString()}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            )
           ) : (
-            <div className="text-center py-20 text-muted-foreground">
-              <Trophy className="h-12 w-12 mx-auto mb-4 opacity-30" />
-              <p>Contest management coming soon</p>
-            </div>
+            <EmptyState
+              icon={Trophy}
+              title="Contest management coming soon"
+              description="This section is under construction. Check back in a future release."
+            />
           )}
         </div>
       </main>
+      <Footer />
     </>
   );
 }
