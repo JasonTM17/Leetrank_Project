@@ -19,6 +19,9 @@ on:
         required: false
         default: "0"
 
+permissions:
+  contents: read
+
 concurrency:
   group: load-test-${{ github.ref }}
   cancel-in-progress: true

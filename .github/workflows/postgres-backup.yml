@@ -21,6 +21,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: postgres-backup-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   dump:
     runs-on: ubuntu-latest

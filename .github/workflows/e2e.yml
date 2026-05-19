@@ -14,9 +14,12 @@ on:
       - "e2e/**"
       - ".github/workflows/e2e.yml"
 
+permissions:
+  contents: read
+
 concurrency:
   group: e2e-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   e2e:

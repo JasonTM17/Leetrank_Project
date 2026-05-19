@@ -9,6 +9,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: sbom-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   sbom:
     name: Generate SBOM (CycloneDX)
