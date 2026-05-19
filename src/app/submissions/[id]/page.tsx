@@ -10,6 +10,7 @@ import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PercentileCard } from "@/components/submission/percentile-card";
+import { PlaybackViewer } from "@/components/submission/playback-viewer";
 import { ArrowLeft, FileCode, AlertTriangle } from "lucide-react";
 import { formatRelativeTime, formatDate, getDifficultyBg } from "@/lib/utils";
 import { languageLabel } from "@/lib/languages";
@@ -174,6 +175,8 @@ export default function SubmissionDetailPage({ params }: { params: Promise<{ id:
               </pre>
             </CardContent>
           </Card>
+
+          <PlaybackViewer submissionId={submission.id} />
 
           <div>
             <Link
