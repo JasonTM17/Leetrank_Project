@@ -135,6 +135,10 @@ and harden the platform across security, observability, and CI lanes.
 
 ## [Unreleased]
 
+_No unreleased changes._
+
+## [0.1.0] - 2026-04-01
+
 ### Added
 - 30+ new public API routes covering search, trending, random, statistics,
   contest lifecycle (join/leave/active/upcoming/me/leaderboard/entries),
