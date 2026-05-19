@@ -1,11 +1,20 @@
 import { cn } from "@/lib/utils";
 import { HTMLAttributes, forwardRef } from "react";
 
-const Card = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => (
+interface CardProps extends HTMLAttributes<HTMLDivElement> {
+  /** Adds a lift-on-hover treatment: elevated shadow + subtle translate. */
+  hoverable?: boolean;
+}
+
+const Card = forwardRef<HTMLDivElement, CardProps>(
+  ({ className, hoverable, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn("rounded-lg border bg-card text-card-foreground shadow-sm", className)}
+      className={cn(
+        "rounded-lg border bg-card text-card-foreground shadow-sm",
+        hoverable && "transition-all motion-safe:duration-200 hover:shadow-elevated hover:-translate-y-0.5",
+        className
+      )}
       {...props}
     />
   )
