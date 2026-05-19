@@ -1,22 +1,50 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderToString } from "react-dom/server";
-import { Toaster } from "@/components/ui/toaster";
-import { useToastStore, toast } from "@/hooks/useToast";
+import type { Toast } from "@/hooks/useToast";
 
 /**
- * Toaster is a thin client-only render of the toast store, so we can
- * exercise its branches without a DOM by:
- *   1. Driving the zustand store directly (push / dismiss / clear).
- *   2. Calling renderToString to get the markup the React pipeline
- *      would emit on a server render or hydrate target.
+ * Toaster reads from the zustand store via useSyncExternalStore.
+ * On a node-only renderToString pass, useSyncExternalStore reads the
+ * server snapshot — which for zustand is whatever the store held at
+ * module init (empty), so runtime store mutations don't surface in
+ * SSR markup.
  *
- * That hits every branch except `useEffect`-driven auto-dismissal,
- * which lives in `useAutoDismiss` (covered separately in
- * useToast.test.ts and below via timer simulation).
+ * Instead of fighting that, we mock @/hooks/useToast so the selector
+ * returns a deterministic toasts array per test. That lets us verify
+ * exactly what markup the component emits for each variant + branch
+ * combination — which is what production users actually see — without
+ * pulling jsdom or @testing-library/react into devDeps.
+ *
+ * Auto-dismiss timing is covered by useToast.test.ts; this file
+ * focuses on the rendered surface: variants, ARIA, dismiss button,
+ * description visibility, and empty-state.
  */
 
+const dismissSpy = vi.fn();
+let mockToasts: Toast[] = [];
+
+vi.mock("@/hooks/useToast", () => ({
+  useToastStore: <T,>(selector: (s: { toasts: Toast[]; dismiss: (id: string) => void }) => T) =>
+    selector({ toasts: mockToasts, dismiss: dismissSpy }),
+  useAutoDismiss: () => {},
+}));
+
+// Import AFTER vi.mock so the real module resolution sees our stub.
+import { Toaster } from "@/components/ui/toaster";
+
+function setToasts(...next: Partial<Toast>[]) {
+  mockToasts = next.map((t, i) => ({
+    id: t.id ?? `toast-${i}`,
+    variant: t.variant ?? "default",
+    duration: t.duration ?? 4000,
+    title: t.title,
+    description: t.description,
+  }));
+}
+
 beforeEach(() => {
-  useToastStore.getState().clear();
+  mockToasts = [];
+  dismissSpy.mockReset();
 });
 
 describe("Toaster — render", () => {
@@ -26,64 +54,68 @@ describe("Toaster — render", () => {
   });
 
   it("renders a region landmark with the notifications label when toasts exist", () => {
-    toast.success("Saved");
+    setToasts({ title: "Saved", variant: "success" });
     const html = renderToString(<Toaster />);
     expect(html).toContain('role="region"');
     expect(html).toContain('aria-label="Notifications"');
   });
 
   it("renders the toast title and description text", () => {
-    toast.info("Heads up", "More details here");
+    setToasts({ title: "Heads up", description: "More details here", variant: "info" });
     const html = renderToString(<Toaster />);
     expect(html).toContain("Heads up");
     expect(html).toContain("More details here");
   });
 
-  it("applies the success variant border + background classes for toast.success", () => {
-    toast.success("Yay");
+  it("applies the success variant border + background classes", () => {
+    setToasts({ title: "Yay", variant: "success" });
     const html = renderToString(<Toaster />);
     expect(html).toContain("border-success/30");
     expect(html).toContain("bg-success/10");
   });
 
-  it("applies the destructive variant classes for toast.error", () => {
-    toast.error("Oops");
+  it("applies the destructive variant classes for the error variant", () => {
+    setToasts({ title: "Oops", variant: "error" });
     const html = renderToString(<Toaster />);
     expect(html).toContain("border-destructive/30");
     expect(html).toContain("bg-destructive/10");
   });
 
-  it("applies the warning variant classes for toast.warning", () => {
-    toast.warning("Careful");
+  it("applies the warning variant classes", () => {
+    setToasts({ title: "Careful", variant: "warning" });
     const html = renderToString(<Toaster />);
     expect(html).toContain("border-warning/30");
   });
 
-  it("applies the primary/info variant classes for toast.info", () => {
-    toast.info("FYI");
+  it("applies the primary classes for the info variant", () => {
+    setToasts({ title: "FYI", variant: "info" });
     const html = renderToString(<Toaster />);
     expect(html).toContain("border-primary/30");
   });
 
-  it("applies the default neutral border + bg classes for toast.show", () => {
-    toast.show("Plain");
+  it("applies the default neutral border + bg classes for the default variant", () => {
+    setToasts({ title: "Plain", variant: "default" });
     const html = renderToString(<Toaster />);
     expect(html).toContain("border-border");
     expect(html).toContain("bg-card");
   });
 
-  it("renders a dismiss button with the Dismiss notification aria-label per toast", () => {
-    toast.success("a");
-    toast.error("b");
+  it("renders one Dismiss notification button per toast", () => {
+    setToasts(
+      { title: "a", variant: "success" },
+      { title: "b", variant: "error" }
+    );
     const html = renderToString(<Toaster />);
     const matches = html.match(/aria-label="Dismiss notification"/g) ?? [];
     expect(matches.length).toBe(2);
   });
 
   it("renders multiple stacked toasts in insertion order", () => {
-    toast.success("first");
-    toast.error("second");
-    toast.info("third");
+    setToasts(
+      { title: "first", variant: "success" },
+      { title: "second", variant: "error" },
+      { title: "third", variant: "info" }
+    );
     const html = renderToString(<Toaster />);
     const firstIdx = html.indexOf("first");
     const secondIdx = html.indexOf("second");
@@ -93,34 +125,34 @@ describe("Toaster — render", () => {
     expect(thirdIdx).toBeGreaterThan(secondIdx);
   });
 
-  it("omits the description div when no description was supplied", () => {
-    toast.success("title-only");
+  it("omits the description block when no description was supplied", () => {
+    setToasts({ title: "title-only", variant: "success" });
     const html = renderToString(<Toaster />);
     expect(html).toContain("title-only");
-    // The description block is only rendered when t.description is truthy.
     expect(html).not.toContain("text-foreground/70");
   });
 
-  it("renders the animate-fade-in-up class on each toast for entrance polish", () => {
-    toast.success("animate me");
+  it("includes animate-fade-in-up on rendered toasts for entrance polish", () => {
+    setToasts({ title: "animate me", variant: "success" });
     const html = renderToString(<Toaster />);
     expect(html).toContain("animate-fade-in-up");
   });
-});
 
-describe("Toaster — store integration", () => {
-  it("dismiss removes only the targeted toast leaving siblings intact", () => {
-    const idA = useToastStore.getState().push({ title: "a", variant: "default" });
-    useToastStore.getState().push({ title: "b", variant: "default" });
-    useToastStore.getState().dismiss(idA);
-    const left = useToastStore.getState().toasts.map((t) => t.title);
-    expect(left).toEqual(["b"]);
+  it("renders aria-live=polite on each toast for screen-reader announcements", () => {
+    setToasts(
+      { title: "a", variant: "success" },
+      { title: "b", variant: "error" }
+    );
+    const html = renderToString(<Toaster />);
+    const matches = html.match(/aria-live="polite"/g) ?? [];
+    expect(matches.length).toBe(2);
   });
 
-  it("re-renders to empty markup once every toast is dismissed", () => {
-    const id = useToastStore.getState().push({ title: "x", variant: "default" });
-    useToastStore.getState().dismiss(id);
+  it("renders only the title block when description is the empty string", () => {
+    setToasts({ title: "only", description: "", variant: "info" });
     const html = renderToString(<Toaster />);
-    expect(html).toBe("");
+    expect(html).toContain("only");
+    // Empty-string descriptions should not produce a description div.
+    expect(html).not.toContain("text-foreground/70");
   });
 });
