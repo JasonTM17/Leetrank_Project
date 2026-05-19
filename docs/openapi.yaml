@@ -339,6 +339,44 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
 
+  /api/auth/profile:
+    get:
+      tags: [Auth]
+      summary: Current user's public profile (read symmetric to PATCH)
+      description: >
+        Returns the public-profile shape (id, username, avatar, bio, createdAt)
+        for the signed-in user. /api/auth/me is the private session inspector
+        and includes email + role; /api/auth/profile is the symmetric read for
+        the same fields PATCH writes, so clients editing a profile only need
+        the one endpoint pair.
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Public profile of the signed-in user
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [Auth]
+      summary: Update the signed-in user's profile (bio, avatar)
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                bio: { type: string, maxLength: 500 }
+                avatar: { type: string, format: uri, nullable: true }
+      responses:
+        '200':
+          description: Updated user
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { description: Rate limited }
+
   /api/problems:
     get:
       tags: [Problems]
@@ -654,7 +692,11 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
     post:
       tags: [Bookmarks]
-      summary: Toggle a bookmark
+      summary: Toggle a bookmark (legacy back-compat path)
+      description: >
+        POST /api/bookmarks acts as a toggle: creates the row if missing,
+        deletes it otherwise. New clients should prefer DELETE /api/bookmarks
+        for explicit removal — POST is kept for the existing UI button.
       security:
         - cookieAuth: []
       requestBody:
@@ -671,6 +713,26 @@ paths:
           description: New state
         '401': { $ref: '#/components/responses/Unauthorized' }
         '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Bookmarks]
+      summary: Remove a bookmark (RESTful)
+      description: >
+        Idempotent — removing a bookmark that does not exist returns
+        `{ bookmarked: false }` without a 404. Pair with POST for the
+        traditional toggle, or call directly when the client knows the
+        intended state.
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: query
+          name: problemId
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Bookmark removed (or already absent)
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
 
   /api/users/{username}:
     get:
