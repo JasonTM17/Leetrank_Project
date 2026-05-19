@@ -8,7 +8,7 @@ import { DropdownMenu, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparato
 import { Sheet } from "@/components/ui/sheet";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { LocaleSwitcher } from "@/components/layout/locale-switcher";
-import { User, LogOut, Shield, Bookmark, ListChecks, Settings as SettingsIcon, Menu, Search } from "lucide-react";
+import { User, LogOut, Shield, Bookmark, ListChecks, Settings as SettingsIcon, Menu, Search, Activity } from "lucide-react";
 import { useEffect, useState, startTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
@@ -142,6 +142,9 @@ export function Navbar() {
                     <DropdownMenuItem href="/admin" icon={<Shield className="h-4 w-4" />}>
                       {t("admin")}
                     </DropdownMenuItem>
+                    <DropdownMenuItem href="/admin/devops" icon={<Activity className="h-4 w-4" />}>
+                      DevOps
+                    </DropdownMenuItem>
                   </>
                 )}
                 <DropdownMenuSeparator />
@@ -230,9 +233,14 @@ export function Navbar() {
                 <ListChecks className="h-4 w-4" /> {t("submissions")}
               </Link>
               {user.role === "admin" && (
-                <Link href="/admin" className="flex items-center gap-2 rounded-md px-3 py-2.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground motion-safe:transition-colors">
-                  <Shield className="h-4 w-4" /> {t("admin")}
-                </Link>
+                <>
+                  <Link href="/admin" className="flex items-center gap-2 rounded-md px-3 py-2.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground motion-safe:transition-colors">
+                    <Shield className="h-4 w-4" /> {t("admin")}
+                  </Link>
+                  <Link href="/admin/devops" className="flex items-center gap-2 rounded-md px-3 py-2.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground motion-safe:transition-colors">
+                    <Activity className="h-4 w-4" /> DevOps
+                  </Link>
+                </>
               )}
               <button
                 onClick={handleLogout}
