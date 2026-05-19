@@ -35,6 +35,10 @@ jobs:
             context: .
             dockerfile: apps/auth/Dockerfile
             image: nguyenson1710/leetrank-auth
+          - service: auth-go
+            context: ./services/auth-go
+            dockerfile: services/auth-go/Dockerfile
+            image: nguyenson1710/leetrank-auth-go
           - service: judge
             context: ./judge-service
             dockerfile: judge-service/Dockerfile
