@@ -21,7 +21,7 @@ jobs:
           node-version: 20
 
       - name: Install deps (npm — flat tree for cyclonedx)
-        run: npm install --no-audit --no-fund --legacy-peer-deps
+        run: npm install --no-audit --no-fund
 
       - name: Generate CycloneDX SBOM
         run: npx --yes @cyclonedx/cyclonedx-npm --output-file sbom.cdx.json
