@@ -124,6 +124,8 @@
     "medium": "Trung bình",
     "hard": "Khó",
     "tags": "Thẻ",
+    "topics": "Chủ đề",
+    "companies": "Công ty",
     "status": "Trạng thái",
     "solved": "Đã giải",
     "notSolved": "Chưa giải",
@@ -199,6 +201,18 @@
     "toastSubmitFailed": "Nộp bài thất bại",
     "toastNetworkBody": "Lỗi mạng. Kiểm tra kết nối và thử lại.",
     "toastRequestFailed": "Yêu cầu thất bại ({status})"
+  },
+  "editor": {
+    "settings": "Cài đặt trình soạn thảo",
+    "close": "Đóng",
+    "vim": "Chế độ Vim",
+    "theme": "Giao diện",
+    "themeDark": "Tối",
+    "themeLight": "Sáng",
+    "themeHighContrast": "Tương phản cao",
+    "fontSize": "Cỡ chữ",
+    "tabWidth": "Độ rộng tab",
+    "wordWrap": "Tự xuống dòng"
   },
   "contests": {
     "title": "Cuộc thi",
@@ -300,5 +314,18 @@
   "footer": {
     "builtForLearning": "Xây dựng cho việc học.",
     "status": "Tình trạng"
+  },
+  "daily": {
+    "title": "Thử thách hằng ngày",
+    "empty": "Thử thách hôm nay sẽ sớm được công bố.",
+    "loading": "Đang tải thử thách hằng ngày",
+    "streak": "Chuỗi",
+    "longest": "Dài nhất",
+    "solved": "đã giải hôm nay",
+    "cta": "Giải hôm nay",
+    "ctaSolved": "Mở bài",
+    "solvedToday": "Tuyệt — bạn đã giải xong thử thách hôm nay.",
+    "keepStreak": "Giữ chuỗi của bạn.",
+    "startStreak": "Bắt đầu một chuỗi mới hôm nay."
   }
 }

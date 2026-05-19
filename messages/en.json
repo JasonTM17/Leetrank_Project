@@ -124,6 +124,8 @@
     "medium": "Medium",
     "hard": "Hard",
     "tags": "Tags",
+    "topics": "Topics",
+    "companies": "Companies",
     "status": "Status",
     "solved": "Solved",
     "notSolved": "Not solved",
@@ -199,6 +201,18 @@
     "toastSubmitFailed": "Submission failed",
     "toastNetworkBody": "Network error. Check your connection and try again.",
     "toastRequestFailed": "Request failed ({status})"
+  },
+  "editor": {
+    "settings": "Editor settings",
+    "close": "Close",
+    "vim": "Vim mode",
+    "theme": "Theme",
+    "themeDark": "Dark",
+    "themeLight": "Light",
+    "themeHighContrast": "High contrast",
+    "fontSize": "Font size",
+    "tabWidth": "Tab width",
+    "wordWrap": "Word wrap"
   },
   "contests": {
     "title": "Contests",
@@ -300,5 +314,18 @@
   "footer": {
     "builtForLearning": "Built for learning.",
     "status": "Status"
+  },
+  "daily": {
+    "title": "Daily Challenge",
+    "empty": "Today's challenge will be posted soon.",
+    "loading": "Loading daily challenge",
+    "streak": "Streak",
+    "longest": "Longest",
+    "solved": "solved today",
+    "cta": "Solve today",
+    "ctaSolved": "Open problem",
+    "solvedToday": "Nice — you've solved today's challenge.",
+    "keepStreak": "Keep your streak alive.",
+    "startStreak": "Start a new streak today."
   }
 }
