@@ -163,8 +163,8 @@ export default function ContestDetailPage({
     );
   }
 
-  const sortedProblems = [...contest.problems].sort((a, b) => a.order - b.order);
-  const sortedEntries = [...contest.entries].sort((a, b) => b.score - a.score);
+  const sortedProblems = [...(contest.problems ?? [])].sort((a, b) => a.order - b.order);
+  const sortedEntries = [...(contest.entries ?? [])].sort((a, b) => b.score - a.score);
 
   const joinTooltip =
     contest.status === "active"
@@ -216,7 +216,7 @@ export default function ContestDetailPage({
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Users className="h-4 w-4" aria-hidden="true" />
-                  <span>{contest.entries.length} participants</span>
+                  <span>{contest.entries?.length ?? 0} participants</span>
                 </div>
               </div>
 
