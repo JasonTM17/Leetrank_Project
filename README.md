@@ -18,9 +18,57 @@ Solve, judge, rank — across 30+ languages, with real-time leaderboards and con
 
 ---
 
+## Demo
+
+<p align="center">
+  <img src="docs/screenshots/demo.gif" alt="LeetRank end-to-end demo: home, problems, editor, submit, verdict" width="900"/>
+</p>
+
+<p align="center">
+  <em>Browse problems &middot; open the Monaco editor &middot; submit &middot; see verdict &middot; climb the leaderboard.</em>
+</p>
+
+## Screenshots
+
+<table>
+  <tr>
+    <td width="50%"><a href="docs/screenshots/home.png"><img src="docs/screenshots/home.png" alt="Home" width="100%"/></a><div align="center"><sub><b>Home</b></sub></div></td>
+    <td width="50%"><a href="docs/screenshots/problems.png"><img src="docs/screenshots/problems.png" alt="Problems" width="100%"/></a><div align="center"><sub><b>Problems</b></sub></div></td>
+  </tr>
+  <tr>
+    <td width="50%"><a href="docs/screenshots/problem-detail.png"><img src="docs/screenshots/problem-detail.png" alt="Problem detail with Monaco editor" width="100%"/></a><div align="center"><sub><b>Problem &middot; editor &middot; verdict</b></sub></div></td>
+    <td width="50%"><a href="docs/screenshots/leaderboard.png"><img src="docs/screenshots/leaderboard.png" alt="Leaderboard" width="100%"/></a><div align="center"><sub><b>Leaderboard</b></sub></div></td>
+  </tr>
+  <tr>
+    <td width="50%"><a href="docs/screenshots/contests.png"><img src="docs/screenshots/contests.png" alt="Contests" width="100%"/></a><div align="center"><sub><b>Contests</b></sub></div></td>
+    <td width="50%"><a href="docs/screenshots/status.png"><img src="docs/screenshots/status.png" alt="Public status page" width="100%"/></a><div align="center"><sub><b>Public status page</b></sub></div></td>
+  </tr>
+</table>
+
+<p align="center">
+  Also available: <a href="docs/screenshots/api-docs.png">API docs</a> &middot;
+  <a href="docs/screenshots/dark/home.png">dark mode</a> &middot;
+  <a href="docs/screenshots/mobile/home.png">mobile</a> &middot;
+  <a href="docs/screenshots/demo.webm">demo.webm</a>
+</p>
+
+## Try it locally
+
+```bash
+git clone https://github.com/JasonTM17/Leetrank_Project.git
+cd Leetrank_Project
+cp .env.example .env
+docker compose -f docker-compose.yml -f docker-compose.local.yml up -d
+# Then open http://localhost:3000
+```
+
+Full instructions, port matrix, and native-dev workflow are in [Run locally](#run-locally) below.
+
+---
+
 ## Highlights
 
-- **30+ languages judged in isolation.** Python, Go, Rust, C/C++, Java, Kotlin, Scala, JS/TS, Ruby, PHP, C#, Lua, R, SQL — every submission runs in a per-process Docker sandbox with strict CPU/memory caps and pattern blocklists. See [ADR 0020](docs/adr/0020-judge-sandbox-model.md).
+- **30+ languages judged in isolation.** Python, Go, Rust, C/C++, Java, Kotlin, Scala, JS/TS, Ruby, PHP, C#, Lua, R, SQL — every submission runs in a per-process [nsjail](https://github.com/google/nsjail) (Linux namespaces + cgroups + seccomp + capability drop) with strict CPU/memory/process/file-descriptor caps. Pattern blocklists are pre-flight defence-in-depth, not the boundary. See [ADR 0020](docs/adr/0020-judge-sandbox-model.md).
 - **True microservices.** Frontend (Next.js 16) and backend are split into independently deployable services: `apps/api` (read API), `apps/auth` + `services/auth-go` (auth cutover), `services/problems-go` and `services/submissions-go` (Go rewrites), `judge-service` (Go sandbox runner). Each has its own Dockerfile, port, and lifecycle.
 - **Real-time leaderboards.** Redis sorted sets for `O(log N)` rank-by-score lookups; Postgres remains the source of truth. See [ADR 0022](docs/adr/0022-leaderboard-caching-strategy.md).
 - **Glicko-2 rating.** Per-user skill rating with confidence intervals — picked over plain Elo because contests are sparse and bursty. See [ADR 0021](docs/adr/0021-rating-algorithm.md).
@@ -114,7 +162,7 @@ Demo accounts after seeding: `admin@leetrank.local` / `Admin123!` and `demo@leet
 ## Features
 
 - **Problem catalogue.** 100+ seed problems across easy/medium/hard, tagged by topic, with full Markdown statements, sample I/O, and visible test cases.
-- **Online judge.** Submit code in any of 30+ languages; per-submission Docker sandbox enforces CPU/wall-clock/memory limits and blocks dangerous syscalls via pattern lists.
+- **Online judge.** Submit code in any of 30+ languages; per-submission nsjail sandbox enforces CPU/wall-clock/memory/process limits and isolates the process via fresh PID, mount, and network namespaces. Pattern blocklists run as pre-flight defence-in-depth.
 - **Contests.** Time-boxed events with their own problem set, frozen leaderboard, and post-event rating recompute.
 - **Leaderboards.** All-time, weekly, contest-scoped — backed by Redis sorted sets with Postgres as source of truth.
 - **Glicko-2 ratings.** Per-user rating with confidence interval; better than Elo for sparse, bursty competition.
@@ -139,7 +187,7 @@ Demo accounts after seeding: `admin@leetrank.local` / `Admin123!` and `demo@leet
 | Reverse proxy | Caddy 2 | Auto-TLS, simple config. See [ADR 0008](docs/adr/0008-caddy-as-reverse-proxy.md). |
 | Auth | jose (JWT HS256, Ed25519 in 3.1.5+) | Edge-compatible, RFC-correct. See [ADR 0004](docs/adr/0004-jwt-with-jose-not-jsonwebtoken.md). |
 | Validation | Zod (TS) / go-playground/validator (Go) | Schema-first server-side validation. See [ADR 0006](docs/adr/0006-zod-for-server-validation.md). |
-| Judge runtime | Go 1.22, exec.CommandContext + Docker | Goroutine fan-out per test case, hard SIGKILL on timeout. See [ADR 0003](docs/adr/0003-go-for-judge-service.md). |
+| Judge runtime | Go 1.22, exec.CommandContext + nsjail | Per-submission nsjail jail (Linux NS + cgroups + seccomp + cap drop). Goroutine fan-out per test case, hard SIGKILL on timeout. See [ADR 0003](docs/adr/0003-go-for-judge-service.md), [ADR 0020](docs/adr/0020-judge-sandbox-model.md). |
 | Observability | zerolog + Prometheus + OpenTelemetry | One ADR-blessed stack across services. See [ADR 0024](docs/adr/0024-observability-stack.md). |
 | CI/CD | GitHub Actions, Docker Hub | Build + push on every `main` commit. |
 
