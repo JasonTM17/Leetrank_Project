@@ -47,3 +47,15 @@ services:
   judge:
     ports: !override
       - "19090:9090"
+
+  submissions-go:
+    ports: !override
+      - "14012:4012"
+    environment:
+      <<: *postgres-url
+
+  problems-go:
+    ports: !override
+      - "14013:4013"
+    environment:
+      <<: *postgres-url
