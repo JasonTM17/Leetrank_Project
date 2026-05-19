@@ -305,6 +305,22 @@ func (h *handler) login(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 	defer cancel()
 
+	ip := httpx.ClientIP(r)
+	ua := r.UserAgent()
+
+	// Persistent account lockout: 10 failures in 1h = 15min lock,
+	// stacked on top of the in-memory window above.
+	if status, err := isLocked(ctx, h.pool, accountKey); err == nil && status.locked {
+		retryAfter := status.retryAfterSeconds(time.Now().UTC())
+		w.Header().Set("Retry-After", strconv.Itoa(retryAfter))
+		httpx.JSON(w, http.StatusTooManyRequests, map[string]string{
+			"error":      "account_locked",
+			"message":    "Too many failed login attempts. Account locked.",
+			"retryAfter": strconv.Itoa(retryAfter),
+		})
+		return
+	}
+
 	var (
 		id        string
 		email     string
@@ -324,14 +340,22 @@ func (h *handler) login(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		// User not found — still run bcrypt to prevent timing enumeration.
 		_ = bcrypt.CompareHashAndPassword(dummyHash, []byte(req.Password))
+		_ = recordLoginAttempt(ctx, h.pool, accountKey, "", ip, ua, false)
+		h.maybeLockAccount(ctx, accountKey, w)
 		httpx.JSON(w, http.StatusUnauthorized, map[string]string{"error": "invalid credentials"})
 		return
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(hashStr), []byte(req.Password)); err != nil {
+		_ = recordLoginAttempt(ctx, h.pool, accountKey, id, ip, ua, false)
+		h.maybeLockAccount(ctx, accountKey, w)
 		httpx.JSON(w, http.StatusUnauthorized, map[string]string{"error": "invalid credentials"})
 		return
 	}
+
+	// Successful login — record + clear any stale lockout row.
+	_ = recordLoginAttempt(ctx, h.pool, accountKey, id, ip, ua, true)
+	_ = clearLockout(ctx, h.pool, accountKey)
 
 	token, err := h.ks.Sign(id, role, jwtAudience, jwks.AccessTTL)
 	if err != nil {
@@ -359,6 +383,24 @@ func (h *handler) login(w http.ResponseWriter, r *http.Request) {
 		"refreshToken": refresh,
 		"expiresIn":    int(jwks.AccessTTL.Seconds()),
 	})
+}
+
+// maybeLockAccount counts recent failures for an identifier and, if the
+// threshold is hit, persists an AccountLockout row. Best-effort: any DB
+// error is swallowed so a failed login still returns 401 cleanly.
+func (h *handler) maybeLockAccount(ctx context.Context, identifier string, w http.ResponseWriter) {
+	if h.pool == nil {
+		return
+	}
+	count, err := recentFailureCount(ctx, h.pool, identifier)
+	if err != nil || count < lockoutThreshold {
+		return
+	}
+	until, err := lockAccount(ctx, h.pool, identifier, "too_many_failed_logins")
+	if err != nil {
+		return
+	}
+	w.Header().Set("Retry-After", strconv.Itoa(int(time.Until(until).Seconds())+1))
 }
 
 // ── me ────────────────────────────────────────────────────────────────────────

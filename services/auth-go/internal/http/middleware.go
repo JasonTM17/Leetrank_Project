@@ -152,3 +152,7 @@ func clientIP(r *http.Request) string {
 	}
 	return r.RemoteAddr
 }
+
+// ClientIP is the exported variant of clientIP, used by handlers that
+// need to record the remote IP (audit log, lockout policy).
+func ClientIP(r *http.Request) string { return clientIP(r) }
