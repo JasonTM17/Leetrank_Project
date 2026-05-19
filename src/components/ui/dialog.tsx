@@ -24,15 +24,33 @@ const SIZE_CLASS: Record<NonNullable<DialogProps["size"]>, string> = {
  * Headless-style dialog. Uses the native <dialog> element under the hood for
  * focus trapping and Escape handling, then layers our own styles + close
  * button on top so we don't need a separate animation library.
+ *
+ * Focus management:
+ *   - On open, autofocuses the first interactive element inside the body.
+ *   - On close, restores focus to the trigger that opened the dialog.
  */
 export function Dialog({ open, onClose, title, description, children, size = "md" }: DialogProps) {
   const ref = useRef<HTMLDialogElement>(null);
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const previouslyFocused = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     const node = ref.current;
     if (!node) return;
-    if (open && !node.open) node.showModal();
-    else if (!open && node.open) node.close();
+    if (open && !node.open) {
+      previouslyFocused.current = (document.activeElement as HTMLElement) ?? null;
+      node.showModal();
+      // Focus first focusable element in the body, fall back to dialog itself.
+      requestAnimationFrame(() => {
+        const focusable = bodyRef.current?.querySelector<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        focusable?.focus();
+      });
+    } else if (!open && node.open) {
+      node.close();
+      previouslyFocused.current?.focus?.();
+    }
   }, [open]);
 
   useEffect(() => {
@@ -49,6 +67,10 @@ export function Dialog({ open, onClose, title, description, children, size = "md
   return (
     <dialog
       ref={ref}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="dialog-title"
+      aria-describedby={description ? "dialog-description" : undefined}
       onClick={(e) => {
         // Click on the backdrop (the dialog itself, not its child) closes it.
         if (e.target === ref.current) onClose();
@@ -61,9 +83,9 @@ export function Dialog({ open, onClose, title, description, children, size = "md
     >
       <div className="flex items-start justify-between gap-4 mb-3">
         <div>
-          <h2 className="text-lg font-semibold">{title}</h2>
+          <h2 id="dialog-title" className="text-lg font-semibold">{title}</h2>
           {description && (
-            <p className="text-sm text-muted-foreground mt-1">{description}</p>
+            <p id="dialog-description" className="text-sm text-muted-foreground mt-1">{description}</p>
           )}
         </div>
         <button
@@ -76,10 +98,11 @@ export function Dialog({ open, onClose, title, description, children, size = "md
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           )}
         >
-          <X className="h-4 w-4" />
+          <X className="h-4 w-4" aria-hidden="true" />
         </button>
       </div>
-      <div>{children}</div>
+      <div ref={bodyRef}>{children}</div>
     </dialog>
   );
 }
+
