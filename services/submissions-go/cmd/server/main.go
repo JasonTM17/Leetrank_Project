@@ -21,6 +21,7 @@ import (
 	"github.com/JasonTM17/Leetrank_Project/services/submissions-go/internal/db"
 	httpx "github.com/JasonTM17/Leetrank_Project/services/submissions-go/internal/http"
 	"github.com/JasonTM17/Leetrank_Project/services/submissions-go/internal/observability"
+	"github.com/JasonTM17/Leetrank_Project/services/submissions-go/internal/queue"
 	"github.com/JasonTM17/Leetrank_Project/services/submissions-go/internal/submissions"
 	"github.com/JasonTM17/Leetrank_Project/services/submissions-go/internal/version"
 	"github.com/go-chi/chi/v5"
@@ -98,6 +99,14 @@ func main() {
 	r.Get("/readyz", httpx.Readiness(pool))
 	r.Get("/metrics", httpx.PrometheusHandler())
 	r.Mount("/v1/submissions", h.Router())
+
+	// Background sweeper: refreshes the queue-depth gauge and moves
+	// 'judging' rows older than 60s to status='failed' with reason
+	// 'judge_timeout'. Stops when sweeperCtx is cancelled below.
+	sweeperCtx, sweeperCancel := context.WithCancel(context.Background())
+	defer sweeperCancel()
+	sweeper := queue.New(pool, logger)
+	go sweeper.Run(sweeperCtx)
 
 	srv := &http.Server{
 		Addr:              ":" + cfg.Port,
