@@ -12,7 +12,7 @@ COPY main.go languages.go exec.go scheduler.go ./
 RUN CGO_ENABLED=0 GOOS=linux go build -mod=mod -ldflags="-s -w" -o judge-service .
 
 # ── Stage 2: Runtime image ────────────────────────────────────────────────────
-FROM ubuntu:22.04
+FROM ubuntu:26.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
