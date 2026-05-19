@@ -1,6 +1,7 @@
 import { vi, beforeEach } from "vitest";
 import { cache } from "@/lib/cache";
 import { _resetRateLimit } from "@/lib/rate-limit";
+import { _resetAuthBuckets } from "@/lib/auth-buckets";
 
 // Stable JWT secret across all tests so signed tokens round-trip.
 process.env.JWT_SECRET = process.env.JWT_SECRET ?? "test-secret-32-chars-minimum-aaaa";
@@ -82,6 +83,7 @@ beforeEach(() => {
   cookies.clear();
   cache.clear();
   _resetRateLimit();
+  _resetAuthBuckets();
   for (const model of Object.values(prismaMock)) {
     if (typeof model === "function") {
       (model as ReturnType<typeof vi.fn>).mockReset();

@@ -59,7 +59,22 @@ Output: [0,1]
     starterCode: JSON.stringify({
       python: `def twoSum(nums: list[int], target: int) -> list[int]:
     # Write your solution here
-    pass`,
+    pass
+
+# ─── Judge harness — do not remove ───────────────────────────────────────────
+# Reads two lines of stdin: a JSON array of nums and a target int. Auto-detects
+# either a top-level twoSum() or a LeetCode-style Solution.twoSum() so the
+# canonical class-based answer also works.
+if __name__ == "__main__":
+    import sys, json
+    _raw = sys.stdin.read().splitlines()
+    _nums = json.loads(_raw[0])
+    _target = int(_raw[1])
+    if "Solution" in globals():
+        _ans = Solution().twoSum(_nums, _target)
+    else:
+        _ans = twoSum(_nums, _target)
+    print(json.dumps(_ans, separators=(",", ":")))`,
       javascript: `/**
  * @param {number[]} nums
  * @param {number} target
@@ -67,7 +82,17 @@ Output: [0,1]
  */
 function twoSum(nums, target) {
     // Write your solution here
-}`,
+}
+
+// ─── Judge harness — do not remove ──────────────────────────────────────────
+let __data = "";
+process.stdin.on("data", (c) => { __data += c; });
+process.stdin.on("end", () => {
+    const __lines = __data.trim().split("\\n");
+    const __nums = JSON.parse(__lines[0]);
+    const __target = parseInt(__lines[1], 10);
+    console.log(JSON.stringify(twoSum(__nums, __target)));
+});`,
     }),
     tags: ["array", "hash-table"],
     testCases: [
