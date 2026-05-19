@@ -52,16 +52,16 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.48.0",
-    "autocannon": "^7.15.0",
+    "autocannon": "^8.0.0",
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
+    "@types/node": "^25",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "eslint": "^9",
+    "eslint": "^10",
     "eslint-config-next": "16.2.6",
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",
-    "typescript": "^5",
-    "vitest": "^2.1.8"
+    "typescript": "^6",
+    "vitest": "^4.1.6"
   }
 }
