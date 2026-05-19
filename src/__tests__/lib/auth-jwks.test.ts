@@ -64,6 +64,7 @@ describe("auth — JWKS verify path branches", () => {
 
   it("returns null when JWKS verification fails (non-HS256 alg)", async () => {
     // Token with alg=none-style header bypass attempt — jose rejects.
+    // gitleaks:allow — test fixture, signature is literal "invalid-sig"
     const token = "eyJhbGciOiJSUzI1NiJ9.eyJ1c2VySWQiOiJ4In0.invalid-sig";
     const result = await verifyTokenJwks(token);
     expect(result).toBeNull();
