@@ -52,10 +52,15 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
+      // Trim whitespace from text inputs so leading/trailing spaces in
+      // username/email don't fail validation server-side or create
+      // duplicate accounts on accident.
+      const trimmedUsername = username.trim();
+      const trimmedEmail = email.trim();
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, email, password }),
+        body: JSON.stringify({ username: trimmedUsername, email: trimmedEmail, password }),
       });
 
       const data = await res.json();
