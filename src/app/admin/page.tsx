@@ -213,8 +213,8 @@ export default function AdminPage() {
                           <td className="px-4 py-3 text-sm text-muted-foreground">{p._count?.submissions || 0}</td>
                           <td className="px-4 py-3 text-right">
                             <div className="flex justify-end gap-1">
-                              <Button variant="ghost" size="icon" className="h-8 w-8"><Edit className="h-4 w-4" /></Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDeleteProblem(p.id)}><Trash2 className="h-4 w-4" /></Button>
+                              <Button variant="ghost" size="icon" className="h-8 w-8" aria-label={`Edit problem ${p.title}`}><Edit className="h-4 w-4" aria-hidden="true" /></Button>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" aria-label={`Delete problem ${p.title}`} onClick={() => handleDeleteProblem(p.id)}><Trash2 className="h-4 w-4" aria-hidden="true" /></Button>
                             </div>
                           </td>
                         </tr>

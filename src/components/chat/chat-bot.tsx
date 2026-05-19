@@ -98,7 +98,7 @@ export function ChatBot({ userId, problemId, contestId }: ChatBotProps) {
           className="fixed bottom-0 right-0 z-50 flex h-[600px] w-[380px] flex-col shadow-2xl"
           role="dialog"
           aria-label="AI assistant chat"
-          aria-modal="false"
+          aria-modal="true"
         >
           <Card className="flex h-full flex-col rounded-b-none rounded-tr-none">
             <CardHeader className="flex flex-row items-center justify-between border-b px-4 py-3">
