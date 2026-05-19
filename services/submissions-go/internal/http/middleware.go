@@ -1,25 +1,27 @@
-// Package http holds Chi-friendly middleware mirroring apps/api's
-// request-context, error-handler, and timeout middleware.
+// Package http holds the chi-friendly middleware shared by every endpoint:
+// request-id propagation, structured zerolog access logs, panic recovery,
+// per-request timeout, and helpers used by the metrics and tracing
+// middleware.
 package http
 
 import (
 	"context"
 	"encoding/json"
-	"log/slog"
 	"net/http"
 	"runtime/debug"
 	"strconv"
 	"time"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	"github.com/rs/zerolog"
 )
 
 type ctxKey string
 
 const requestIDKey ctxKey = "request_id"
 
-// RequestID generates a per-request UUID and propagates it via the
-// X-Request-ID response header.
+// RequestID generates a per-request UUID and propagates it via X-Request-ID.
 func RequestID(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		id := r.Header.Get("X-Request-ID")
@@ -32,6 +34,7 @@ func RequestID(next http.Handler) http.Handler {
 	})
 }
 
+// RequestIDFrom pulls the request id out of a request-scoped context.
 func RequestIDFrom(ctx context.Context) string {
 	if v, ok := ctx.Value(requestIDKey).(string); ok {
 		return v
@@ -39,36 +42,41 @@ func RequestIDFrom(ctx context.Context) string {
 	return ""
 }
 
-// AccessLog emits one structured log line per request after the handler
-// returns. Status, duration, route are captured via a wrapped writer.
-func AccessLog(logger *slog.Logger) func(http.Handler) http.Handler {
+// AccessLog emits one structured zerolog line per request.
+func AccessLog(logger zerolog.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now()
 			rec := &statusRecorder{ResponseWriter: w, status: http.StatusOK}
 			next.ServeHTTP(rec, r)
-			logger.Info("request",
-				"method", r.Method,
-				"path", r.URL.Path,
-				"status", rec.status,
-				"duration_ms", time.Since(start).Milliseconds(),
-				"request_id", RequestIDFrom(r.Context()),
-			)
+			route := r.URL.Path
+			if rc := chi.RouteContext(r.Context()); rc != nil && rc.RoutePattern() != "" {
+				route = rc.RoutePattern()
+			}
+			logger.Info().
+				Str("method", r.Method).
+				Str("path", r.URL.Path).
+				Str("route", route).
+				Int("status", rec.status).
+				Int64("duration_ms", time.Since(start).Milliseconds()).
+				Str("request_id", RequestIDFrom(r.Context())).
+				Str("remote", clientIP(r)).
+				Msg("http_request")
 		})
 	}
 }
 
 // Recover catches handler panics, logs the stack, and returns a 500.
-func Recover(logger *slog.Logger) func(http.Handler) http.Handler {
+func Recover(logger zerolog.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			defer func() {
 				if rec := recover(); rec != nil {
-					logger.Error("panic",
-						"err", rec,
-						"stack", string(debug.Stack()),
-						"request_id", RequestIDFrom(r.Context()),
-					)
+					logger.Error().
+						Interface("err", rec).
+						Bytes("stack", debug.Stack()).
+						Str("request_id", RequestIDFrom(r.Context())).
+						Msg("panic")
 					JSON(w, http.StatusInternalServerError, map[string]string{"error": "Internal server error"})
 				}
 			}()
@@ -77,8 +85,7 @@ func Recover(logger *slog.Logger) func(http.Handler) http.Handler {
 	}
 }
 
-// Timeout wraps the request context with a deadline. On expiry the
-// context cancels and Chi's default cancel handler returns 504.
+// Timeout wraps the request context with a deadline.
 func Timeout(d time.Duration) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -101,6 +108,7 @@ func Timeout(d time.Duration) func(http.Handler) http.Handler {
 	}
 }
 
+// JSON writes a JSON response with proper Content-Length / Content-Type.
 func JSON(w http.ResponseWriter, status int, body any) {
 	buf, err := json.Marshal(body)
 	if err != nil {
@@ -121,4 +129,18 @@ type statusRecorder struct {
 func (s *statusRecorder) WriteHeader(code int) {
 	s.status = code
 	s.ResponseWriter.WriteHeader(code)
+}
+
+func (s *statusRecorder) Status() int { return s.status }
+
+func clientIP(r *http.Request) string {
+	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+		for i := 0; i < len(xff); i++ {
+			if xff[i] == ',' {
+				return xff[:i]
+			}
+		}
+		return xff
+	}
+	return r.RemoteAddr
 }
