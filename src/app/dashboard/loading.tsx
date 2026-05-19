@@ -6,7 +6,7 @@ export default function DashboardLoading() {
   return (
     <>
       <Navbar />
-      <main id="main-content" className="flex-1">
+      <main id="main-content" className="flex-1" aria-busy="true" aria-live="polite">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
           {/* Page title */}
           <Skeleton className="h-8 w-40 mb-2" />
