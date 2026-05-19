@@ -169,6 +169,12 @@ Lint with `pnpm openapi:lint` (Redocly). Specs must lint clean before a PR is me
 
 PR title follows the same Conventional Commits format as a single commit; the merge commit will use it verbatim.
 
+### Review model (solo maintainer)
+
+LeetRank is currently a one-maintainer project, so the `CODEOWNERS` file routes every PR to the sole contributor (`@JasonTM17`). Self-review is intentional, not an oversight: the maintainer opens a PR, lets the full status-check matrix run (`web`, `api`, `judge`, `go-tests`, `audit`, `e2e`, `codeql`, `trivy-fs`), reviews the diff in the GitHub UI, and merges only after CI is green and the codecov gate passes. See `docs/release.md` for the required-checks list and branch-protection rules that mirror this policy.
+
+If you're an outside contributor, your PR will be assigned to `@JasonTM17` automatically; please don't worry about reviewer selection.
+
 ### PR description template
 
 ```
