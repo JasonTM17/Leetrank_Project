@@ -9,6 +9,26 @@ const TTL_MS = 60_000;
 
 const slugSchema = z.string().min(1).max(200).regex(/^[a-z0-9-]+$/, "Invalid slug");
 
+interface PlanDetail {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  difficulty: string;
+  estimatedHours: number;
+  coverImage: string | null;
+  isOfficial: boolean;
+  problems: {
+    id: string;
+    title: string;
+    slug: string;
+    difficulty: string;
+    acceptanceRate: number | null;
+    order: number;
+    dayNumber: number;
+  }[];
+}
+
 // GET /api/study-plans/[slug] — full detail with day-grouped problems and,
 // if the caller is signed in, per-problem solved status. The catalogue half
 // of the payload is cacheable; user state is computed per-request.
@@ -26,7 +46,7 @@ export async function GET(
       );
     }
 
-    const detail = await cache.remember(`study-plans:detail:${slugCheck.data}`, TTL_MS, async () => {
+    const detail = (await cache.remember(`study-plans:detail:${slugCheck.data}`, TTL_MS, async (): Promise<PlanDetail | null> => {
       const plan = await prisma.studyPlan.findUnique({
         where: { slug: slugCheck.data },
         include: {
@@ -68,7 +88,7 @@ export async function GET(
           dayNumber: spp.dayNumber,
         })),
       };
-    });
+    })) as PlanDetail | null;
 
     if (!detail) {
       return Response.json({ error: "Study plan not found" }, { status: 404 });
