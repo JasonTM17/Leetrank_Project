@@ -1,4 +1,9 @@
 import type { NextConfig } from "next";
+import createNextIntlPlugin from "next-intl/plugin";
+
+// Wires next-intl's request-time config into the Next build. The path points
+// at the file that exports getRequestConfig() — see src/i18n/request.ts.
+const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 const nextConfig: NextConfig = {
   // Enable standalone output so the Docker runtime image can ship
@@ -32,8 +37,36 @@ const nextConfig: NextConfig = {
           { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
         ],
       },
+      // Belt-and-braces: even with `export const dynamic = "force-dynamic"`
+      // in the route layouts, force the CDN to never store these surfaces.
+      // /dashboard and /admin render per-user privileged data — a leaked
+      // cache hit between two users is a security incident, not a UX bug.
+      {
+        source: "/dashboard/:path*",
+        headers: [
+          { key: "Cache-Control", value: "private, no-store, max-age=0, must-revalidate" },
+        ],
+      },
+      {
+        source: "/dashboard",
+        headers: [
+          { key: "Cache-Control", value: "private, no-store, max-age=0, must-revalidate" },
+        ],
+      },
+      {
+        source: "/admin/:path*",
+        headers: [
+          { key: "Cache-Control", value: "private, no-store, max-age=0, must-revalidate" },
+        ],
+      },
+      {
+        source: "/admin",
+        headers: [
+          { key: "Cache-Control", value: "private, no-store, max-age=0, must-revalidate" },
+        ],
+      },
     ];
   },
 };
 
-export default nextConfig;
+export default withNextIntl(nextConfig);
