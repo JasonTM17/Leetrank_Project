@@ -6,12 +6,19 @@ import { signToken } from "@/lib/auth";
 import { loginSchema } from "@/lib/validations";
 import { rateLimit } from "@/lib/rate-limit";
 import { clientIp } from "@/lib/client-ip";
+import { loginAccountKey } from "@/lib/auth-buckets";
 
 // RULES §4: rate-limit auth routes. Switched from the local Map-based
 // limiter to the shared lib/rate-limit helper so the GC + reset
 // behaviour is consistent with /register and other write paths.
 const RATE_LIMIT_MAX = 5;
 const RATE_LIMIT_WINDOW_MS = 15 * 60_000;
+
+// Bug #2: a separate per-account bucket so a successful change-password
+// can re-arm the user's login budget without resetting other callers
+// hitting the same IP.
+const ACCOUNT_LIMIT_MAX = 5;
+const ACCOUNT_LIMIT_WINDOW_MS = 15 * 60_000;
 
 export async function POST(request: NextRequest) {
   try {
@@ -39,6 +46,22 @@ export async function POST(request: NextRequest) {
     }
 
     const { email, password } = parsed.data;
+
+    // Bug #2: per-account bucket sits *behind* the per-IP bucket. A
+    // change-password bumps the generation, so the very next login on
+    // the rotated credential lands in a fresh budget.
+    const accountLimit = rateLimit(
+      loginAccountKey(email),
+      ACCOUNT_LIMIT_MAX,
+      ACCOUNT_LIMIT_WINDOW_MS
+    );
+    if (!accountLimit.allowed) {
+      const retryAfter = Math.max(1, Math.ceil((accountLimit.resetAt - Date.now()) / 1000));
+      return Response.json(
+        { error: "Too many login attempts for this account. Try again later." },
+        { status: 429, headers: { "Retry-After": String(retryAfter) } }
+      );
+    }
 
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {

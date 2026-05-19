@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { bumpLoginBucketFor } from "@/lib/auth-buckets";
 import { z } from "zod";
 
 const changePasswordSchema = z.object({
@@ -44,7 +45,7 @@ export async function POST(request: NextRequest) {
 
     const user = await prisma.user.findUnique({
       where: { id: session.userId },
-      select: { id: true, password: true },
+      select: { id: true, email: true, password: true },
     });
     if (!user) {
       return Response.json({ error: "User not found" }, { status: 404 });
@@ -60,6 +61,11 @@ export async function POST(request: NextRequest) {
       where: { id: user.id },
       data: { password: hashed },
     });
+
+    // Bug #2: re-arm the per-account login bucket so the user can log
+    // in with the new password immediately, even if a recent burst of
+    // failed attempts (with the *old* password) burned the budget.
+    bumpLoginBucketFor(user.email);
 
     return Response.json({ success: true });
   } catch {
