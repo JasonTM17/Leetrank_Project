@@ -3,7 +3,7 @@
 # detection is unreliable on Alpine 3.18+ (libssl.so.1.1 removed, the
 # legacy `linux-musl` engine still tries to dlopen it). Debian slim ships
 # OpenSSL 3 that Prisma natively recognises as `debian-openssl-3.0.x`.
-FROM node:20-slim AS deps
+FROM node:26-slim AS deps
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -18,7 +18,7 @@ COPY package.json ./
 RUN npm install --no-audit --no-fund
 
 # Stage 2: Build the application
-FROM node:20-slim AS build
+FROM node:26-slim AS build
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -41,7 +41,7 @@ ENV NEXT_TELEMETRY_DISABLED=1 \
 RUN npm run build
 
 # Stage 3: Production runner
-FROM node:20-slim AS runner
+FROM node:26-slim AS runner
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
