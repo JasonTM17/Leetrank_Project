@@ -4,6 +4,7 @@ import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { Button } from "@/components/ui/button";
 import { DailyChallengeBanner } from "@/components/daily-challenge/banner";
+import { HomeRecommendations } from "@/components/home/recommendations";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
@@ -151,6 +152,8 @@ export default function HomePage() {
             <DailyChallengeBanner />
           </div>
         </section>
+
+        <HomeRecommendations />
 
         <section className="py-24 relative">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
