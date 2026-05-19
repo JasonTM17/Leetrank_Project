@@ -24,11 +24,11 @@ import (
 )
 
 const (
-	cookieName   = "leetrank_session"
-	jwtAudience  = "leetrank"
-	cookieTTL    = 7 * 24 * time.Hour
-	rateLimitMax = 5
-	rateLimitWin = 15 * time.Minute
+	cookieName        = "leetrank_session"
+	refreshCookieName = "leetrank_refresh"
+	jwtAudience       = "leetrank"
+	rateLimitMax      = 5
+	rateLimitWin      = 15 * time.Minute
 )
 
 // dummyHash is computed once at startup so login-miss paths still run a
@@ -106,6 +106,7 @@ func Router(pool *pgxpool.Pool, ks *jwks.KeyStore) http.Handler {
 	r.Post("/register", h.register)
 	r.Post("/login", h.login)
 	r.Post("/logout", h.logout)
+	r.Post("/refresh", h.refresh)
 	r.Get("/me", h.me)
 	r.Post("/change-password", h.changePassword)
 	r.Get("/sessions", notImplemented) // Session model not yet in schema
@@ -119,12 +120,36 @@ func setSessionCookie(w http.ResponseWriter, token string) {
 		Name:     cookieName,
 		Value:    token,
 		Path:     "/",
-		MaxAge:   int(cookieTTL.Seconds()),
+		MaxAge:   int(jwks.AccessTTL.Seconds()),
 		HttpOnly: true,
 		Secure:   true,
 		SameSite: http.SameSiteLaxMode,
 	})
 	w.Header().Set("Authorization", "Bearer "+token)
+}
+
+func setRefreshCookie(w http.ResponseWriter, token string) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     refreshCookieName,
+		Value:    token,
+		Path:     "/v1/auth",
+		MaxAge:   int(jwks.RefreshTTL.Seconds()),
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteLaxMode,
+	})
+}
+
+func clearRefreshCookie(w http.ResponseWriter) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     refreshCookieName,
+		Value:    "",
+		Path:     "/v1/auth",
+		MaxAge:   -1,
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteLaxMode,
+	})
 }
 
 func clearSessionCookie(w http.ResponseWriter) {
@@ -219,13 +244,20 @@ func (h *handler) register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := h.ks.Sign(id, "user", jwtAudience, cookieTTL)
+	token, err := h.ks.Sign(id, "user", jwtAudience, jwks.AccessTTL)
+	if err != nil {
+		httpx.JSON(w, http.StatusInternalServerError, map[string]string{"error": "internal server error"})
+		return
+	}
+
+	refresh, _, err := h.ks.IssueRefresh(ctx, id)
 	if err != nil {
 		httpx.JSON(w, http.StatusInternalServerError, map[string]string{"error": "internal server error"})
 		return
 	}
 
 	setSessionCookie(w, token)
+	setRefreshCookie(w, refresh)
 	httpx.JSON(w, http.StatusCreated, map[string]any{
 		"user": userResponse{
 			ID:        id,
@@ -234,7 +266,9 @@ func (h *handler) register(w http.ResponseWriter, r *http.Request) {
 			Role:      "user",
 			CreatedAt: now,
 		},
-		"token": token,
+		"token":        token,
+		"refreshToken": refresh,
+		"expiresIn":    int(jwks.AccessTTL.Seconds()),
 	})
 }
 
@@ -299,13 +333,20 @@ func (h *handler) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := h.ks.Sign(id, role, jwtAudience, cookieTTL)
+	token, err := h.ks.Sign(id, role, jwtAudience, jwks.AccessTTL)
+	if err != nil {
+		httpx.JSON(w, http.StatusInternalServerError, map[string]string{"error": "internal server error"})
+		return
+	}
+
+	refresh, _, err := h.ks.IssueRefresh(ctx, id)
 	if err != nil {
 		httpx.JSON(w, http.StatusInternalServerError, map[string]string{"error": "internal server error"})
 		return
 	}
 
 	setSessionCookie(w, token)
+	setRefreshCookie(w, refresh)
 	httpx.JSON(w, http.StatusOK, map[string]any{
 		"user": userResponse{
 			ID:        id,
@@ -314,7 +355,9 @@ func (h *handler) login(w http.ResponseWriter, r *http.Request) {
 			Role:      role,
 			CreatedAt: createdAt,
 		},
-		"token": token,
+		"token":        token,
+		"refreshToken": refresh,
+		"expiresIn":    int(jwks.AccessTTL.Seconds()),
 	})
 }
 
@@ -357,8 +400,64 @@ func (h *handler) me(w http.ResponseWriter, r *http.Request) {
 // ── logout ────────────────────────────────────────────────────────────────────
 
 func (h *handler) logout(w http.ResponseWriter, r *http.Request) {
+	if c, err := r.Cookie(refreshCookieName); err == nil && c.Value != "" {
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
+		_ = h.ks.RevokeRefresh(ctx, c.Value)
+	}
 	clearSessionCookie(w)
+	clearRefreshCookie(w)
 	httpx.JSON(w, http.StatusOK, map[string]bool{"ok": true})
+}
+
+// refresh rotates the refresh token: revoke the presented one, issue a
+// new access + refresh pair. The refresh token is read from the cookie
+// (or `refreshToken` field in JSON body for non-browser clients).
+func (h *handler) refresh(w http.ResponseWriter, r *http.Request) {
+	plain := ""
+	if c, err := r.Cookie(refreshCookieName); err == nil {
+		plain = c.Value
+	}
+	if plain == "" {
+		var body struct {
+			RefreshToken string `json:"refreshToken"`
+		}
+		_ = decodeBody(r, &body)
+		plain = strings.TrimSpace(body.RefreshToken)
+	}
+	if plain == "" {
+		httpx.JSON(w, http.StatusUnauthorized, map[string]string{"error": "refresh token required"})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
+	newRefresh, userID, _, err := h.ks.RotateRefresh(ctx, plain)
+	if err != nil {
+		clearRefreshCookie(w)
+		httpx.JSON(w, http.StatusUnauthorized, map[string]string{"error": err.Error()})
+		return
+	}
+
+	var role string
+	if err := h.pool.QueryRow(ctx, `SELECT role FROM "User" WHERE id = $1`, userID).Scan(&role); err != nil {
+		role = "user"
+	}
+
+	access, err := h.ks.Sign(userID, role, jwtAudience, jwks.AccessTTL)
+	if err != nil {
+		httpx.JSON(w, http.StatusInternalServerError, map[string]string{"error": "internal server error"})
+		return
+	}
+
+	setSessionCookie(w, access)
+	setRefreshCookie(w, newRefresh)
+	httpx.JSON(w, http.StatusOK, map[string]any{
+		"token":        access,
+		"refreshToken": newRefresh,
+		"expiresIn":    int(jwks.AccessTTL.Seconds()),
+	})
 }
 
 // ── change-password ───────────────────────────────────────────────────────────

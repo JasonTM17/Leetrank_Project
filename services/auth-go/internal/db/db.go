@@ -33,5 +33,28 @@ func New(ctx context.Context, url string) (*pgxpool.Pool, error) {
 		pool.Close()
 		return nil, fmt.Errorf("ping: %w", err)
 	}
+	if err := EnsureRefreshTokenTable(connectCtx, pool); err != nil {
+		pool.Close()
+		return nil, fmt.Errorf("ensure RefreshToken: %w", err)
+	}
 	return pool, nil
+}
+
+// EnsureRefreshTokenTable creates the RefreshToken table and indexes
+// when missing. Idempotent — safe to call on every boot.
+func EnsureRefreshTokenTable(ctx context.Context, pool *pgxpool.Pool) error {
+	const ddl = `
+CREATE TABLE IF NOT EXISTS "RefreshToken" (
+    "tokenHash"   TEXT        PRIMARY KEY,
+    "userId"      TEXT        NOT NULL,
+    "expiresAt"   TIMESTAMPTZ NOT NULL,
+    "createdAt"   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    "revokedAt"   TIMESTAMPTZ NULL,
+    "rotatedFrom" TEXT        NULL
+);
+CREATE INDEX IF NOT EXISTS "RefreshToken_userId_idx"    ON "RefreshToken" ("userId");
+CREATE INDEX IF NOT EXISTS "RefreshToken_expiresAt_idx" ON "RefreshToken" ("expiresAt");
+`
+	_, err := pool.Exec(ctx, ddl)
+	return err
 }
