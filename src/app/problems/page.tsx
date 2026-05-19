@@ -11,7 +11,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getDifficultyBg } from "@/lib/utils";
-import { Search, CheckCircle2, Circle, SearchX } from "lucide-react";
+import { Search, CheckCircle2, Circle, SearchX, ChevronDown } from "lucide-react";
 
 interface ProblemItem {
   id: string;
@@ -21,6 +21,12 @@ interface ProblemItem {
   tags: { id: string; name: string }[];
   _count?: { submissions: number };
   solved?: boolean;
+}
+
+interface TagItem {
+  slug: string;
+  name: string;
+  category?: string;
 }
 
 const DIFFICULTY_VALUES = ["", "Easy", "Medium", "Hard"] as const;
@@ -62,6 +68,65 @@ function ProblemRowSkeleton() {
   );
 }
 
+interface FilterGroupProps {
+  label: string;
+  open: boolean;
+  onToggle: () => void;
+  tags: TagItem[];
+  selected: string;
+  onSelect: (slug: string) => void;
+}
+
+/**
+ * Collapsible chip group for a tag category. The chevron rotates when
+ * `open` flips so the disclosure state is obvious without extra copy. The
+ * selection is single-pick — clicking the active chip clears it.
+ */
+function FilterGroup({ label, open, onToggle, tags, selected, onSelect }: FilterGroupProps) {
+  return (
+    <div className="rounded-xl border bg-card">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        className="flex w-full items-center justify-between px-4 py-2.5 text-sm font-medium hover:bg-muted/40 motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xl"
+      >
+        <span className="flex items-center gap-2">
+          <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />
+          {label}
+          <span className="text-xs text-muted-foreground">({tags.length})</span>
+          {selected && (
+            <span className="ml-2 text-xs text-primary">
+              {tags.find((t) => t.slug === selected)?.name ?? selected}
+            </span>
+          )}
+        </span>
+        <ChevronDown
+          className={`h-4 w-4 text-muted-foreground motion-safe:transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+          aria-hidden="true"
+        />
+      </button>
+      {open && (
+        <div className="flex flex-wrap gap-1.5 px-4 pb-3 pt-1">
+          {tags.map((tag) => (
+            <button
+              key={tag.slug}
+              onClick={() => onSelect(tag.slug)}
+              className={`rounded-full border px-3 py-1 text-xs font-medium motion-safe:transition-all duration-150 ${
+                selected === tag.slug
+                  ? "border-primary/50 bg-primary/10 text-primary"
+                  : "border-border bg-card text-muted-foreground hover:border-primary/30 hover:text-foreground"
+              }`}
+            >
+              {tag.name}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ProblemsPage() {
   const t = useTranslations("problems");
   const tCommon = useTranslations("common");
@@ -70,7 +135,11 @@ export default function ProblemsPage() {
   const [search, setSearch] = useState("");
   const [difficulty, setDifficulty] = useState("");
   const [selectedTag, setSelectedTag] = useState("");
-  const [tags, setTags] = useState<{ slug: string; name: string }[]>([]);
+  const [selectedTopic, setSelectedTopic] = useState("");
+  const [selectedCompany, setSelectedCompany] = useState("");
+  const [tags, setTags] = useState<TagItem[]>([]);
+  const [topicsOpen, setTopicsOpen] = useState(true);
+  const [companiesOpen, setCompaniesOpen] = useState(false);
 
   const tabLabels: Record<string, string> = {
     "": tCommon("all"),
@@ -91,6 +160,8 @@ export default function ProblemsPage() {
     const params = new URLSearchParams();
     if (difficulty) params.set("difficulty", difficulty);
     if (selectedTag) params.set("tag", selectedTag);
+    if (selectedTopic) params.set("topic", selectedTopic);
+    if (selectedCompany) params.set("company", selectedCompany);
     if (search) params.set("search", search);
 
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -110,7 +181,12 @@ export default function ProblemsPage() {
     return () => {
       cancelled = true;
     };
-  }, [difficulty, selectedTag, search]);
+  }, [difficulty, selectedTag, selectedTopic, selectedCompany, search]);
+
+  const topics = tags.filter((t) => (t.category ?? "topic") === "topic");
+  const companies = tags.filter((t) => t.category === "company");
+  const hasFilters =
+    !!difficulty || !!selectedTag || !!selectedTopic || !!selectedCompany || !!search;
 
   return (
     <>
@@ -161,22 +237,33 @@ export default function ProblemsPage() {
             </div>
           </div>
 
-          {/* Tag pills */}
-          {tags.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mb-6">
-              {tags.slice(0, 10).map((tag) => (
-                <button
-                  key={tag.slug}
-                  onClick={() => setSelectedTag(selectedTag === tag.slug ? "" : tag.slug)}
-                  className={`rounded-full border px-3 py-1 text-xs font-medium motion-safe:transition-all duration-150 ${
-                    selectedTag === tag.slug
-                      ? "border-primary/50 bg-primary/10 text-primary"
-                      : "border-border bg-card text-muted-foreground hover:border-primary/30 hover:text-foreground"
-                  }`}
-                >
-                  {tag.name}
-                </button>
-              ))}
+          {/* Tag groups — collapsible topic + company */}
+          {(topics.length > 0 || companies.length > 0) && (
+            <div className="space-y-3 mb-6">
+              {topics.length > 0 && (
+                <FilterGroup
+                  label={t("topics")}
+                  open={topicsOpen}
+                  onToggle={() => setTopicsOpen((o) => !o)}
+                  tags={topics}
+                  selected={selectedTopic}
+                  onSelect={(slug) =>
+                    setSelectedTopic(selectedTopic === slug ? "" : slug)
+                  }
+                />
+              )}
+              {companies.length > 0 && (
+                <FilterGroup
+                  label={t("companies")}
+                  open={companiesOpen}
+                  onToggle={() => setCompaniesOpen((o) => !o)}
+                  tags={companies}
+                  selected={selectedCompany}
+                  onSelect={(slug) =>
+                    setSelectedCompany(selectedCompany === slug ? "" : slug)
+                  }
+                />
+              )}
             </div>
           )}
 
@@ -198,8 +285,11 @@ export default function ProblemsPage() {
                     setSearch("");
                     setDifficulty("");
                     setSelectedTag("");
+                    setSelectedTopic("");
+                    setSelectedCompany("");
                   }}
                   className="text-sm text-primary hover:underline font-medium"
+                  disabled={!hasFilters}
                 >
                   {t("clearAllFilters")}
                 </button>
