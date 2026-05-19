@@ -130,28 +130,28 @@ jobs:
       - uses: docker/setup-buildx-action@v3
 
       - name: Build app image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           push: false
           tags: leetrank-app:ci
 
       - name: Build api image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./apps/api
           push: false
           tags: leetrank-api:ci
 
       - name: Build auth image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./apps/auth
           push: false
           tags: leetrank-auth:ci
 
       - name: Build judge image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./judge-service
           push: false
