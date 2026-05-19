@@ -72,12 +72,19 @@ export const createContestSchema = z
   });
 
 export const runCodeSchema = z.object({
-  code: z.string().min(1, "Code is required"),
+  code: z.string().min(1, "code is required"),
   language: languageEnum,
-  testCases: z.array(z.object({
-    input: z.string(),
-    expected: z.string(),
-  })).min(1, "At least one test case is required"),
+  // testCases is optional — when omitted (or empty) the runner falls back
+  // to a single stdin-only run with empty input/expected, which matches the
+  // editor "Run" button that doesn't have testcases on hand.
+  testCases: z
+    .array(
+      z.object({
+        input: z.string(),
+        expected: z.string(),
+      })
+    )
+    .optional(),
 });
 
 export const submitCodeSchema = z.object({

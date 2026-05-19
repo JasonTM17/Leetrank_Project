@@ -94,8 +94,16 @@ export async function POST(request: NextRequest) {
 
     const parsed = submitCodeSchema.safeParse(body);
     if (!parsed.success) {
-      const firstError = parsed.error.errors[0]?.message || "Invalid input";
-      return Response.json({ error: firstError }, { status: 400 });
+      // Always include the field name (e.g. "code: code is required") so
+      // external clients hitting the OpenAPI doc with the wrong key get a
+      // diagnosable 400 instead of an opaque "Required".
+      const issue = parsed.error.errors[0];
+      const field = issue?.path?.join(".") ?? "input";
+      const msg = issue?.message ?? "Invalid input";
+      return Response.json(
+        { error: msg.includes(field) ? msg : `${field}: ${msg}` },
+        { status: 400 }
+      );
     }
 
     const { problemId, language, code } = parsed.data;

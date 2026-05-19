@@ -38,12 +38,26 @@ export async function POST(request: NextRequest) {
 
     const parsed = runCodeSchema.safeParse(body);
     if (!parsed.success) {
-      const firstError = parsed.error.errors[0]?.message || "Invalid input";
-      return Response.json({ error: firstError }, { status: 400 });
+      // Surface the offending field name with the message — bare "Required"
+      // gives external callers no clue which key they're missing.
+      const issue = parsed.error.errors[0];
+      const field = issue?.path?.join(".") ?? "input";
+      const msg = issue?.message ?? "Invalid input";
+      return Response.json(
+        { error: msg.includes(field) ? msg : `${field}: ${msg}` },
+        { status: 400 }
+      );
     }
 
     const { code, language, testCases } = parsed.data;
-    const results = await executeCode({ code, language, testCases });
+    // When the caller omits testCases (e.g. the editor "Run" button) we still
+    // want to exercise the code at least once. Fall back to a single empty
+    // stdin/expected pair — the runner will return stdout under `actual`.
+    const cases =
+      testCases && testCases.length > 0
+        ? testCases
+        : [{ input: "", expected: "" }];
+    const results = await executeCode({ code, language, testCases: cases });
 
     return Response.json({ results });
   } catch (err) {
