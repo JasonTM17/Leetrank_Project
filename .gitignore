@@ -81,6 +81,8 @@ tests/ux/screenshots/
 # Project artifacts under /scripts/ that ARE tracked
 !/scripts/load-test.mjs
 !/scripts/load-test-fixtures.mjs
+!/scripts/backup-postgres.sh
+!/scripts/restore-postgres.sh
 
 # private notes — never commit personal plans, drafts, or scratch docs
 PLAN*.md
