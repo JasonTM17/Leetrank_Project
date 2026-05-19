@@ -26,6 +26,48 @@ interface StatusData {
   checkedAt: string;
 }
 
+interface HealthApiResponse {
+  status: "ok" | "degraded";
+  uptimeSeconds: number;
+  timestamp: string;
+  services: {
+    database: { status: "ok" | "degraded" | "down"; latencyMs?: number };
+    judge: { status: "ok" | "degraded" | "down"; latencyMs?: number };
+  };
+}
+
+function mapApiStatus(s: "ok" | "degraded" | "down"): ServiceHealth {
+  if (s === "ok") return "operational";
+  if (s === "degraded") return "degraded";
+  return "down";
+}
+
+// /api/health is the canonical health endpoint; map its compact shape to
+// the richer ServiceResult[] this page renders. Adds 0-latency fallbacks
+// when a probe is "down" (no latency was observed).
+function mapHealth(h: HealthApiResponse): StatusData {
+  const services: ServiceResult[] = [
+    {
+      id: "database",
+      name: "Database",
+      status: mapApiStatus(h.services.database.status),
+      latencyMs: h.services.database.latencyMs ?? 0,
+    },
+    {
+      id: "judge",
+      name: "Judge Service",
+      status: mapApiStatus(h.services.judge.status),
+      latencyMs: h.services.judge.latencyMs ?? 0,
+    },
+  ];
+
+  const hasDown = services.some((s) => s.status === "down");
+  const hasDegraded = services.some((s) => s.status === "degraded");
+  const overall: ServiceHealth = hasDown ? "down" : hasDegraded ? "degraded" : "operational";
+
+  return { status: overall, services, checkedAt: h.timestamp };
+}
+
 const BREADCRUMB_ITEMS = [
   { label: "Home", href: "/" },
   { label: "Status" },
@@ -111,10 +153,15 @@ export default function StatusPage() {
   const [loading, setLoading] = useState(true);
 
   const fetchStatus = useCallback(() => {
-    fetch("/api/status")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((json: StatusData | null) => {
-        if (json) setData(json);
+    // /api/health is the canonical endpoint; we always parse the body
+    // because a 503 still carries the per-service breakdown we want to show.
+    fetch("/api/health")
+      .then(async (r) => {
+        const json = (await r.json().catch(() => null)) as HealthApiResponse | null;
+        return json;
+      })
+      .then((json) => {
+        if (json) setData(mapHealth(json));
       })
       .catch(() => {/* keep previous data */})
       .finally(() => setLoading(false));
