@@ -65,3 +65,23 @@ services:
       - "14013:4013"
     environment:
       <<: *postgres-url
+
+  leaderboard-rust:
+    ports: !override
+      - "14014:4014"
+    environment:
+      <<: *postgres-url
+
+  notifications-ruby:
+    ports: !override
+      - "14015:4015"
+
+  analytics-python:
+    ports: !override
+      - "14016:4016"
+    environment:
+      <<: *postgres-url
+
+  realtime-go:
+    ports: !override
+      - "14017:4017"

@@ -177,6 +177,132 @@ services:
       retries: 3
       start_period: 10s
 
+  # Rust leaderboard service (port 4014). Reads `leaderboard:global` ZSET
+  # from redis and serves paginated rankings; admin recompute pulls from pg.
+  leaderboard-rust:
+    build:
+      context: ./services/leaderboard-rust
+      dockerfile: Dockerfile
+    ports:
+      - "4014:4014"
+    environment:
+      - LEADERBOARD_PORT=4014
+      - DATABASE_URL=${DATABASE_URL:-postgresql://leetrank:leetrank-dev@postgres:5432/leetrank?schema=public}
+      - REDIS_URL=${REDIS_URL:-redis://:leetrank-dev@redis:6379/0}
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set}
+      - ADMIN_TOKEN=${LEADERBOARD_ADMIN_TOKEN:-}
+      - RUST_LOG=info
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "/app/leaderboard-rust", "-healthcheck"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # Ruby Sinatra notifications service (port 4015). HTTP API queues into
+  # redis; the worker (same image, alt command) drains and sends.
+  notifications-ruby:
+    build:
+      context: ./services/notifications-ruby
+      dockerfile: Dockerfile
+    ports:
+      - "4015:4015"
+    environment:
+      - PORT=4015
+      - REDIS_URL=${REDIS_URL:-redis://:leetrank-dev@redis:6379/0}
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASS=${SMTP_PASS:-}
+      - SMTP_FROM=${SMTP_FROM:-noreply@leetrank.local}
+      - NOTIFICATION_WEBHOOK_URL=${NOTIFICATION_WEBHOOK_URL:-}
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:4015/v1/notifications/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  notifications-ruby-worker:
+    build:
+      context: ./services/notifications-ruby
+      dockerfile: Dockerfile
+    command: ["bundle", "exec", "ruby", "worker.rb"]
+    environment:
+      - REDIS_URL=${REDIS_URL:-redis://:leetrank-dev@redis:6379/0}
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASS=${SMTP_PASS:-}
+      - SMTP_FROM=${SMTP_FROM:-noreply@leetrank.local}
+      - NOTIFICATION_WEBHOOK_URL=${NOTIFICATION_WEBHOOK_URL:-}
+    depends_on:
+      redis:
+        condition: service_healthy
+      notifications-ruby:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Python FastAPI analytics service (port 4016). Heatmaps, problem stats,
+  # contest deltas — heavy reads from pg with numpy post-processing.
+  analytics-python:
+    build:
+      context: ./services/analytics-python
+      dockerfile: Dockerfile
+    ports:
+      - "4016:4016"
+    environment:
+      - ANALYTICS_PORT=4016
+      - DATABASE_URL=${DATABASE_URL:-postgresql://leetrank:leetrank-dev@postgres:5432/leetrank?schema=public}
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set}
+      - LOG_LEVEL=info
+      - CORS_ALLOWED_ORIGINS=${API_CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://web:3000}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:4016/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  # Go realtime websocket fan-out (port 4017). Subscribes to redis pubsub
+  # (verdicts:*, contests:*, problems:*, global) and broadcasts to clients.
+  realtime-go:
+    build:
+      context: ./services/realtime-go
+      dockerfile: Dockerfile
+    ports:
+      - "4017:4017"
+    environment:
+      - REALTIME_PORT=4017
+      - REDIS_URL=${REDIS_URL:-redis://:leetrank-dev@redis:6379/0}
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set}
+      - CORS_ALLOWED_ORIGINS=${API_CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://web:3000}
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "/app/realtime-go", "-healthcheck"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+
   judge:
     build:
       context: ./judge-service
