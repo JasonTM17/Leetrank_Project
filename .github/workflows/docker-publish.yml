@@ -53,7 +53,7 @@ jobs:
             image: nguyenson1710/leetrank-problems-go
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: docker/setup-qemu-action@v3
 
