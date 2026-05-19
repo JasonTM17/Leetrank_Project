@@ -16,6 +16,7 @@
     "seed:bigdata": "npx ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed-bigdata.ts",
     "seed:bulk": "npx ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed-bulk.ts",
     "seed:topics": "npx ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed-topics.ts",
+    "seed:study-plans": "npx ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed-study-plans.ts",
     "seed:1k": "npx ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed-bulk.ts 1000 1000",
     "seed:stress": "npx ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed-bulk.ts 10000 1000",
     "test": "vitest run",
