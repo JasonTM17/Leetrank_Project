@@ -35,7 +35,6 @@ export default function SettingsPage() {
         setAvatar(data.user.avatar ?? "");
       })
       .finally(() => setLoading(false));
-    /* eslint-enable react-hooks/set-state-in-effect */
   }, [router, setUser]);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -77,25 +76,37 @@ export default function SettingsPage() {
     <>
       <Navbar />
       <main id="main-content" className="flex-1">
-        <div className="mx-auto max-w-2xl px-4 sm:px-6 py-12">
-          <Breadcrumb
-            className="mb-6"
-            items={[
-              { label: "Home", href: "/" },
-              { label: "Dashboard", href: "/dashboard" },
-              { label: "Settings" },
-            ]}
-          />
+        <section className="relative overflow-hidden border-b">
+          <div className="absolute inset-0 bg-grid opacity-30" aria-hidden="true" />
+          <div className="absolute inset-0 bg-radial-fade" aria-hidden="true" />
+          <div className="absolute inset-x-0 -top-16 h-64 bg-gradient-to-b from-primary/15 to-transparent blur-3xl" aria-hidden="true" />
 
-          <div className="mb-8 animate-fade-in-up">
-            <h1 className="text-3xl font-bold flex items-center gap-2">
-              <SettingsIcon className="h-7 w-7 text-primary" /> Settings
-            </h1>
-            <p className="mt-1 text-muted-foreground">
-              Update how you appear on your public profile.
-            </p>
+          <div className="relative mx-auto max-w-2xl px-4 sm:px-6 lg:px-8 py-10">
+            <Breadcrumb
+              className="mb-6"
+              items={[
+                { label: "Home", href: "/" },
+                { label: "Dashboard", href: "/dashboard" },
+                { label: "Settings" },
+              ]}
+            />
+
+            <div className="animate-fade-in-up">
+              <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-3 py-1 text-xs text-primary backdrop-blur mb-3">
+                <SettingsIcon className="h-3.5 w-3.5" aria-hidden="true" />
+                <span className="font-medium">Profile preferences</span>
+              </div>
+              <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
+                <span className="gradient-text">Settings</span>
+              </h1>
+              <p className="mt-2 text-muted-foreground text-lg">
+                Update how you appear on your public profile.
+              </p>
+            </div>
           </div>
+        </section>
 
+        <div className="mx-auto max-w-2xl px-4 sm:px-6 py-10">
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Profile</CardTitle>
