@@ -23,7 +23,7 @@ jobs:
 # cache disabled — pnpm-lock not in CI workspace yet
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install --no-audit --no-fund
 
       - name: Typecheck
         run: npm run typecheck
@@ -49,7 +49,7 @@ jobs:
         with:
           node-version: 20
 # cache disabled — pnpm-lock not in CI workspace yet
-      - run: npm ci
+      - run: npm install --no-audit --no-fund
       - name: Audit (fail on high or critical)
         run: npm audit --audit-level=high
 
@@ -108,16 +108,21 @@ jobs:
 
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.21'
-          cache-dependency-path: judge-service/go.sum
+          go-version: '1.22'
 
       - name: Vet
+        env:
+          GOFLAGS: -mod=mod
         run: go vet ./...
 
       - name: Build
+        env:
+          GOFLAGS: -mod=mod
         run: go build ./...
 
       - name: Test (race detector)
+        env:
+          GOFLAGS: -mod=mod
         run: go test -race -count=1 ./...
 
   docker:
