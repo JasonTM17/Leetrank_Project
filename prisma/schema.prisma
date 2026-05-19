@@ -27,6 +27,8 @@ model User {
   discussionComments DiscussionComment[]
   bookmarks         Bookmark[]
   chatMessages      ChatMessage[]
+
+  @@index([role])
 }
 
 model Tag {
@@ -163,6 +165,7 @@ model Discussion {
 
   @@index([problemId, createdAt(sort: Desc)])
   @@index([userId, createdAt])
+  @@index([problemId, upvotes(sort: Desc)])
 }
 
 model DiscussionComment {
@@ -204,4 +207,5 @@ model ChatMessage {
 
   @@index([userId, createdAt])
   @@index([problemId, createdAt])
+  @@index([contestId, createdAt])
 }

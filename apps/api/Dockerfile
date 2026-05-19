@@ -22,11 +22,17 @@ COPY prisma ./prisma
 
 # Install with optional deps so any native bindings (e.g. prisma engines)
 # land. --omit=optional skipped them and `prisma generate` failed.
+# Scope tightening (P-01): apps/api has its own package.json with the
+# minimal hono + prisma + zod surface — DO NOT install the root workspace
+# (Next, Monaco, Playwright, Vitest) here. Build deps include `prisma`
+# CLI + `typescript` + `tsx`; runtime stage prunes them with
+# `npm prune --omit=dev`. See ADR 0028.
 # Migrating to `pnpm install --frozen-lockfile` is tracked in DX audit
 # F-21/F-22.
 RUN npm install --no-audit --no-fund \
  && npx prisma generate \
- && npx tsc
+ && npx tsc \
+ && npm prune --omit=dev
 
 # --- Runtime stage ---
 FROM node:20-slim AS runtime

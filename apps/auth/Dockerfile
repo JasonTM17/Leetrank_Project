@@ -17,7 +17,8 @@ COPY prisma ./prisma
 
 RUN npm install --no-audit --no-fund \
  && npx prisma generate \
- && npx tsc
+ && npx tsc \
+ && npm prune --omit=dev
 
 # --- Runtime stage ---
 FROM node:20-slim AS runtime
