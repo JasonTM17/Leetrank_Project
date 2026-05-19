@@ -10,7 +10,7 @@ WORKDIR /build
 # generated against an older proxy state and trips "SECURITY ERROR" in CI.
 # `go build -mod=mod` regenerates the hashes from the proxy on the fly.
 COPY go.mod ./
-COPY main.go languages.go exec.go scheduler.go sandbox.go ./
+COPY main.go languages.go exec.go scheduler.go sandbox.go profiles.go ./
 COPY internal/ ./internal/
 
 RUN CGO_ENABLED=0 GOOS=linux go build -mod=mod -ldflags="-s -w" -o judge-service .
