@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PercentileCard } from "@/components/submission/percentile-card";
 import { ArrowLeft, FileCode, AlertTriangle } from "lucide-react";
 import { formatRelativeTime, formatDate, getDifficultyBg } from "@/lib/utils";
 import { languageLabel } from "@/lib/languages";
@@ -155,6 +156,10 @@ export default function SubmissionDetailPage({ params }: { params: Promise<{ id:
                 </pre>
               </CardContent>
             </Card>
+          )}
+
+          {submission.status === "accepted" && submission.runtime !== null && (
+            <PercentileCard submissionId={submission.id} />
           )}
 
           <Card>
