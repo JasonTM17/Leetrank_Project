@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
@@ -19,6 +20,12 @@ const BREADCRUMB_ITEMS = [
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+
+export const metadata: Metadata = {
+  title: "DevOps · LeetRank",
+  description: "Internal DevOps console: service health, CI runs, queue depth, and security events.",
+  robots: { index: false, follow: false },
+};
 
 export default async function DevOpsConsolePage() {
   const gate = await requireAdmin();
