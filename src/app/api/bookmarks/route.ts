@@ -30,7 +30,10 @@ export async function GET(request: NextRequest) {
         where: { userId_problemId: { userId: session.userId, problemId } },
         select: { id: true },
       });
-      return Response.json({ bookmarked: !!bm });
+      return Response.json(
+        { bookmarked: !!bm },
+        { headers: { "Cache-Control": "private, no-store" } }
+      );
     }
 
     // Otherwise: full list for /dashboard.
@@ -44,7 +47,10 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    return Response.json({ bookmarks });
+    return Response.json(
+      { bookmarks },
+      { headers: { "Cache-Control": "private, no-store" } }
+    );
   } catch (err) {
     logger.error("bookmarks GET failed", { scope: "api/bookmarks", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });

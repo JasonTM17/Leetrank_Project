@@ -38,7 +38,10 @@ export async function GET(
       return Response.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    return Response.json({ submission });
+    return Response.json(
+      { submission },
+      { headers: { "Cache-Control": "private, no-store" } }
+    );
   } catch (err) {
     logger.error("submissions/[id] GET failed", { scope: "api/submissions/[id]", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
