@@ -8,3 +8,5 @@ pydantic==2.10.3
 pydantic-settings==2.6.1
 python-jose[cryptography]==3.3.0
 orjson==3.10.12
+aiocache==0.12.3
+redis==5.2.0
