@@ -30,6 +30,7 @@ func (h *Handler) Router() http.Handler {
 	r.Get("/random", h.random)
 	r.Get("/search", h.search)
 	r.Get("/{slug}", h.detail)
+	r.Get("/{slug}/similar", h.similar)
 	return r
 }
 
@@ -514,7 +515,72 @@ func (h *Handler) search(w http.ResponseWriter, r *http.Request) {
 }
 
 // ---- similar (by tag overlap) -------------------------------------------
-// Implemented in feat(problems): similar-problems by tag overlap.
+
+type similarItem struct {
+	ID              string `json:"id"`
+	Title           string `json:"title"`
+	Slug            string `json:"slug"`
+	Difficulty      string `json:"difficulty"`
+	OverlapCount    int    `json:"overlapCount"`
+	SubmissionCount int    `json:"submissionCount"`
+}
+
+// GET /v1/problems/{slug}/similar — top 5 related problems ranked by
+// shared-tag count then by submission volume (a stand-in for `_count.submissions`
+// from the Prisma client). Empty slice if the source problem has no tags.
+func (h *Handler) similar(w http.ResponseWriter, r *http.Request) {
+	slug := chi.URLParam(r, "slug")
+	if slug == "" {
+		httpx.JSON(w, http.StatusBadRequest, map[string]string{"error": "slug required"})
+		return
+	}
+
+	const sql = `
+		WITH src AS (
+		  SELECT id FROM "Problem" WHERE slug = $1
+		),
+		src_tags AS (
+		  SELECT pt."tagId" FROM "ProblemTag" pt
+		  JOIN src ON src.id = pt."problemId"
+		)
+		SELECT p.id, p.title, p.slug, p.difficulty,
+		       COUNT(pt."tagId")::int AS overlap_count,
+		       (SELECT COUNT(*) FROM "Submission" s WHERE s."problemId" = p.id)::int AS submission_count
+		FROM "Problem" p
+		JOIN "ProblemTag" pt ON pt."problemId" = p.id
+		WHERE pt."tagId" IN (SELECT "tagId" FROM src_tags)
+		  AND p.id <> (SELECT id FROM src)
+		GROUP BY p.id, p.title, p.slug, p.difficulty
+		ORDER BY overlap_count DESC, submission_count DESC, p."order" ASC
+		LIMIT 5`
+
+	rows, err := h.pool.Query(r.Context(), sql, slug)
+	if err != nil {
+		httpx.JSON(w, http.StatusInternalServerError, map[string]string{"error": "Internal server error"})
+		return
+	}
+	defer rows.Close()
+
+	items := make([]similarItem, 0, 5)
+	for rows.Next() {
+		var it similarItem
+		if err := rows.Scan(&it.ID, &it.Title, &it.Slug, &it.Difficulty, &it.OverlapCount, &it.SubmissionCount); err != nil {
+			httpx.JSON(w, http.StatusInternalServerError, map[string]string{"error": "Internal server error"})
+			return
+		}
+		items = append(items, it)
+	}
+	if err := rows.Err(); err != nil {
+		httpx.JSON(w, http.StatusInternalServerError, map[string]string{"error": "Internal server error"})
+		return
+	}
+
+	w.Header().Set("Cache-Control", "public, max-age=300, stale-while-revalidate=600")
+	httpx.JSON(w, http.StatusOK, map[string]any{
+		"slug":     slug,
+		"problems": items,
+	})
+}
 
 // ---- helpers ------------------------------------------------------------
 
