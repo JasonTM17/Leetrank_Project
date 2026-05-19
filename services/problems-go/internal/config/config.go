@@ -9,20 +9,24 @@ import (
 )
 
 type Config struct {
-	DatabaseURL string
-	Port        string
-	CORSOrigins string
-	LogLevel    string
+	DatabaseURL  string
+	Port         string
+	CORSOrigins  string
+	LogLevel     string
+	LogPretty    bool
+	OTLPEndpoint string
 }
 
 const defaultPort = "4013"
 
 func Load() (*Config, error) {
 	cfg := &Config{
-		DatabaseURL: os.Getenv("DATABASE_URL"),
-		Port:        envOr("PROBLEMS_PORT", defaultPort),
-		CORSOrigins: os.Getenv("CORS_ALLOWED_ORIGINS"),
-		LogLevel:    envOr("LOG_LEVEL", "info"),
+		DatabaseURL:  os.Getenv("DATABASE_URL"),
+		Port:         envOr("PROBLEMS_PORT", defaultPort),
+		CORSOrigins:  os.Getenv("CORS_ALLOWED_ORIGINS"),
+		LogLevel:     envOr("LOG_LEVEL", "info"),
+		LogPretty:    os.Getenv("LOG_PRETTY") == "1",
+		OTLPEndpoint: os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT"),
 	}
 
 	var errs []error
