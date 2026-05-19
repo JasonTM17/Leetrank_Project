@@ -1,0 +1,86 @@
+{
+  "annotations": {"list": []},
+  "editable": false,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"unit": "ops", "color": {"mode": "palette-classic"}}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+      "id": 1,
+      "options": {"legend": {"displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"]}},
+      "targets": [
+        {"expr": "rate(auth_login_attempts_total[5m])", "legendFormat": "attempts/s", "refId": "A"},
+        {"expr": "rate(auth_login_failures_total[5m])", "legendFormat": "failures/s", "refId": "B"},
+        {"expr": "rate(auth_login_success_total[5m])", "legendFormat": "success/s", "refId": "C"}
+      ],
+      "title": "Login attempts (success vs failure)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"unit": "short", "color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 5}, {"color": "red", "value": 10}]}}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+      "id": 2,
+      "options": {"colorMode": "background", "graphMode": "area", "textMode": "value_and_name", "orientation": "horizontal", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}},
+      "targets": [
+        {"expr": "sum(rate(auth_account_lockouts_total[1m])) * 60", "legendFormat": "lockouts/min", "refId": "A"}
+      ],
+      "title": "Account lockouts per minute",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"unit": "ops", "color": {"mode": "palette-classic"}}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+      "id": 3,
+      "options": {"legend": {"displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"]}},
+      "targets": [
+        {"expr": "rate(auth_refresh_rotations_total[5m])", "legendFormat": "refresh rotations/s", "refId": "A"},
+        {"expr": "rate(auth_refresh_reuse_blocked_total[5m])", "legendFormat": "reuse blocked/s", "refId": "B"}
+      ],
+      "title": "Refresh-token rotations & reuse blocks",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"unit": "ops", "color": {"mode": "palette-classic"}}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+      "id": 4,
+      "options": {"legend": {"displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"]}},
+      "targets": [
+        {"expr": "rate(auth_jwks_verifies_total[5m])", "legendFormat": "verifies/s", "refId": "A"},
+        {"expr": "rate(auth_jwks_verify_failures_total[5m])", "legendFormat": "verify failures/s", "refId": "B"}
+      ],
+      "title": "JWKS verifies (success vs failure)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"unit": "reqps", "color": {"mode": "palette-classic"}}, "overrides": []},
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 16},
+      "id": 5,
+      "options": {"legend": {"displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"]}},
+      "targets": [
+        {"expr": "sum by (route, status) (rate(http_requests_total{service=\"identity\"}[5m]))", "legendFormat": "{{route}} [{{status}}]", "refId": "A"}
+      ],
+      "title": "Identity service: req/s by route & status",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["leetrank", "auth", "security"],
+  "templating": {"list": []},
+  "time": {"from": "now-1h", "to": "now"},
+  "timepicker": {},
+  "timezone": "",
+  "title": "Auth & Security",
+  "uid": "leetrank-auth-security",
+  "version": 1,
+  "weekStart": ""
+}
