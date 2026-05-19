@@ -5,41 +5,61 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
+// Standardised RED metrics — same names across every Go service.
 var (
-	requestCounter = prometheus.NewCounterVec(
+	requestsTotal = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
-			Name: "leetrank_submissions_requests_total",
-			Help: "Total HTTP requests handled by leetrank-submissions-go.",
+			Name: "http_requests_total",
+			Help: "Total HTTP requests, by service/method/route/status.",
 		},
-		[]string{"method", "status"},
+		[]string{"service", "method", "route", "status"},
 	)
 	requestDuration = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
-			Name:    "leetrank_submissions_request_duration_seconds",
-			Help:    "Request latency in seconds.",
+			Name:    "http_request_duration_seconds",
+			Help:    "End-to-end HTTP latency in seconds.",
 			Buckets: prometheus.DefBuckets,
 		},
-		[]string{"method"},
+		[]string{"service", "method", "route", "status"},
+	)
+	inflightGauge = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "http_inflight_requests",
+			Help: "Currently in-flight HTTP requests.",
+		},
+		[]string{"service"},
 	)
 )
 
 func init() {
-	prometheus.MustRegister(requestCounter, requestDuration)
+	prometheus.MustRegister(requestsTotal, requestDuration, inflightGauge)
 }
 
-// Metrics increments the Prometheus counters per request.
-func Metrics(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		start := time.Now()
-		rec := &statusRecorder{ResponseWriter: w, status: http.StatusOK}
-		next.ServeHTTP(rec, r)
-		requestCounter.WithLabelValues(r.Method, strconv.Itoa(rec.status)).Inc()
-		requestDuration.WithLabelValues(r.Method).Observe(time.Since(start).Seconds())
-	})
+// Metrics returns a chi-friendly middleware that records counter,
+// histogram, and inflight metrics under the given service label.
+func Metrics(service string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			start := time.Now()
+			rec := &statusRecorder{ResponseWriter: w, status: http.StatusOK}
+			inflightGauge.WithLabelValues(service).Inc()
+			defer inflightGauge.WithLabelValues(service).Dec()
+			next.ServeHTTP(rec, r)
+			route := r.URL.Path
+			if rc := chi.RouteContext(r.Context()); rc != nil && rc.RoutePattern() != "" {
+				route = rc.RoutePattern()
+			}
+			status := strconv.Itoa(rec.status)
+			requestsTotal.WithLabelValues(service, r.Method, route, status).Inc()
+			requestDuration.WithLabelValues(service, r.Method, route, status).
+				Observe(time.Since(start).Seconds())
+		})
+	}
 }
 
 // PrometheusHandler returns the /metrics handler.
