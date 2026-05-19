@@ -18,15 +18,17 @@ describe("GET /api/discussions/[id]", () => {
       updatedAt: new Date(),
       user: { id: "u1", username: "alice", avatar: null },
       comments: [
-        { id: "c1", body: "Nice", createdAt: new Date(), user: { id: "u2", username: "bob", avatar: null } },
+        { id: "c1", body: "Nice", parentId: null, createdAt: new Date(), user: { id: "u2", username: "bob", avatar: null } },
       ],
     } as never);
+    prismaMock.discussionVote.aggregate.mockResolvedValue({ _sum: { value: 0 } } as never);
 
     const res = await GET(asNextRequest(new Request("http://x/api/discussions/d1")), paramsFor("d1"));
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data.discussion.title).toBe("Approach");
     expect(data.discussion.comments).toHaveLength(1);
+    expect(data.discussion.score).toBe(0);
   });
 
   it("returns 404 for unknown id", async () => {
