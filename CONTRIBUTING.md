@@ -1,5 +1,7 @@
 # Contributing to LeetRank
 
+🌐 **English** · [Tiếng Việt](CONTRIBUTING.vi.md)
+
 Thanks for your interest. This guide covers the workflow we use day-to-day — branch naming, commit format, dev setup, PRs, and review.
 
 We follow [Conventional Commits](https://www.conventionalcommits.org/) and one-feature-per-PR. Read this once before your first PR; you'll save a review round.

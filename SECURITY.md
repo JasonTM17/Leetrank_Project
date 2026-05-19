@@ -1,5 +1,7 @@
 # Security Policy
 
+🌐 **English** · [Tiếng Việt](SECURITY.vi.md)
+
 ## Supported Versions
 
 LeetRank is in active development on the `main` branch. Security fixes target

@@ -5,6 +5,8 @@
 **A self-hostable, commercial-grade competitive programming platform.**
 Solve, judge, rank — across 30+ languages, with real-time leaderboards and contest support.
 
+🌐 **English** · [Tiếng Việt](README.vi.md)
+
 [![CI](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/ci.yml/badge.svg)](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/ci.yml)
 [![Docker Pulls](https://img.shields.io/docker/pulls/nguyenson1710/leetrank-app?logo=docker&label=pulls)](https://hub.docker.com/r/nguyenson1710/leetrank-app)
 [![GHCR](https://img.shields.io/badge/ghcr.io-jasontm17%2Fleetrank-blueviolet?logo=github)](https://github.com/JasonTM17?tab=packages&repo_name=Leetrank_Project)
