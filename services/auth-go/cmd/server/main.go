@@ -84,7 +84,7 @@ func main() {
 	r.Get("/metrics", httpx.PrometheusHandler())
 	r.Get("/jwks", keystore.JWKSHandler)
 	r.Get("/.well-known/jwks.json", keystore.JWKSHandler)
-	r.Mount("/v1/auth", auth.Router())
+	r.Mount("/v1/auth", auth.Router(pool, keystore))
 
 	srv := &http.Server{
 		Addr:              ":" + cfg.Port,
