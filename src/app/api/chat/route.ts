@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { createHmac } from "node:crypto";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
@@ -9,6 +10,24 @@ const chatBodySchema = z.object({
   problemId: z.string().optional(),
   contestId: z.string().optional(),
 });
+
+// HMAC the outbound n8n webhook so the workflow can reject forged requests.
+// docs/runbooks/n8n.md describes the verification side. In production the
+// secret is required; in dev/test we log a warning and skip signing so local
+// stacks without n8n configured continue to work.
+let n8nHmacWarned = false;
+function n8nHmacSecret(): string | null {
+  const v = process.env.N8N_HMAC_SECRET;
+  if (v && v.length >= 16) return v;
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("N8N_HMAC_SECRET must be set (16+ chars) in production");
+  }
+  if (!n8nHmacWarned) {
+    console.warn("[chat] N8N_HMAC_SECRET unset — skipping HMAC signing (dev only)");
+    n8nHmacWarned = true;
+  }
+  return null;
+}
 
 /** Strip code blocks longer than 200 lines to avoid shipping full submissions to the LLM. */
 function redactLongCodeBlocks(text: string): string {
@@ -86,16 +105,24 @@ export async function POST(request: NextRequest) {
 
   let reply: string;
   try {
+    const rawBody = JSON.stringify({
+      userId: session.userId,
+      ...(problemId ? { problemId } : {}),
+      ...(contestId ? { contestId } : {}),
+      message: redactedMessage,
+      history: history.reverse().map((m: { role: string; content: string }) => ({ role: m.role, content: m.content })),
+    });
+
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    const secret = n8nHmacSecret();
+    if (secret) {
+      headers["X-LeetRank-Signature"] = createHmac("sha256", secret).update(rawBody).digest("hex");
+    }
+
     const n8nResponse = await fetch(webhookUrl, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        userId: session.userId,
-        ...(problemId ? { problemId } : {}),
-        ...(contestId ? { contestId } : {}),
-        message: redactedMessage,
-        history: history.reverse().map((m: { role: string; content: string }) => ({ role: m.role, content: m.content })),
-      }),
+      headers,
+      body: rawBody,
       signal: AbortSignal.timeout(30_000),
     });
 
