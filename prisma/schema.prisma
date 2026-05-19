@@ -28,6 +28,7 @@ model User {
   discussionVotes   DiscussionVote[]
   bookmarks         Bookmark[]
   chatMessages      ChatMessage[]
+  dailyChallengeStreak DailyChallengeStreak?
 
   @@index([role])
 }
@@ -36,7 +37,13 @@ model Tag {
   id       String    @id @default(cuid())
   name     String    @unique
   slug     String    @unique
+  // LeetCode-style taxonomy: "topic" (algorithm/data-structure), "company"
+  // (interview source), "skill" (language/runtime tag). Default keeps every
+  // pre-existing seeded row classified as a topic without a backfill script.
+  category String    @default("topic")
   problems ProblemTag[]
+
+  @@index([category])
 }
 
 model Problem {
@@ -50,6 +57,9 @@ model Problem {
   constraints String?
   starterCode String?
   order       Int      @default(0)
+  // 0..1 share of accepted submissions, refreshed by
+  // src/lib/acceptance-rate.ts. Null until the first refresh runs.
+  acceptanceRate Float?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -59,9 +69,11 @@ model Problem {
   contestProblems ContestProblem[]
   discussions Discussion[]
   bookmarks   Bookmark[]
+  dailyChallenges DailyChallenge[]
 
   @@index([difficulty, order])
   @@index([order])
+  @@index([acceptanceRate])
 }
 
 model ProblemTag {
@@ -232,4 +244,33 @@ model ChatMessage {
   @@index([userId, createdAt])
   @@index([problemId, createdAt])
   @@index([contestId, createdAt])
+}
+
+// Daily challenge: one problem chosen per UTC date by the cron picker.
+// `date` is the UTC midnight of the challenge day; uniqueness guarantees
+// idempotency when the picker is re-run.
+model DailyChallenge {
+  id              String   @id @default(cuid())
+  problemId       String
+  date            DateTime @unique
+  createdAt       DateTime @default(now())
+  completionCount Int      @default(0)
+
+  problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@index([problemId])
+  @@index([date(sort: Desc)])
+}
+
+// Per-user daily-challenge streak counter. `lastSolvedDate` stores the UTC
+// midnight of the most recent solved challenge so streak math is timezone-
+// independent.
+model DailyChallengeStreak {
+  userId         String   @id @unique
+  currentStreak  Int      @default(0)
+  longestStreak  Int      @default(0)
+  lastSolvedDate DateTime?
+  updatedAt      DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
