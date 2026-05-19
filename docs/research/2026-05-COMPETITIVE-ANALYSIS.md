@@ -486,3 +486,53 @@ Cap eviction runs every 100 inserts to keep the ZSET bounded.
 - Where the agent's `WebFetch` was blocked (LeetCode, Codeforces, partial AtCoder), the entry says so explicitly and falls back to cached training knowledge as of Jan 2025.
 - 12 gaps ranked, 5 actions sized; each action references one or more ADRs from `docs/adr/` (0007, 0021, 0022, 0024, 0028).
 
+---
+
+## 7. Status update — 2026-05-19
+
+Snapshot of which gaps from §3 closed in the v0.2.0 feature wave (~500
+commits since v0.1.0). Cross-referenced against `git log v0.1.0..HEAD`,
+[CHANGELOG.md](../../CHANGELOG.md), and the current `prisma/schema.prisma`.
+
+### Closed
+
+| # | Gap | Shipped as | Evidence |
+|---|---|---|---|
+| 1 | Daily Challenge | `DailyChallenge` + `UserActivity` schema, `/api/daily-challenge` GET + history, home banner, picker workflow | commits `bff6caf`, `05e6f8a`, `05318ca`, `1f7c48e`, `9ff9414` |
+| 2 | Study Plans | `Plan` + `PlanStep` + `UserPlanProgress` schema, `/plans` index + `[slug]` page, `/api/plans*`, post-AC unlock hook | commits `ccd71b4`, `12a23a3` |
+| 3 | Contest divisions | `Division` + `Rating` + `RatingChange` schema, division badge + delta column, idempotent admin `finalize-rating` | commits `f100b4e`, `61c98b7`, `6345502`, `bd1ea99` |
+| 5 | Official editorial | `Editorial` model, `/api/editorial/[slug]`, problem-detail tab with progressive hints | commit `8c4e164` |
+| 6 | Streaks + activity heatmap | Pure streak math lib, `<StreakBadge>` + activity heatmap, daily-attempted/solved fields on `UserActivity` | commits `05e6f8a`, `bff6caf` |
+| 8 | Submission "beats X% in language" | `analytics-helpers` (percentile + distribution), `GET /submissions/[id]/percentile`, percentile card UI | commits `fd92eaf`, `d731b22`, `1adb3e7`, `609952a` |
+| — | Achievements + badges | `Achievement` + `UserAchievement` schema, pure `evaluateAchievements` engine, `/achievements` page + badge component | commits `3a62fdf`, `f322f8e`, `bf91c47`, `ac34fc6` |
+| — | Solution sharing + votes | `SharedSolution` + `SolutionVote` models + migration, `/api/solutions*`, vote API | commits `b0e14b8`, `da427c6` |
+| — | Recommendations engine | Pure scorer (tag overlap + difficulty progression + freshness), `/api/recommendations`, home component | commits `a56fabb`, `9564a91`, `255bdb2` |
+| — | Code playback (feature-flagged) | `SubmissionEvent` model, recorder + viewer, `POST /submission-events` + `GET /playback/[id]`, gated by `PLAYBACK_ENABLED` | commits `16c0169`, `62badd5`, `ab2a873`, `fae5370` |
+| — | Admin analytics dashboard | Aggregation lib + `/api/admin/analytics`, SVG chart primitives, `/admin/analytics` page | commits `e7c4702`, `10fd3ca`, `3029679`, `50137ef` |
+| — | Tags taxonomy expansion | Topics + companies seeder, tag taxonomy + acceptance-rate field, collapsible filter chips | commits `a0bf3a9`, `040b8ea`, `49c06cd`, `80dfdb8` |
+
+The last six rows ("—") were not in the original §3 ranked gap list but
+landed in the same wave because they are cheap, cross-cutting, or
+flow-naturally from a closed gap (e.g., recommendations is an obvious
+follow-on from study plans + activity history).
+
+### Still open
+
+| # | Gap | Status |
+|---|---|---|
+| 4 | Per-problem numeric difficulty rating | Tag taxonomy + acceptance-rate field landed (`a0bf3a9`); the Glicko-2-percentile compute path planned for `analytics-python` has not shipped. Foundational data is in place. |
+| 7 | Virtual contest participation | Not started. No `VirtualEntry` model, no replay clock. |
+| 9 | Skill certifications | Not started. PDF + verification URL workflow not yet built. |
+| 10 | Hacking phase | Not started. No `Hack` model, no post-contest read-window UX. |
+| 11 | Mashup / custom private contests | Not started. Contest creation still admin-only. |
+| 12 | Company tags + interview-prep filter | `Company` + `ProblemCompany` join schema seeded via `seed-topics.ts`; the company-frequency UI surface and "Top Interview 150" curated set have not shipped. Foundational data is in place. |
+
+### Re-prioritisation note
+
+Gaps 4 and 12 are now half-shipped (data layer present, UX surface
+pending). They are cheap to finish and should jump to the front of the
+next sprint. Gaps 7, 10, and 11 remain medium / large efforts and stay
+on the long-term backlog. Gap 9 (certifications) requires a paid-tier
+business decision and is paused until a pricing model is committed.
+
+
