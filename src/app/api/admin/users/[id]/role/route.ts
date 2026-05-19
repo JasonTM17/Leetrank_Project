@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-guard";
+import { logger } from "@/lib/logger";
 import { z } from "zod";
 
 const roleSchema = z.object({
@@ -50,6 +51,7 @@ export async function PATCH(
     if (err instanceof Error && err.message.includes("Record to update not found")) {
       return Response.json({ error: "User not found" }, { status: 404 });
     }
+    logger.error("admin/users[id]/role PATCH failed", { scope: "api/admin/users/[id]/role", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

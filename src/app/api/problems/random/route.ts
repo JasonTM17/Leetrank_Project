@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
+import { logger } from "@/lib/logger";
 
 // GET /api/problems/random — returns a single random problem, optionally
 // filtered by difficulty. Used by the "I'm feeling lucky" CTA. Picks via
@@ -26,7 +27,8 @@ export async function GET(request: NextRequest) {
     });
 
     return Response.json({ problem });
-  } catch {
+  } catch (err) {
+    logger.error("problems/random failed", { scope: "api/problems/random", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

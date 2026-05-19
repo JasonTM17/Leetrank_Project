@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { logger } from "@/lib/logger";
 
 // DELETE /api/discussions/[id]/comments/[commentId] — remove a comment.
 // Author or admin only. Validates that the commentId actually belongs to
@@ -33,7 +34,8 @@ export async function DELETE(
 
     await prisma.discussionComment.delete({ where: { id: comment.id } });
     return Response.json({ success: true });
-  } catch {
+  } catch (err) {
+    logger.error("discussions/comments DELETE failed", { scope: "api/discussions/[id]/comments/[commentId]", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-guard";
 import { createContestSchema, firstZodError } from "@/lib/validations";
 import { cache } from "@/lib/cache";
+import { logger } from "@/lib/logger";
 
 export async function GET() {
   try {
@@ -15,7 +16,8 @@ export async function GET() {
     });
 
     return Response.json({ contests });
-  } catch {
+  } catch (err) {
+    logger.error("admin/contests GET failed", { scope: "api/admin/contests", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }
@@ -54,7 +56,8 @@ export async function POST(request: NextRequest) {
     cache.delete("contests:all");
 
     return Response.json({ contest }, { status: 201 });
-  } catch {
+  } catch (err) {
+    logger.error("admin/contests POST failed", { scope: "api/admin/contests", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

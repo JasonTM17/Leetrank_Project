@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-guard";
+import { logger } from "@/lib/logger";
 
 export async function GET() {
   try {
@@ -20,7 +21,8 @@ export async function GET() {
     });
 
     return Response.json({ users });
-  } catch {
+  } catch (err) {
+    logger.error("admin/users GET failed", { scope: "api/admin/users", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

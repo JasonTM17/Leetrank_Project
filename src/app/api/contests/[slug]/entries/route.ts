@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
+import { logger } from "@/lib/logger";
 
 // GET /api/contests/[slug]/entries — list of joined participants for a
 // contest, ordered by score desc. Like the leaderboard, but returns the
@@ -41,7 +42,8 @@ export async function GET(
     ]);
 
     return Response.json({ entries, total });
-  } catch {
+  } catch (err) {
+    logger.error("contests/entries failed", { scope: "api/contests/[slug]/entries", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

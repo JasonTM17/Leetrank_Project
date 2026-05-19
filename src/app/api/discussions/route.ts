@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { createDiscussionSchema, firstZodError } from "@/lib/validations";
 import { rateLimit } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 50;
@@ -42,7 +43,8 @@ export async function GET(request: NextRequest) {
     ]);
 
     return Response.json({ discussions, total, page, limit });
-  } catch {
+  } catch (err) {
+    logger.error("discussions GET failed", { scope: "api/discussions", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }
@@ -96,7 +98,8 @@ export async function POST(request: NextRequest) {
     });
 
     return Response.json({ discussion }, { status: 201 });
-  } catch {
+  } catch (err) {
+    logger.error("discussions POST failed", { scope: "api/discussions", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

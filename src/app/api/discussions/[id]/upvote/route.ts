@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
 // POST /api/discussions/[id]/upvote — toggles +1 on the discussion's upvote
 // counter. We don't track per-user votes yet (no DiscussionVote model) so
@@ -51,6 +52,7 @@ export async function POST(
     if (err instanceof Error && err.message.includes("Record to update not found")) {
       return Response.json({ error: "Discussion not found" }, { status: 404 });
     }
+    logger.error("discussions/[id]/upvote failed", { scope: "api/discussions/[id]/upvote", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

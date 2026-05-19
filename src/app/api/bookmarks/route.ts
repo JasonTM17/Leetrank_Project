@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 import { z } from "zod";
 
 const toggleSchema = z.object({
@@ -44,7 +45,8 @@ export async function GET(request: NextRequest) {
     });
 
     return Response.json({ bookmarks });
-  } catch {
+  } catch (err) {
+    logger.error("bookmarks GET failed", { scope: "api/bookmarks", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }
@@ -106,7 +108,8 @@ export async function POST(request: NextRequest) {
       data: { userId: session.userId, problemId },
     });
     return Response.json({ bookmarked: true });
-  } catch {
+  } catch (err) {
+    logger.error("bookmarks POST failed", { scope: "api/bookmarks", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }
@@ -148,7 +151,8 @@ export async function DELETE(request: NextRequest) {
 
     await prisma.bookmark.delete({ where: { id: existing.id } });
     return Response.json({ bookmarked: false });
-  } catch {
+  } catch (err) {
+    logger.error("bookmarks DELETE failed", { scope: "api/bookmarks", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
+import { logger } from "@/lib/logger";
 
 // GET /api/users — public directory of users with the basics for a "Browse
 // users" view. Avatar + bio are surfaced; emails and roles are not.
@@ -18,7 +19,8 @@ export async function GET(request: NextRequest) {
 
     const where: Record<string, unknown> = {};
     if (search) {
-      where.username = { contains: search };
+      // Bug-sweep 2026-05: case-insensitive lookup so "AL" finds "alice".
+      where.username = { contains: search, mode: "insensitive" };
     }
 
     const [users, total] = await Promise.all([
@@ -39,7 +41,8 @@ export async function GET(request: NextRequest) {
     ]);
 
     return Response.json({ users, total, page, limit });
-  } catch {
+  } catch (err) {
+    logger.error("users GET failed", { scope: "api/users", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-guard";
+import { logger } from "@/lib/logger";
 
 // GET /api/admin/stats — dashboard summary for the admin panel header.
 // Pulls all the counters in parallel; cheap because each is a COUNT(*) on
@@ -40,7 +41,8 @@ export async function GET(request: NextRequest) {
       acceptedSubmissions,
       discussions,
     });
-  } catch {
+  } catch (err) {
+    logger.error("admin/stats GET failed", { scope: "api/admin/stats", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { cache } from "@/lib/cache";
+import { logger } from "@/lib/logger";
 
 const TTL_MS = 60_000;
 
@@ -35,7 +36,9 @@ export async function GET(request: NextRequest) {
     const compute = async (): Promise<ListResult> => {
       const where: Record<string, unknown> = {};
       if (difficulty) where.difficulty = difficulty;
-      if (search) where.title = { contains: search };
+      // Bug-sweep 2026-05: Postgres LIKE is case-sensitive — without
+      // `mode: "insensitive"` searching "two" misses "Two Sum".
+      if (search) where.title = { contains: search, mode: "insensitive" };
       if (tag) where.tags = { some: { tag: { slug: tag } } };
 
       const [problems, total] = await Promise.all([
@@ -71,7 +74,8 @@ export async function GET(request: NextRequest) {
         ? { "Cache-Control": "public, max-age=60, stale-while-revalidate=300" }
         : { "Cache-Control": "no-store" },
     });
-  } catch {
+  } catch (err) {
+    logger.error("problems GET failed", { scope: "api/problems", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-guard";
 import { createProblemSchema, firstZodError } from "@/lib/validations";
 import { invalidateProblemsCache } from "@/lib/cache-invalidate";
+import { logger } from "@/lib/logger";
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,7 +16,10 @@ export async function GET(request: NextRequest) {
 
     const where: Record<string, unknown> = {};
     if (difficulty) where.difficulty = difficulty;
-    if (search) where.title = { contains: search };
+    // Bug-sweep 2026-05: case-insensitive title match. Postgres LIKE is
+    // case-sensitive by default; without `mode` admins searching "two"
+    // miss problems titled "Two Sum".
+    if (search) where.title = { contains: search, mode: "insensitive" };
 
     const problems = await prisma.problem.findMany({
       where,
@@ -27,7 +31,8 @@ export async function GET(request: NextRequest) {
     });
 
     return Response.json({ problems });
-  } catch {
+  } catch (err) {
+    logger.error("admin/problems GET failed", { scope: "api/admin/problems", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }
@@ -81,7 +86,8 @@ export async function POST(request: NextRequest) {
     invalidateProblemsCache();
 
     return Response.json({ problem }, { status: 201 });
-  } catch {
+  } catch (err) {
+    logger.error("admin/problems POST failed", { scope: "api/admin/problems", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

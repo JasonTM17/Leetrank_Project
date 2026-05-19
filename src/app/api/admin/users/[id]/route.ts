@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-guard";
+import { logger } from "@/lib/logger";
 
 // DELETE /api/admin/users/[id] — wipe a user. Cascading deletes (Prisma
 // schema marks every user-owned table with onDelete: Cascade) handle the
@@ -31,7 +32,8 @@ export async function DELETE(
     }
 
     return Response.json({ success: true });
-  } catch {
+  } catch (err) {
+    logger.error("admin/users[id] DELETE failed", { scope: "api/admin/users/[id]", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

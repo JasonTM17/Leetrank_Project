@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-guard";
 import { updateProblemSchema, firstZodError } from "@/lib/validations";
 import { invalidateProblemsCache } from "@/lib/cache-invalidate";
+import { logger } from "@/lib/logger";
 
 export async function PUT(
   request: NextRequest,
@@ -34,7 +35,8 @@ export async function PUT(
     invalidateProblemsCache();
 
     return Response.json({ problem });
-  } catch {
+  } catch (err) {
+    logger.error("admin/problems[id] PUT failed", { scope: "api/admin/problems/[id]", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }
@@ -54,7 +56,8 @@ export async function DELETE(
     invalidateProblemsCache();
 
     return Response.json({ success: true });
-  } catch {
+  } catch (err) {
+    logger.error("admin/problems[id] DELETE failed", { scope: "api/admin/problems/[id]", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

@@ -6,6 +6,7 @@ import { signToken } from "@/lib/auth";
 import { registerSchema } from "@/lib/validations";
 import { rateLimit } from "@/lib/rate-limit";
 import { clientIp } from "@/lib/client-ip";
+import { logger } from "@/lib/logger";
 
 // RULES §4: rate-limit auth routes. Registration is a write path that
 // allocates DB rows + runs bcrypt — uncapped traffic here is both a spam
@@ -112,7 +113,8 @@ export async function POST(request: NextRequest) {
         createdAt: user.createdAt,
       },
     }, { status: 201 });
-  } catch {
+  } catch (err) {
+    logger.error("register failed", { scope: "api/auth/register", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

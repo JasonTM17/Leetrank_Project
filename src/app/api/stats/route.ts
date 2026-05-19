@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
+import { logger } from "@/lib/logger";
 
 // GET /api/stats — public counters used by the homepage hero numbers.
 // Cached for 60 seconds at the response layer; the actual reads run in
@@ -21,7 +22,8 @@ export async function GET(_request: NextRequest) {
         },
       }
     );
-  } catch {
+  } catch (err) {
+    logger.error("stats GET failed", { scope: "api/stats", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

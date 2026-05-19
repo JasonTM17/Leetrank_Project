@@ -1,5 +1,6 @@
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { logger } from "@/lib/logger";
 
 export async function GET() {
   try {
@@ -18,7 +19,8 @@ export async function GET() {
     }
 
     return Response.json({ user });
-  } catch {
+  } catch (err) {
+    logger.error("auth/me failed", { scope: "api/auth/me", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
+import { logger } from "@/lib/logger";
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 50;
@@ -23,7 +24,8 @@ export async function GET(request: NextRequest) {
     });
 
     return Response.json({ contests });
-  } catch {
+  } catch (err) {
+    logger.error("contests/upcoming failed", { scope: "api/contests/upcoming", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

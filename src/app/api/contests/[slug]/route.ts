@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { cache } from "@/lib/cache";
+import { logger } from "@/lib/logger";
 
 const TTL_MS = 60_000;
 
@@ -56,7 +57,8 @@ export async function GET(
       { contest: contestPayload },
       { headers: { "Cache-Control": "public, max-age=60, stale-while-revalidate=300" } }
     );
-  } catch {
+  } catch (err) {
+    logger.error("contests/[slug] failed", { scope: "api/contests/[slug]", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }
