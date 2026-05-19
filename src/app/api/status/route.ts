@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 
 const API_URL = process.env.API_INTERNAL_URL ?? "http://api:4000";
-const AUTH_URL = process.env.AUTH_INTERNAL_URL ?? "http://auth:4001";
+const AUTH_URL = process.env.AUTH_INTERNAL_URL ?? "http://identity:4011";
 const JUDGE_URL = process.env.JUDGE_INTERNAL_URL ?? "http://judge:9090";
 
 type ServiceHealth = "operational" | "degraded" | "down";
@@ -63,8 +63,8 @@ async function checkApi(): Promise<ServiceResult> {
 async function checkAuth(): Promise<ServiceResult> {
   const { ok, latencyMs } = await probeHttp(`${AUTH_URL}/healthz`);
   return {
-    id: "auth",
-    name: "Auth Service",
+    id: "identity",
+    name: "Identity Service",
     status: ok ? "operational" : "down",
     latencyMs,
   };
