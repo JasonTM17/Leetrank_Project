@@ -73,6 +73,10 @@ Thumbs.db
 .omc/
 .claude/worktrees/
 DOCUMENTATION_MASTER.md
+.playwright-mcp/
+.tmp-go/
+load-test-results/
+tests/ux/screenshots/
 /scripts/*
 # Project artifacts under /scripts/ that ARE tracked
 !/scripts/load-test.mjs
