@@ -26,19 +26,27 @@ jobs:
           - service: app
             context: .
             dockerfile: Dockerfile
-            image: jasontm17/leetrank-app
+            image: nguyenson1710/leetrank-app
           - service: api
             context: .
             dockerfile: apps/api/Dockerfile
-            image: jasontm17/leetrank-api
+            image: nguyenson1710/leetrank-api
           - service: auth
             context: .
             dockerfile: apps/auth/Dockerfile
-            image: jasontm17/leetrank-auth
+            image: nguyenson1710/leetrank-auth
           - service: judge
             context: ./judge-service
             dockerfile: judge-service/Dockerfile
-            image: jasontm17/leetrank-judge
+            image: nguyenson1710/leetrank-judge
+          - service: submissions-go
+            context: ./services/submissions-go
+            dockerfile: services/submissions-go/Dockerfile
+            image: nguyenson1710/leetrank-submissions-go
+          - service: problems-go
+            context: ./services/problems-go
+            dockerfile: services/problems-go/Dockerfile
+            image: nguyenson1710/leetrank-problems-go
 
     steps:
       - uses: actions/checkout@v4

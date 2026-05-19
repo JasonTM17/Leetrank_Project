@@ -39,7 +39,7 @@ Caddy routes `/api/v1/auth/*` to `auth:4001` **above** the existing `/api/v1/*` 
 | Caddy routing | Done — `/api/v1/auth/*` → `auth:4001` |
 | Prometheus scrape | Done — `job_name: auth` |
 | CI typecheck + build | Done — mirrors `api` job |
-| Docker Hub publish | Done — `jasontm17/leetrank-auth` in matrix |
+| Docker Hub publish | Done — `nguyenson1710/leetrank-auth` in matrix |
 | JWKS endpoint | Scaffold — returns `{ keys: [] }` |
 | Login endpoint | Stub — returns 501 |
 

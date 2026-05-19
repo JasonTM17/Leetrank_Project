@@ -1,0 +1,14 @@
+# Build artefacts that have no business in the image.
+.git
+.github
+.gitignore
+.gitattributes
+*.md
+!README.md
+*.test
+bin/
+dist/
+node_modules
+.dockerignore
+Dockerfile
+.env*
