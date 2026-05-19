@@ -1,7 +1,8 @@
 import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/db";
+import { envOr } from "@/lib/env";
 
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+const BASE_URL = envOr("NEXT_PUBLIC_APP_URL", "http://localhost:3000");
 
 // Cache the database query in production for 1 hour. Sitemaps don't need to
 // be perfectly fresh, and skipping it on every crawl keeps Postgres quiet.

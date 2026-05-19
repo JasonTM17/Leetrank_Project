@@ -1,3 +1,4 @@
+import { envOr } from "@/lib/env";
 import { RunResult } from "@/types";
 
 interface JudgeRequest {
@@ -19,7 +20,7 @@ interface GoJudgeResponse {
   status: string;
 }
 
-const JUDGE_URL = process.env.JUDGE_SERVICE_URL || "http://localhost:9090";
+const JUDGE_URL = envOr("JUDGE_SERVICE_URL", "http://localhost:9090");
 const FETCH_TIMEOUT_MS = 30_000;
 
 export class JudgeUnavailableError extends Error {

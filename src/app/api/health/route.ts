@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
+import { envOr } from "@/lib/env";
 
-const JUDGE_URL = process.env.JUDGE_SERVICE_URL || "http://localhost:9090";
+const JUDGE_URL = envOr("JUDGE_SERVICE_URL", "http://localhost:9090");
 const startedAt = Date.now();
 
 interface ServiceStatus {

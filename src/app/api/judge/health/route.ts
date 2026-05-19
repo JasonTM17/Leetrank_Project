@@ -1,11 +1,12 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
+import { envOr } from "@/lib/env";
 
 // GET /api/judge/health — proxy to the Go judge's /health endpoint, surfaced
 // at our own /api so the frontend doesn't need to know the judge URL. We
 // strip the response body and return only the high-level status + scheduler
 // snapshot — that's what dashboards care about.
-const JUDGE_URL = process.env.JUDGE_SERVICE_URL || "http://localhost:9090";
+const JUDGE_URL = envOr("JUDGE_SERVICE_URL", "http://localhost:9090");
 
 export async function GET(_request: NextRequest) {
   const controller = new AbortController();
