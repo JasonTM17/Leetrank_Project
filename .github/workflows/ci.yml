@@ -195,7 +195,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        service: [auth-go, problems-go, submissions-go]
+        service: [auth-go, problems-go, submissions-go, realtime-go]
     defaults:
       run:
         working-directory: services/${{ matrix.service }}
