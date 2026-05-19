@@ -127,13 +127,13 @@ export default function AchievementsPage() {
           </div>
         ) : error ? (
           <EmptyState
-            icon={<Trophy className="h-8 w-8" />}
+            icon={Trophy}
             title={t("errorTitle")}
             description={t("errorBody")}
           />
         ) : filtered.length === 0 ? (
           <EmptyState
-            icon={<Trophy className="h-8 w-8" />}
+            icon={Trophy}
             title={t("emptyTitle")}
             description={t("emptyBody")}
           />

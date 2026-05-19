@@ -32,6 +32,7 @@ export function ProblemDescription({
   description,
   constraints,
   hints,
+  editorial,
   testCases,
   tags,
   title,

@@ -310,6 +310,7 @@ export default function ProblemDetailPage({
     <>
       <ProblemDescription
         title={problem.title}
+        slug={problem.slug}
         difficulty={problem.difficulty}
         description={problem.description}
         constraints={problem.constraints}
