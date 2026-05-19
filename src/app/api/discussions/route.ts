@@ -14,6 +14,26 @@ const MAX_LIMIT = 50;
 const WRITE_LIMIT_MAX = 5;
 const WRITE_LIMIT_WINDOW_MS = 60_000;
 
+// LeetCode-parity sort modes. "hot" combines vote score with recency
+// so fresh+upvoted threads float; "new" is plain createdAt desc;
+// "top" sorts purely by votes desc.
+type SortMode = "hot" | "new" | "top";
+const SORT_MODES = ["hot", "new", "top"] as const;
+function parseSort(raw: string | null): SortMode {
+  return (SORT_MODES as readonly string[]).includes(raw ?? "")
+    ? (raw as SortMode)
+    : "hot";
+}
+
+// Hot score blends vote count and recency: log10(max(score, 1)) + ageHours / 12.
+// Newer threads get a steady additive boost; popular ones rise via the log term.
+// Computed in JS after fetch — N is bounded by MAX_LIMIT*PAGE so cheap.
+const HOT_AGE_HALFLIFE_HOURS = 12;
+function hotRank(score: number, createdAt: Date): number {
+  const ageHours = (Date.now() - createdAt.getTime()) / 36e5;
+  return Math.log10(Math.max(score, 1)) - ageHours / HOT_AGE_HALFLIFE_HOURS;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = request.nextUrl;
@@ -27,22 +47,56 @@ export async function GET(request: NextRequest) {
       MAX_LIMIT,
       Math.max(1, parseInt(searchParams.get("limit") ?? String(DEFAULT_LIMIT), 10) || DEFAULT_LIMIT)
     );
+    const sort = parseSort(searchParams.get("sort"));
 
-    const [discussions, total] = await Promise.all([
+    // "new" and "top" map directly to a Prisma orderBy. "hot" uses
+    // a JS-side rank — fetch a wider slice (page*limit) by createdAt
+    // desc, attach scores, then re-sort.
+    const orderBy =
+      sort === "top"
+        ? [{ upvotes: "desc" as const }, { createdAt: "desc" as const }]
+        : { createdAt: "desc" as const };
+
+    const fetchTake = sort === "hot" ? page * limit : limit;
+    const fetchSkip = sort === "hot" ? 0 : (page - 1) * limit;
+
+    const [rows, total] = await Promise.all([
       prisma.discussion.findMany({
         where: { problemId },
-        orderBy: { createdAt: "desc" },
-        skip: (page - 1) * limit,
-        take: limit,
+        orderBy,
+        skip: fetchSkip,
+        take: fetchTake,
         include: {
           user: { select: { id: true, username: true, avatar: true } },
-          _count: { select: { comments: true } },
+          _count: { select: { comments: true, votes: true } },
         },
       }),
       prisma.discussion.count({ where: { problemId } }),
     ]);
 
-    return Response.json({ discussions, total, page, limit });
+    let discussions = rows;
+    if (sort === "hot") {
+      // Materialize per-thread vote score then sort by hotRank.
+      const ids = rows.map((r) => r.id);
+      const agg = ids.length
+        ? await prisma.discussionVote.groupBy({
+            by: ["discussionId"],
+            where: { discussionId: { in: ids } },
+            _sum: { value: true },
+          })
+        : [];
+      const scoreById = new Map(
+        agg.map((a) => [a.discussionId, a._sum.value ?? 0])
+      );
+      discussions = [...rows]
+        .map((r) => ({ ...r, score: scoreById.get(r.id) ?? 0 }))
+        .sort((a, b) =>
+          hotRank(b.score, b.createdAt) - hotRank(a.score, a.createdAt)
+        )
+        .slice((page - 1) * limit, page * limit);
+    }
+
+    return Response.json({ discussions, total, page, limit, sort });
   } catch (err) {
     logger.error("discussions GET failed", { scope: "api/discussions", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
