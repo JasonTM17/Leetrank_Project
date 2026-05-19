@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -84,7 +85,17 @@ func main() {
 			"version": version.Version,
 		})
 	})
-	r.Get("/healthz", httpx.Liveness)
+	// Readiness flag flipped to false on SIGTERM so load balancers stop
+	// sending new traffic during the lameDuckDelay drain window (ADR 0029).
+	var ready atomic.Bool
+	ready.Store(true)
+	r.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		if !ready.Load() {
+			http.Error(w, "draining", http.StatusServiceUnavailable)
+			return
+		}
+		httpx.Liveness(w, r)
+	})
 	r.Get("/readyz", httpx.Readiness(pool))
 	r.Get("/metrics", httpx.PrometheusHandler())
 	r.Mount("/v1/problems", h.Router())
@@ -109,6 +120,13 @@ func main() {
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 	<-stop
+
+	// lameDuckDelay: flip readiness false, then sleep so upstream LBs/Caddy
+	// stop routing traffic before we tear down in-flight handlers (ADR 0029).
+	const lameDuckDelay = 3 * time.Second
+	ready.Store(false)
+	logger.Info().Dur("delay", lameDuckDelay).Msg("shutdown: lame-duck drain")
+	time.Sleep(lameDuckDelay)
 
 	logger.Info().Msg("shutdown: drain begin")
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)

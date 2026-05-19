@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -303,6 +304,7 @@ type server struct {
 	runnersDir string
 	languages  *LanguageRegistry
 	logger     zerolog.Logger
+	ready      atomic.Bool
 }
 
 func newServer(logger zerolog.Logger) *server {
@@ -346,6 +348,16 @@ func newServer(logger zerolog.Logger) *server {
 		languages:  registry,
 		logger:     logger,
 	}
+}
+
+// readyzHandler returns 503 once the readiness flag has been flipped during
+// the lameDuckDelay drain (ADR 0029); otherwise it forwards to healthHandler.
+func (s *server) readyzHandler(w http.ResponseWriter, r *http.Request) {
+	if !s.ready.Load() {
+		http.Error(w, "draining", http.StatusServiceUnavailable)
+		return
+	}
+	s.healthHandler(w, r)
 }
 
 func envInt(name string, fallback int) int {
@@ -775,6 +787,7 @@ func main() {
 	}()
 
 	srv := newServer(logger)
+	srv.ready.Store(true)
 
 	r := mux.NewRouter()
 	r.Use(corsMiddleware)
@@ -782,7 +795,7 @@ func main() {
 	r.Use(observability.OtelMiddleware("leetrank-judge"))
 
 	r.HandleFunc("/health", srv.healthHandler).Methods(http.MethodGet, http.MethodOptions)
-	r.HandleFunc("/healthz", srv.healthHandler).Methods(http.MethodGet, http.MethodOptions)
+	r.HandleFunc("/healthz", srv.readyzHandler).Methods(http.MethodGet, http.MethodOptions)
 	r.Handle("/metrics", promhttp.Handler()).Methods(http.MethodGet)
 	r.HandleFunc("/execute", srv.executeHandler).Methods(http.MethodPost, http.MethodOptions)
 
@@ -810,6 +823,13 @@ func main() {
 
 	<-quit
 	logger.Info().Msg("shutting down judge service")
+
+	// lameDuckDelay: flip readiness false, then sleep so upstream LBs/Caddy
+	// stop routing traffic before we tear down in-flight handlers (ADR 0029).
+	const lameDuckDelay = 3 * time.Second
+	srv.ready.Store(false)
+	logger.Info().Dur("delay", lameDuckDelay).Msg("shutdown: lame-duck drain")
+	time.Sleep(lameDuckDelay)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
