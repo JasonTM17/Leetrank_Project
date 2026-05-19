@@ -10,6 +10,21 @@ vi.stubEnv("NODE_ENV", "test");
 // without bleeding state across files.
 const cookies = new Map<string, string>();
 
+// Stub next-intl for component tests so useTranslations / useLocale resolve
+// without a NextIntlClientProvider wrapper. Translation calls return the key
+// itself, which keeps tests focused on shape/behavior, not copy.
+vi.mock("next-intl", () => {
+  const t = (key: string) => key;
+  // The factory next-intl exports — t("namespace.key") flavor.
+  const useTranslations = () => t;
+  const useLocale = () => "en";
+  return {
+    useTranslations,
+    useLocale,
+    NextIntlClientProvider: ({ children }: { children: React.ReactNode }) => children,
+  };
+});
+
 vi.mock("next/headers", () => ({
   cookies: async () => ({
     get: (name: string) => {

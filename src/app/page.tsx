@@ -5,6 +5,7 @@ import { Footer } from "@/components/layout/footer";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   Trophy,
   Users,
@@ -22,35 +23,35 @@ import { LANGUAGES } from "@/lib/languages";
 const FEATURES = [
   {
     icon: Code2,
-    title: "10,000+ problems",
-    description: "Curated and synthetic problems across every difficulty, with hidden test cases that mirror real interview rigor.",
+    titleKey: "feat1Title",
+    descKey: "feat1Body",
   },
   {
     icon: Trophy,
-    title: "1,000+ contests",
-    description: "Weekly competitions with live leaderboards, atomic scoring, and ratings that follow you across the platform.",
+    titleKey: "feat2Title",
+    descKey: "feat2Body",
   },
   {
     icon: Terminal,
-    title: "15 languages, one editor",
-    description: "Python, Go, Rust, Java, C++, Kotlin and more — all backed by a sandboxed Go judge with hard time limits.",
+    titleKey: "feat3Title",
+    descKey: "feat3Body",
   },
   {
     icon: Activity,
-    title: "Production-grade infra",
-    description: "Postgres, Redis, Caddy, Prometheus, Grafana. Helmed by a concurrency scheduler that absorbs burst load.",
+    titleKey: "feat4Title",
+    descKey: "feat4Body",
   },
   {
     icon: ShieldCheck,
-    title: "Security first",
-    description: "Per-language blocklists, JWT with httpOnly cookies, rate limiting, and full Zod validation at the boundary.",
+    titleKey: "feat5Title",
+    descKey: "feat5Body",
   },
   {
     icon: Globe2,
-    title: "Global community",
-    description: "Discussion forums, editorial solutions, and a leaderboard that ranks dedup-aware unique problems solved.",
+    titleKey: "feat6Title",
+    descKey: "feat6Body",
   },
-];
+] as const;
 
 const STATIC_STATS_FALLBACK = [
   { value: "10K+", label: "Problems" },
@@ -67,6 +68,7 @@ interface ApiStats {
 }
 
 export default function HomePage() {
+  const t = useTranslations("home");
   const [liveStats, setLiveStats] = useState<ApiStats | null>(null);
 
   useEffect(() => {
@@ -76,12 +78,19 @@ export default function HomePage() {
       .catch(() => {/* keep fallback */});
   }, []);
 
+  const STATIC_STATS_FALLBACK = [
+    { value: "10K+", label: t("statsProblems") },
+    { value: "1K+", label: t("statsContests") },
+    { value: "15", label: t("statsLanguages") },
+    { value: "<200ms", label: t("statsLatency") },
+  ];
+
   const STATS = liveStats
     ? [
-        { value: liveStats.problems.toLocaleString(), label: "Problems" },
-        { value: liveStats.contests.toLocaleString(), label: "Contests" },
-        { value: liveStats.users.toLocaleString(), label: "Users" },
-        { value: liveStats.accepted.toLocaleString(), label: "Accepted submissions" },
+        { value: liveStats.problems.toLocaleString(), label: t("statsProblems") },
+        { value: liveStats.contests.toLocaleString(), label: t("statsContests") },
+        { value: liveStats.users.toLocaleString(), label: t("statsUsers") },
+        { value: liveStats.accepted.toLocaleString(), label: t("statsAccepted") },
       ]
     : STATIC_STATS_FALLBACK;
 
@@ -98,25 +107,24 @@ export default function HomePage() {
             <div className="text-center max-w-3xl mx-auto animate-fade-in-up">
               <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-4 py-1.5 text-sm text-primary backdrop-blur">
                 <Zap className="h-4 w-4" />
-                <span className="font-medium">Now with 15 languages and a live judge queue</span>
+                <span className="font-medium">{t("heroBadgeShort")}</span>
               </div>
               <h1 className="mt-6 text-5xl md:text-7xl font-bold tracking-tight">
-                Master algorithms.{" "}
-                <span className="gradient-text">Ace interviews.</span>
+                {t("heroTitle")}{" "}
+                <span className="gradient-text">{t("heroTitleAccent")}</span>
               </h1>
               <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-                A modern competitive programming platform with a production-grade Go judge,
-                10,000+ problems, and contests that rank you against developers worldwide.
+                {t("heroBody")}
               </p>
               <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
                 <Link href="/register">
                   <Button size="lg" className="gap-2 shadow-glow">
-                    Get started — it&apos;s free <ArrowRight className="h-4 w-4" />
+                    {t("ctaGetStarted")} <ArrowRight className="h-4 w-4" />
                   </Button>
                 </Link>
                 <Link href="/problems">
                   <Button variant="outline" size="lg" className="gap-2">
-                    Browse problems
+                    {t("ctaBrowseProblems")}
                   </Button>
                 </Link>
               </div>
@@ -141,18 +149,17 @@ export default function HomePage() {
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16 max-w-2xl mx-auto">
               <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
-                Everything you need to <span className="gradient-text">level up</span>
+                {t("featuresHeadline")} <span className="gradient-text">{t("featuresHeadlineAccent")}</span>
               </h2>
               <p className="mt-4 text-muted-foreground">
-                From beginner-friendly Easy problems to interview-grade Hard, LeetRank meets you
-                where you are and pushes you forward.
+                {t("featuresBody")}
               </p>
             </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {FEATURES.map((f) => (
                 <div
-                  key={f.title}
+                  key={f.titleKey}
                   className="group relative overflow-hidden rounded-xl border bg-card p-6 hover:shadow-elevated hover:border-primary/30 transition-all duration-200"
                 >
                   <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -160,8 +167,8 @@ export default function HomePage() {
                     <div className="inline-flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
                       <f.icon className="h-5 w-5" />
                     </div>
-                    <h3 className="mt-4 text-lg font-semibold">{f.title}</h3>
-                    <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{f.description}</p>
+                    <h3 className="mt-4 text-lg font-semibold">{t(f.titleKey)}</h3>
+                    <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{t(f.descKey)}</p>
                   </div>
                 </div>
               ))}
@@ -172,9 +179,9 @@ export default function HomePage() {
         <section className="py-20 border-t bg-muted/30">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold">Code in your favorite language</h2>
+              <h2 className="text-3xl font-bold">{t("languagesTitle")}</h2>
               <p className="mt-2 text-muted-foreground">
-                {LANGUAGES.length} languages supported, with one consistent runner contract.
+                {t("languagesSubtitle", { count: LANGUAGES.length })}
               </p>
             </div>
             <div className="flex flex-wrap justify-center gap-2">
@@ -198,14 +205,14 @@ export default function HomePage() {
               <div className="relative">
                 <Users className="mx-auto h-10 w-10 text-primary" />
                 <h2 className="mt-4 text-3xl md:text-4xl font-bold tracking-tight">
-                  Ready to start coding?
+                  {t("ctaFinalReady")}
                 </h2>
                 <p className="mt-4 text-muted-foreground max-w-xl mx-auto">
-                  Join thousands of developers sharpening their skills. Free forever for individuals.
+                  {t("ctaFinalBody")}
                 </p>
                 <Link href="/register" className="inline-block mt-8">
                   <Button size="lg" className="gap-2 shadow-glow">
-                    Create free account <ArrowRight className="h-4 w-4" />
+                    {t("ctaCreateFree")} <ArrowRight className="h-4 w-4" />
                   </Button>
                 </Link>
               </div>

@@ -1,16 +1,20 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Sheet } from "@/components/ui/sheet";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { LocaleSwitcher } from "@/components/layout/locale-switcher";
 import { User, LogOut, Shield, Bookmark, ListChecks, Settings as SettingsIcon, Menu, Search } from "lucide-react";
 import { useEffect, useState, startTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
 export function Navbar() {
+  const t = useTranslations("nav");
+  const tc = useTranslations("common");
   const { user, setUser, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
@@ -36,9 +40,9 @@ export function Navbar() {
   }
 
   const navLinks = [
-    { href: "/problems", label: "Problems" },
-    { href: "/leaderboard", label: "Leaderboard" },
-    { href: "/contests", label: "Contests" },
+    { href: "/problems", label: t("problems") },
+    { href: "/leaderboard", label: t("leaderboard") },
+    { href: "/contests", label: t("contests") },
   ];
 
   const userMenuTrigger = user ? (
@@ -102,40 +106,41 @@ export function Navbar() {
                   new KeyboardEvent("keydown", { key: "k", metaKey: true, ctrlKey: true, bubbles: true }),
                 );
               }}
-              title="Open command palette (⌘K)"
+              title={`${t("openCommandPalette")} (⌘K)`}
               className="flex items-center gap-2 rounded-md border border-border/60 bg-muted/40 px-3 py-1.5 text-sm text-muted-foreground hover:border-primary/30 hover:bg-muted/60 motion-safe:transition-all duration-200 select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              aria-label="Open command palette"
+              aria-label={t("openCommandPalette")}
             >
               <Search className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-              <span className="hidden lg:inline text-xs">Search…</span>
+              <span className="hidden lg:inline text-xs">{tc("searchHint")}</span>
               <kbd className="ml-1 hidden lg:inline-flex items-center gap-0.5 rounded border border-border/60 bg-background px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground/70">
                 ⌘K
               </kbd>
             </button>
 
             <ThemeToggle />
+            <LocaleSwitcher />
 
             {user ? (
               <DropdownMenu trigger={userMenuTrigger} widthClass="w-52">
                 <DropdownMenuLabel>{user.email ?? user.username}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem href="/dashboard" icon={<User className="h-4 w-4" />}>
-                  Dashboard
+                  {t("dashboard")}
                 </DropdownMenuItem>
                 <DropdownMenuItem href="/submissions" icon={<ListChecks className="h-4 w-4" />}>
-                  Submissions
+                  {t("submissions")}
                 </DropdownMenuItem>
                 <DropdownMenuItem href="/dashboard/bookmarks" icon={<Bookmark className="h-4 w-4" />}>
-                  Bookmarks
+                  {t("bookmarks")}
                 </DropdownMenuItem>
                 <DropdownMenuItem href="/dashboard/settings" icon={<SettingsIcon className="h-4 w-4" />}>
-                  Settings
+                  {t("settings")}
                 </DropdownMenuItem>
                 {user.role === "admin" && (
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem href="/admin" icon={<Shield className="h-4 w-4" />}>
-                      Admin
+                      {t("admin")}
                     </DropdownMenuItem>
                   </>
                 )}
@@ -144,16 +149,16 @@ export function Navbar() {
                   onSelect={handleLogout}
                   icon={<LogOut className="h-4 w-4" />}
                 >
-                  <span className="text-destructive">Logout</span>
+                  <span className="text-destructive">{t("logout")}</span>
                 </DropdownMenuItem>
               </DropdownMenu>
             ) : (
               <>
                 <Link href="/login">
-                  <Button variant="ghost" size="sm">Log in</Button>
+                  <Button variant="ghost" size="sm">{t("login")}</Button>
                 </Link>
                 <Link href="/register">
-                  <Button size="sm" className="shadow-glow/50">Sign up</Button>
+                  <Button size="sm" className="shadow-glow/50">{t("signup")}</Button>
                 </Link>
               </>
             )}
@@ -163,7 +168,7 @@ export function Navbar() {
           <button
             className="md:hidden rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-foreground motion-safe:transition-colors"
             onClick={() => setMobileOpen(true)}
-            aria-label="Open navigation menu"
+            aria-label={t("openMenu")}
           >
             <Menu className="h-5 w-5" />
           </button>
@@ -176,7 +181,7 @@ export function Navbar() {
         onClose={() => setMobileOpen(false)}
         side="left"
         size="sm"
-        title="Navigation"
+        title={t("navigation")}
       >
         <div className="flex flex-col gap-1">
           {/* Logo in sheet */}
@@ -219,37 +224,37 @@ export function Navbar() {
                 {user.username}
               </div>
               <Link href="/dashboard" className="flex items-center gap-2 rounded-md px-3 py-2.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground motion-safe:transition-colors">
-                <User className="h-4 w-4" /> Dashboard
+                <User className="h-4 w-4" /> {t("dashboard")}
               </Link>
               <Link href="/submissions" className="flex items-center gap-2 rounded-md px-3 py-2.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground motion-safe:transition-colors">
-                <ListChecks className="h-4 w-4" /> Submissions
+                <ListChecks className="h-4 w-4" /> {t("submissions")}
               </Link>
               {user.role === "admin" && (
                 <Link href="/admin" className="flex items-center gap-2 rounded-md px-3 py-2.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground motion-safe:transition-colors">
-                  <Shield className="h-4 w-4" /> Admin
+                  <Shield className="h-4 w-4" /> {t("admin")}
                 </Link>
               )}
               <button
                 onClick={handleLogout}
                 className="flex items-center gap-2 rounded-md px-3 py-2.5 text-sm text-destructive hover:bg-destructive/10 motion-safe:transition-colors w-full text-left mt-1"
               >
-                <LogOut className="h-4 w-4" /> Logout
+                <LogOut className="h-4 w-4" /> {t("logout")}
               </button>
             </>
           ) : (
             <div className="flex flex-col gap-2 pt-1">
               <Link href="/login">
-                <Button variant="outline" size="sm" className="w-full">Log in</Button>
+                <Button variant="outline" size="sm" className="w-full">{t("login")}</Button>
               </Link>
               <Link href="/register">
-                <Button size="sm" className="w-full shadow-glow/50">Sign up</Button>
+                <Button size="sm" className="w-full shadow-glow/50">{t("signup")}</Button>
               </Link>
             </div>
           )}
 
           <div className="mt-4 flex items-center gap-2 px-1">
             <ThemeToggle />
-            <span className="text-xs text-muted-foreground">Toggle theme</span>
+            <LocaleSwitcher />
           </div>
         </div>
       </Sheet>

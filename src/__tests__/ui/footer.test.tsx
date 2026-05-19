@@ -7,7 +7,10 @@ describe("Footer", () => {
     const html = renderToString(<Footer />);
     expect(html).toContain("LeetRank");
     expect(html).toContain(new Date().getFullYear().toString());
-    expect(html).toContain("Built for learning");
+    // Translation key — see messages/en.json#footer.builtForLearning. The
+    // test mock for next-intl returns keys verbatim so this stays stable
+    // even when the English copy is rephrased.
+    expect(html).toContain("builtForLearning");
   });
 
   it("links to the four primary navigation surfaces", () => {

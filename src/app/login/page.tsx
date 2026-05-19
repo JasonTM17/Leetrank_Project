@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,6 +34,9 @@ export default function LoginPage() {
     if (!raw) return "/problems";
     return raw.startsWith("/") && !raw.startsWith("//") ? raw : "/problems";
   }, [searchParams]);
+  const ta = useTranslations("auth");
+  const tc = useTranslations("common");
+  const th = useTranslations("home");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -46,9 +50,9 @@ export default function LoginPage() {
       .then((data: ApiStats | null) => {
         if (data) {
           setStats([
-            { value: data.problems.toLocaleString(), label: "Problems" },
-            { value: data.contests.toLocaleString(), label: "Contests" },
-            { value: data.users.toLocaleString(), label: "Users" },
+            { value: data.problems.toLocaleString(), label: th("statsProblems") },
+            { value: data.contests.toLocaleString(), label: th("statsContests") },
+            { value: data.users.toLocaleString(), label: th("statsUsers") },
           ]);
         }
       })
@@ -69,14 +73,14 @@ export default function LoginPage() {
 
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "Login failed");
+        setError(data.error || ta("loginFailed"));
         return;
       }
 
       router.push(fromPath);
       router.refresh();
     } catch {
-      setError("Something went wrong");
+      setError(tc("error"));
     } finally {
       setLoading(false);
     }
@@ -98,8 +102,8 @@ export default function LoginPage() {
 
           <Card className="border-primary/20 shadow-elevated">
             <CardHeader className="pb-4">
-              <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
-              <CardDescription>Sign in to your account to continue</CardDescription>
+              <CardTitle className="text-2xl font-bold">{ta("loginTitle")}</CardTitle>
+              <CardDescription>{ta("loginSubtitle")}</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-5">
@@ -114,12 +118,12 @@ export default function LoginPage() {
 
                 <div className="space-y-1.5">
                   <label htmlFor="login-email" className="text-sm font-medium">
-                    Email
+                    {ta("email")}
                   </label>
                   <Input
                     id="login-email"
                     type="email"
-                    placeholder="you@example.com"
+                    placeholder={ta("emailPlaceholder")}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     autoComplete="email"
@@ -129,7 +133,7 @@ export default function LoginPage() {
 
                 <div className="space-y-1.5">
                   <label htmlFor="login-password" className="text-sm font-medium">
-                    Password
+                    {ta("password")}
                   </label>
                   <div className="relative">
                     <Input
@@ -145,7 +149,7 @@ export default function LoginPage() {
                     <button
                       type="button"
                       onClick={() => setShowPassword((v) => !v)}
-                      aria-label={showPassword ? "Hide password" : "Show password"}
+                      aria-label={showPassword ? ta("hidePassword") : ta("showPassword")}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground motion-safe:transition-colors"
                     >
                       {showPassword ? (
@@ -167,14 +171,14 @@ export default function LoginPage() {
                   ) : (
                     <ArrowRight className="h-4 w-4" aria-hidden="true" />
                   )}
-                  {loading ? "Signing in…" : "Sign in"}
+                  {loading ? ta("loggingIn") : ta("loginAction")}
                 </Button>
               </form>
 
               <p className="text-center text-sm text-muted-foreground mt-5">
-                Don&apos;t have an account?{" "}
+                {ta("noAccount")}{" "}
                 <Link href="/register" className="text-primary hover:underline font-medium">
-                  Sign up
+                  {ta("signUp")}
                 </Link>
               </p>
             </CardContent>
@@ -193,17 +197,16 @@ export default function LoginPage() {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-4 py-1.5 text-sm text-primary backdrop-blur w-fit mb-8">
             <Zap className="h-4 w-4" aria-hidden="true" />
-            <span className="font-medium">Trusted by developers worldwide</span>
+            <span className="font-medium">{ta("loginSubtitle")}</span>
           </div>
 
           <h2 className="text-3xl lg:text-4xl font-bold tracking-tight leading-tight">
-            Master algorithms.{" "}
-            <span className="gradient-text">Ace interviews.</span>
+            {th("heroTitle")}{" "}
+            <span className="gradient-text">{th("heroTitleAccent")}</span>
           </h2>
 
           <p className="mt-4 text-muted-foreground leading-relaxed">
-            A modern competitive programming platform with a production-grade Go judge,
-            10,000+ problems, and contests that rank you against developers worldwide.
+            {th("heroBody")}
           </p>
 
           {/* Stats */}
