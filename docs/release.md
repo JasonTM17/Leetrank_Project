@@ -1,106 +1,165 @@
-# Release & branch-protection policy
+# Release Management
 
-This document defines the rules that govern `main` for LeetRank: which CI checks are required, who reviews, and how releases ship to Docker Hub. It is the source of truth that the GitHub branch-protection rules should mirror — the rules can't be expressed in code today, so this file is the canonical reference until we adopt a tool like `repository-settings-as-code`.
+This document defines the versioning policy, release process, and branch protection rules for LeetRank.
 
-## Required status checks (must be green before merge)
+## Versioning policy
 
-Branch protection on `main` requires all of the following workflow jobs to succeed before a PR can merge:
-
-| Workflow file              | Job name              | Why it gates merge                                            |
-| -------------------------- | --------------------- | ------------------------------------------------------------- |
-| `.github/workflows/ci.yml` | `web`                 | Typecheck, lint, unit tests + coverage, and Next.js build.    |
-| `.github/workflows/ci.yml` | `api`                 | Hono API typecheck + build.                                   |
-| `.github/workflows/ci.yml` | `judge`               | Judge service `go vet`, build, and race-detector tests.       |
-| `.github/workflows/ci.yml` | `judge-sandbox-tests` | Privileged sandbox integration tests against the judge image. |
-| `.github/workflows/ci.yml` | `go-tests`            | Vet + race tests for `auth-go`, `problems-go`, `submissions-go`, `realtime-go` (matrix). |
-| `.github/workflows/ci.yml` | `audit`               | `pnpm audit --prod --audit-level=high` (production deps).     |
-| `.github/workflows/ci.yml` | `e2e`                 | Playwright golden-path against a freshly built Next app.      |
-| `.github/workflows/python-tests.yml` | `analytics-python — pytest` | Pytest suite for the Python analytics service.       |
-| `.github/workflows/rust-tests.yml`   | `leaderboard-rust — cargo test` | Rustfmt + clippy + cargo test for the leaderboard service. |
-| `.github/workflows/ruby-tests.yml`   | `notifications-ruby — rspec`    | RSpec suite for the Ruby notifications service.       |
-| `.github/workflows/codeql.yml`   | `CodeQL`              | CodeQL security + quality queries (JS/TS and Go).             |
-| `.github/workflows/trivy.yml`    | `Trivy`               | Trivy filesystem scan (CRITICAL/HIGH).                        |
-| `.github/workflows/gitleaks.yml` | `Gitleaks`            | Secret scan over the full history.                            |
-| `.github/workflows/sbom.yml`     | `SBOM`                | CycloneDX SBOM generation must succeed.                       |
-| Codecov status check       | `codecov/project`     | Project coverage stays at or above 80% (per `codecov.yml`).   |
-| Codecov status check       | `codecov/patch`       | Changed lines covered at 80%+ (per `codecov.yml`).            |
-
-The exact GitHub status-check names to paste into branch protection (one per line):
+LeetRank follows [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html):
 
 ```
-web
-api
-judge
-judge-sandbox-tests
-go-tests (auth-go)
-go-tests (problems-go)
-go-tests (submissions-go)
-go-tests (realtime-go)
-audit
-e2e
-analytics-python — pytest
-leaderboard-rust — cargo test
-notifications-ruby — rspec
-CodeQL
-Trivy
-Gitleaks
-SBOM
-codecov/project
-codecov/patch
+MAJOR.MINOR.PATCH
 ```
 
-## Branch protection rules
+| Bump | When | Examples |
+|------|------|----------|
+| **MAJOR** | Breaking API changes, incompatible schema migrations, removal of public endpoints | Auth protocol change, DB schema that requires data migration with downtime |
+| **MINOR** | New features, non-breaking additions, new services | Study plans, achievements, new API endpoints, new language support |
+| **PATCH** | Bug fixes, security patches, performance improvements, documentation fixes | Null-guard fix, rate-limit tuning, typo correction |
 
-Configure these in **Settings → Branches → Branch protection rules** for the `main` pattern:
+Pre-release versions use the format `MAJOR.MINOR.PATCH-rc.N` (e.g. `0.3.0-rc.1`).
 
-- Require a pull request before merging.
-- Require at least **1** approving review. The repo is currently solo-maintained (see [`CODEOWNERS`](../.github/CODEOWNERS) and the "Review model" section in [`CONTRIBUTING.md`](../CONTRIBUTING.md)); GitHub will accept the maintainer's own approval after CI is green.
-- Require review from Code Owners.
-- Dismiss stale pull request approvals when new commits are pushed.
-- Require status checks to pass before merging — list every check from the table above.
-- Require branches to be up to date before merging.
-- Require conversation resolution before merging.
-- Require signed commits (recommended; enable when the maintainer's GPG / SSH signing key is provisioned).
-- Require linear history.
-- Disallow force pushes to `main`.
-- Disallow deletions of `main`.
-- Apply rules to administrators (so the maintainer can't accidentally bypass them).
+## Version history
 
-## Auxiliary signals (not merge-blocking but watched)
+| Version | Date | Highlights |
+|---------|------|------------|
+| [0.2.0](https://github.com/JasonTM17/Leetrank_Project/releases/tag/v0.2.0) | 2026-05-19 | Study plans, daily challenge, achievements, Glicko-2 rating, editorial + hints, solution sharing, code playback, PWA, full EN+VI i18n, Ed25519+JWKS auth, nsjail sandbox, observability stack |
+| [0.1.0](https://github.com/JasonTM17/Leetrank_Project/releases/tag/v0.1.0) | 2026-04-01 | Initial release: 34-language judge, contests, leaderboards, discussions, profiles, Monaco editor, chatbot, Docker Compose stack, 461 tests |
 
-These run on every PR but won't block merge — they exist to surface regressions early:
+Full changelog: [CHANGELOG.md](../CHANGELOG.md).
 
-- `bundle.yml` (`bundle`) — appended to PR summary; investigate large jumps.
-- `lighthouse.yml` (`lhci`) — performance/A11y/SEO budgets.
-- `gitleaks.yml` (`scan`) — secret-scan; treat any finding as urgent and rotate.
-- `sbom.yml` (`sbom`) — emits CycloneDX SBOM artifact (90-day retention).
+## Release checklist
+
+Before cutting a release:
+
+1. **All CI checks green on `main`.** No exceptions. See [required checks](#required-status-checks) below.
+2. **CHANGELOG.md updated.** Move items from `[Unreleased]` into a new `[X.Y.Z] - YYYY-MM-DD` section. Follow [Keep a Changelog](https://keepachangelog.com/) format.
+3. **Migration notes documented.** If the release includes schema changes, document the migration path in the CHANGELOG `Migration notes` subsection.
+4. **Version bumped in package.json.** Run `pnpm version <major|minor|patch> --no-git-tag-version`, then commit.
+5. **Tag created and pushed.**
+   ```bash
+   git tag -a v0.3.0 -m "v0.3.0"
+   git push origin v0.3.0
+   ```
+6. **GitHub Release published.** Use the tag. Copy the CHANGELOG section as the release body. Attach SBOM artifact.
+7. **Docker images verified.** Confirm `docker-publish.yml` tagged images with the version on both Docker Hub and GHCR.
 
 ## Release flow
 
-1. Open a PR; let the required checks above run.
-2. Self-review (or peer-review when contributors join), squash-merge using the Conventional Commit title.
-3. On merge to `main`:
-   - `docker-publish.yml` builds every service image, pushes to Docker Hub (`nguyenson1710/leetrank-*`) **and** GHCR (`ghcr.io/jasontm17/leetrank-*`) with `latest`, branch, and short-SHA tags. Provenance + SBOM attestations are attached.
-   - `trivy.yml` rescans the filesystem and the freshly published images.
-   - `sbom.yml` regenerates the workspace SBOM.
-4. To cut a tagged release, push a `v*` git tag — the same `docker-publish.yml` workflow re-tags the images with the version.
+```
+main ──────────────────────────────────────────────────►
+       │                              │
+       ├─ feat/study-plans ──► PR ──► │ (squash merge)
+       │                              │
+       ├─ fix/null-guard ────► PR ──► │ (squash merge)
+       │                              │
+       │                              ├── git tag v0.3.0
+       │                              │
+       │                              ▼
+       │                         docker-publish.yml
+       │                         → nguyenson1710/leetrank-*:v0.3.0
+       │                         → nguyenson1710/leetrank-*:latest
+```
+
+On merge to `main`:
+- `docker-publish.yml` builds every service image, pushes to Docker Hub (`nguyenson1710/leetrank-*`) and GHCR (`ghcr.io/jasontm17/leetrank-*`) with `latest`, branch, and short-SHA tags.
+- `trivy.yml` rescans the filesystem and freshly published images.
+- `sbom.yml` regenerates the workspace SBOM.
+
+On `v*` tag push:
+- The same `docker-publish.yml` workflow re-tags images with the semver version.
+- GitHub Release is created (manually or via `release.yml` workflow).
+
+## Hotfix process
+
+For critical bugs or security issues on a released version:
+
+```
+v0.2.0 (tag)
+    │
+    └── hotfix/critical-auth-bypass (branch from tag)
+            │
+            ├── fix commit(s)
+            │
+            ├── PR → main (cherry-pick or merge)
+            │
+            └── git tag v0.2.1
+```
+
+Steps:
+
+1. Branch from the release tag: `git checkout -b hotfix/description v0.2.0`
+2. Apply the minimal fix. No feature work.
+3. Open a PR against `main`. All CI checks must pass.
+4. After merge, tag the patch release: `git tag -a v0.2.1 -m "v0.2.1"`
+5. Push the tag. Verify Docker images publish with the patch version.
+6. Update CHANGELOG.md with the patch entry.
+
+## Required status checks
+
+Branch protection on `main` requires all of the following to succeed before merge:
+
+| Workflow | Job | Purpose |
+|----------|-----|---------|
+| `ci.yml` | `web` | Typecheck, lint, unit tests + coverage, Next.js build |
+| `ci.yml` | `api` | Hono API typecheck + build |
+| `ci.yml` | `judge` | Judge `go vet`, build, race-detector tests |
+| `ci.yml` | `judge-sandbox-tests` | Privileged sandbox integration tests |
+| `ci.yml` | `go-tests` | Vet + race tests for auth-go, problems-go, submissions-go, realtime-go |
+| `ci.yml` | `audit` | `pnpm audit --prod --audit-level=high` |
+| `ci.yml` | `e2e` | Playwright golden-path suite |
+| `python-tests.yml` | `analytics-python` | Pytest for analytics service |
+| `rust-tests.yml` | `leaderboard-rust` | Rustfmt + clippy + cargo test |
+| `ruby-tests.yml` | `notifications-ruby` | RSpec for notifications service |
+| `codeql.yml` | `CodeQL` | Security + quality queries (JS/TS, Go) |
+| `trivy.yml` | `Trivy` | Filesystem scan (CRITICAL/HIGH) |
+| `gitleaks.yml` | `Gitleaks` | Secret scan |
+| `sbom.yml` | `SBOM` | CycloneDX SBOM generation |
+| Codecov | `codecov/project` | Project coverage >= 80% |
+| Codecov | `codecov/patch` | Changed lines covered >= 80% |
+
+## Branch protection rules
+
+Configured in **Settings > Branches > Branch protection rules** for `main`:
+
+- Require pull request before merging
+- Require at least 1 approving review (self-review accepted for solo maintainer)
+- Require review from Code Owners
+- Dismiss stale approvals on new commits
+- Require all status checks to pass
+- Require branches up to date before merging
+- Require conversation resolution
+- Require linear history
+- Disallow force pushes
+- Disallow branch deletion
+- Apply rules to administrators
+
+## Auxiliary signals (non-blocking)
+
+These run on every PR but do not block merge:
+
+| Workflow | Purpose |
+|----------|---------|
+| `bundle.yml` | Bundle size delta — investigate large jumps |
+| `lighthouse.yml` | Performance / A11y / SEO budgets |
+| `load-test.yml` | k6 load test scenarios |
+| `postgres-backup.yml` | Backup verification |
 
 ## Action pinning policy
 
-Every workflow pins third-party actions to a 40-character commit SHA, with a trailing comment recording the human-readable version (e.g. `# v6.0.2`). Floating tags such as `@master`, `@main`, or major-version aliases (`@v3`, `@v6`) are not allowed — they were the H-4 finding from the May 2026 critic review.
+Every workflow pins third-party actions to a 40-character commit SHA with a trailing version comment:
 
-The Renovate / Dependabot config (`.github/dependabot.yml`) updates the SHA pins weekly; review the diff and the linked release notes before merging the bot's PR.
+```yaml
+- uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+```
+
+Floating tags (`@master`, `@main`, `@v3`) are not allowed. Dependabot updates SHA pins weekly.
 
 ## Verification
 
-Two greps keep the policy honest:
-
 ```bash
-# 1. No floating tags on actions
-grep -E '@(master|main|v[0-9]+)$' .github/workflows/*.yml | wc -l   # → 0
+# No floating tags on actions
+grep -E '@(master|main|v[0-9]+)$' .github/workflows/*.yml | wc -l   # expect 0
 
-# 2. Every workflow YAML is parseable
+# Every workflow YAML is parseable
 python -c "import sys, yaml, glob; [yaml.safe_load(open(p)) for p in glob.glob('.github/workflows/*.yml')]; print('ok')"
 ```
-
-Run both before merging changes that touch CI workflows.
