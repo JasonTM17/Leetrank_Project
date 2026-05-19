@@ -1,0 +1,118 @@
+name: Performance Regression (k6)
+
+# Weekly performance regression suite. Runs the three k6 scenarios
+# against staging, compares against the previous baseline, and fails
+# the workflow if p95 latency or error rate regresses by more than
+# 20 percent.
+#
+# Triggers:
+#   - schedule: every Monday 03:00 UTC
+#   - workflow_dispatch: manual (with optional baseline reset)
+on:
+  schedule:
+    - cron: "0 3 * * 1"
+  workflow_dispatch:
+    inputs:
+      reset_baseline:
+        description: "Reset baseline to current run (true/false)"
+        required: false
+        default: "false"
+      target_url:
+        description: "Override target URL (default: STAGING_URL secret)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+  actions: write   # required to upload artifacts
+
+concurrency:
+  group: perf-${{ github.ref }}
+  cancel-in-progress: false   # never cancel mid-run
+
+env:
+  REGRESSION_THRESHOLD_PCT: "20"
+
+jobs:
+  k6-suite:
+    name: k6 — ${{ matrix.scenario }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        scenario:
+          - login
+          - submission-storm
+          - leaderboard-read
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Resolve target URL
+        id: target
+        run: |
+          if [ -n "${{ inputs.target_url }}" ]; then
+            echo "url=${{ inputs.target_url }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "url=${{ secrets.STAGING_URL }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install k6
+        run: |
+          sudo gpg -k
+          sudo gpg --no-default-keyring \
+            --keyring /usr/share/keyrings/k6-archive-keyring.gpg \
+            --keyserver hkp://keyserver.ubuntu.com:80 \
+            --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" \
+            | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install -y k6
+
+      - name: Run k6 scenario
+        env:
+          BASE_URL: ${{ steps.target.outputs.url }}
+          K6_SUMMARY_TIME_UNIT: ms
+        run: |
+          mkdir -p perf-results
+          k6 run \
+            --summary-export "perf-results/${{ matrix.scenario }}.json" \
+            "scripts/k6/${{ matrix.scenario }}.js" \
+            -e "BASE_URL=${BASE_URL}"
+
+      - name: Upload run artifact
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: perf-${{ matrix.scenario }}-${{ github.run_id }}
+          path: perf-results/
+          retention-days: 90
+
+      - name: Download previous baseline
+        id: baseline
+        uses: dawidd6/action-download-artifact@v6
+        continue-on-error: true
+        with:
+          name: perf-baseline-${{ matrix.scenario }}
+          path: baseline/
+          workflow: perf.yml
+          search_artifacts: true
+          if_no_artifact_found: warn
+
+      - name: Compare against baseline
+        if: steps.baseline.outcome == 'success'
+        run: |
+          node scripts/perf/compare.mjs \
+            --current "perf-results/${{ matrix.scenario }}.json" \
+            --baseline "baseline/${{ matrix.scenario }}.json" \
+            --threshold "${REGRESSION_THRESHOLD_PCT}"
+
+      - name: Promote current run to baseline
+        if: |
+          inputs.reset_baseline == 'true' ||
+          steps.baseline.outcome != 'success'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: perf-baseline-${{ matrix.scenario }}
+          path: perf-results/${{ matrix.scenario }}.json
+          retention-days: 365
