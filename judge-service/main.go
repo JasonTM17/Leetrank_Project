@@ -816,11 +816,20 @@ func main() {
 	r.HandleFunc("/run", srv.executeHandler).Methods(http.MethodPost, http.MethodOptions)
 
 	httpSrv := &http.Server{
-		Addr:         ":" + port,
-		Handler:      r,
-		ReadTimeout:  30 * time.Second,
-		WriteTimeout: 60 * time.Second,
-		IdleTimeout:  120 * time.Second,
+		Addr: ":" + port,
+		Handler: r,
+		// ReadHeaderTimeout caps slow-header (slowloris) attacks. Once
+		// headers arrive we use the wider ReadTimeout for the body.
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       30 * time.Second,
+		// WriteTimeout must comfortably exceed the longest wall-clock cap
+		// across language profiles (java=15s) plus framing overhead. 30s
+		// gives ~2x headroom and aborts genuinely-stuck responses.
+		WriteTimeout: 30 * time.Second,
+		// IdleTimeout reuses kept-alive connections from the proxy /
+		// frontend long enough that bursty submission traffic doesn't
+		// keep reopening TCP/TLS handshakes.
+		IdleTimeout: 120 * time.Second,
 	}
 
 	// Graceful shutdown.
