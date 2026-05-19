@@ -5,20 +5,13 @@ import { prisma } from "@/lib/db";
 import { signToken } from "@/lib/auth";
 import { loginSchema } from "@/lib/validations";
 import { rateLimit } from "@/lib/rate-limit";
+import { clientIp } from "@/lib/client-ip";
 
 // RULES §4: rate-limit auth routes. Switched from the local Map-based
 // limiter to the shared lib/rate-limit helper so the GC + reset
 // behaviour is consistent with /register and other write paths.
 const RATE_LIMIT_MAX = 5;
 const RATE_LIMIT_WINDOW_MS = 15 * 60_000;
-
-function clientIp(request: NextRequest): string {
-  return (
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    request.headers.get("x-real-ip") ??
-    "unknown"
-  );
-}
 
 export async function POST(request: NextRequest) {
   try {
