@@ -33,7 +33,7 @@ import { verifyToken } from "@leetrank/auth-verify";
 
 const result = await verifyToken(token, {
   kind: "jwks",
-  jwksUrl: new URL("http://auth:4001/.well-known/jwks.json"),
+  jwksUrl: new URL("http://identity:4011/.well-known/jwks.json"),
   expectedIssuer: "https://leetrank.io",
   expectedAudience: "leetrank-api",
 });
