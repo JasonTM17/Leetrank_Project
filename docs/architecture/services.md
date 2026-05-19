@@ -84,6 +84,30 @@ When running locally with `docker-compose.local.yml`, ports are remapped to avoi
 
 Single-owner project. Author of record is **Nguyễn Tiến Sơn** (`jasonbmt06@gmail.com`, [@JasonTM17](https://github.com/JasonTM17)). The "Owner" column above tags the logical area for future contributors; for now every service routes to the same person.
 
+## In-process components (web service)
+
+The following capabilities run inside the `app` (Next.js) container as
+route handlers + libs rather than standalone services. They are listed
+here so the architecture surface is complete and discoverable.
+
+| Component | Path | Backed by | Notes |
+|---|---|---|---|
+| Admin analytics | `/admin/analytics` + `GET /api/admin/analytics` | `src/lib/admin-analytics.ts` aggregator over Prisma | SVG chart primitives `<SvgBarChart>`, `<SvgSparkline>`, `<SvgPieChart>`. Admin-gated. |
+| Recommendations | `GET /api/recommendations` + home component | `src/lib/recommendations.ts` pure scorer (tag overlap + difficulty progression + freshness) | No new infra; reads `Submission` + `Problem` + `ProblemTag`. |
+| Daily challenge | `GET /api/daily-challenge` + history routes | `src/lib/streak.ts` pure streak math + `DailyChallenge` table | Picker workflow `.github/workflows/daily-challenge.yml` rotates the row at 00:05 UTC. |
+| Achievements | `/achievements` + `GET /api/achievements` + `GET /api/user-achievements` | `src/lib/achievements.ts` pure `evaluateAchievements` engine | Fired on AC via submissions post-commit hook. |
+| Editorial + hints | `GET /api/editorial/[slug]` | `Editorial` model | Gated until first AC or contest end. |
+| Solutions + votes | `GET/POST /api/solutions` + `POST /api/solutions/[id]/vote` | `SharedSolution` + `SolutionVote` models | Optimistic UI; sort by votes / recent. |
+| Code playback | `POST /api/submission-events` + `GET /api/playback/[id]` | `SubmissionEvent` model | Feature-flagged via `PLAYBACK_ENABLED` env. |
+| Study plans | `GET /api/plans*` + `/plans` UI | `Plan` + `PlanStep` + `UserPlanProgress` models | Submission post-commit hook unlocks next step on AC. |
+| Submission analytics | `GET /api/submissions/[id]/percentile` | `src/lib/analytics-helpers.ts` (percentile + distribution) | Submission percentile card UI. |
+| DevOps console | `/admin/devops` + snapshot API | `src/lib/devops-aggregator.ts` | CI runs, queue depth, error budget tiles. |
+
+These will graduate to dedicated services if + when the surface justifies
+the operational overhead. The current shape is deliberate: the web tier
+keeps Postgres-bound aggregations co-located with SSR rendering, and the
+Go / Rust / Ruby / Python services own the latency-critical paths.
+
 ## See also
 
 - [Runbooks INDEX](../runbooks/INDEX.md) — alert-to-runbook map and quick health-check commands
