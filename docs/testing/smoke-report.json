@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-19T08:04:57.164Z",
+  "generatedAt": "2026-05-19T10:08:08.846Z",
   "totals": {
     "count": 60,
     "passed": 60,
@@ -25,10 +25,10 @@
         503
       ],
       "actualStatus": 200,
-      "latencyMs": 78,
+      "latencyMs": 91,
       "pass": true,
       "failure": null,
-      "sampleBody": "{\"status\":\"ok\",\"uptimeSeconds\":7561,\"timestamp\":\"2026-05-19T08:04:56.872Z\",\"services\":{\"database\":{\"status\":\"ok\",\"latencyMs\":2},\"judge\":{\"status\":\"ok\",\"latencyMs\":22}}}"
+      "sampleBody": "{\"status\":\"ok\",\"uptimeSeconds\":14953,\"timestamp\":\"2026-05-19T10:08:08.097Z\",\"services\":{\"database\":{\"status\":\"ok\",\"latencyMs\":6},\"judge\":{\"status\":\"ok\",\"latencyMs\":5}}}"
     },
     {
       "name": "web.status",
@@ -40,7 +40,7 @@
         503
       ],
       "actualStatus": 404,
-      "latencyMs": 12,
+      "latencyMs": 27,
       "pass": true,
       "failure": null,
       "sampleBody": "<!DOCTYPE html><html lang=\"en\" class=\"geist_a71539c9-module__T19VSG__variable geist_mono_8d43a2aa-module__8Li5zG__variable h-full antialiased\"><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/"
@@ -53,7 +53,7 @@
         200
       ],
       "actualStatus": 200,
-      "latencyMs": 5,
+      "latencyMs": 9,
       "pass": true,
       "failure": null,
       "sampleBody": "openapi: 3.1.0\ninfo:\n  title: LeetRank API\n  version: 1.0.0\n  description: |\n    REST API for the LeetRank competitive programming platform. The API is\n    consumed primarily by the Next.js frontend in this repository, but it's\n    document"
@@ -66,7 +66,7 @@
         200
       ],
       "actualStatus": 200,
-      "latencyMs": 4,
+      "latencyMs": 46,
       "pass": true,
       "failure": null,
       "sampleBody": "{\"problems\":[{\"id\":\"cmpbd3lwz000ada4ohfvco1vw\",\"title\":\"Two Sum\",\"slug\":\"two-sum\",\"difficulty\":\"Easy\",\"tags\":[{\"id\":\"cmpbd3lu90000da4or9hcutnq\",\"name\":\"Array\",\"slug\":\"array\"},{\"id\":\"cmpbd3lwg0008da4o8fkrw86j\",\"name\":\"Hash Table\",\"slug\":\"has"
@@ -79,7 +79,7 @@
         200
       ],
       "actualStatus": 200,
-      "latencyMs": 4,
+      "latencyMs": 11,
       "pass": true,
       "failure": null,
       "sampleBody": "{\"problems\":[{\"id\":\"cmpbd3lwz000ada4ohfvco1vw\",\"title\":\"Two Sum\",\"slug\":\"two-sum\",\"difficulty\":\"Easy\",\"tags\":[{\"id\":\"cmpbd3lu90000da4or9hcutnq\",\"name\":\"Array\",\"slug\":\"array\"},{\"id\":\"cmpbd3lwg0008da4o8fkrw86j\",\"name\":\"Hash Table\",\"slug\":\"has"
@@ -92,7 +92,7 @@
         200
       ],
       "actualStatus": 200,
-      "latencyMs": 4,
+      "latencyMs": 19,
       "pass": true,
       "failure": null,
       "sampleBody": "{\"problems\":[]}"
@@ -106,10 +106,10 @@
         404
       ],
       "actualStatus": 200,
-      "latencyMs": 7,
+      "latencyMs": 14,
       "pass": true,
       "failure": null,
-      "sampleBody": "{\"problem\":{\"id\":\"cmpbd3lyg000gda4ofpafuz1z\",\"title\":\"Reverse String\",\"slug\":\"reverse-string\",\"difficulty\":\"Easy\"}}"
+      "sampleBody": "{\"problem\":{\"id\":\"cmpbd3lwz000ada4ohfvco1vw\",\"title\":\"Two Sum\",\"slug\":\"two-sum\",\"difficulty\":\"Easy\"}}"
     },
     {
       "name": "web.problems.bytag",
@@ -121,7 +121,7 @@
         404
       ],
       "actualStatus": 400,
-      "latencyMs": 5,
+      "latencyMs": 6,
       "pass": true,
       "failure": null,
       "sampleBody": "{\"error\":\"tag query param is required\"}"
@@ -135,7 +135,7 @@
         404
       ],
       "actualStatus": 200,
-      "latencyMs": 11,
+      "latencyMs": 17,
       "pass": true,
       "failure": null,
       "sampleBody": "{\"problem\":{\"id\":\"cmpbd3lwz000ada4ohfvco1vw\",\"title\":\"Two Sum\",\"slug\":\"two-sum\",\"description\":\"Given an array of integers `nums` and an integer `target`, return indices of the two numbers such that they add up to `target`.\\n\\nYou may assume"
@@ -148,7 +148,7 @@
         200
       ],
       "actualStatus": 200,
-      "latencyMs": 4,
+      "latencyMs": 11,
       "pass": true,
       "failure": null,
       "sampleBody": "{\"tags\":[{\"id\":\"cmpbd3lu90000da4or9hcutnq\",\"name\":\"Array\",\"slug\":\"array\"},{\"id\":\"cmpbd3lvo0005da4o7i5m0038\",\"name\":\"Binary Search\",\"slug\":\"binary-search\"},{\"id\":\"cmpbd3lw70007da4ooun5lx41\",\"name\":\"Dynamic Programming\",\"slug\":\"dynamic-progra"
@@ -161,7 +161,7 @@
         200
       ],
       "actualStatus": 200,
-      "latencyMs": 6,
+      "latencyMs": 14,
       "pass": true,
       "failure": null,
       "sampleBody": "{\"contests\":[{\"id\":\"cmpbd3mep001zda4o0fmmo38x\",\"title\":\"LeetRank Weekly Contest #1\",\"slug\":\"weekly-contest-1\",\"description\":\"Kick off the first LeetRank weekly contest! Solve as many problems as you can within 2 hours.\",\"startTime\":\"2026-05"
@@ -174,7 +174,7 @@
         200
       ],
       "actualStatus": 200,
-      "latencyMs": 7,
+      "latencyMs": 13,
       "pass": true,
       "failure": null,
       "sampleBody": "{\"contests\":[]}"
@@ -187,7 +187,7 @@
         200
       ],
       "actualStatus": 200,
-      "latencyMs": 5,
+      "latencyMs": 10,
       "pass": true,
       "failure": null,
       "sampleBody": "{\"contests\":[{\"id\":\"cmpbd3mep001zda4o0fmmo38x\",\"title\":\"LeetRank Weekly Contest #1\",\"slug\":\"weekly-contest-1\",\"description\":\"Kick off the first LeetRank weekly contest! Solve as many problems as you can within 2 hours.\",\"startTime\":\"2026-05"
@@ -200,7 +200,7 @@
         200
       ],
       "actualStatus": 200,
-      "latencyMs": 6,
+      "latencyMs": 10,
       "pass": true,
       "failure": null,
       "sampleBody": "{\"leaderboard\":[],\"total\":0,\"page\":1,\"limit\":50}"
@@ -226,7 +226,7 @@
         200
       ],
       "actualStatus": 200,
-      "latencyMs": 5,
+      "latencyMs": 27,
       "pass": true,
       "failure": null,
       "sampleBody": "{\"problems\":10,\"contests\":1,\"users\":4,\"accepted\":0}"
@@ -240,7 +240,7 @@
         400
       ],
       "actualStatus": 200,
-      "latencyMs": 3,
+      "latencyMs": 8,
       "pass": true,
       "failure": null,
       "sampleBody": "{\"query\":\"\",\"problems\":[],\"contests\":[],\"tags\":[]}"
@@ -253,7 +253,7 @@
         200
       ],
       "actualStatus": 200,
-      "latencyMs": 5,
+      "latencyMs": 17,
       "pass": true,
       "failure": null,
       "sampleBody": "{\"query\":\"two\",\"problems\":[],\"contests\":[],\"tags\":[]}"
@@ -266,7 +266,7 @@
         200
       ],
       "actualStatus": 200,
-      "latencyMs": 5,
+      "latencyMs": 13,
       "pass": true,
       "failure": null,
       "sampleBody": "{\"submissions\":[]}"
@@ -279,10 +279,10 @@
         200
       ],
       "actualStatus": 200,
-      "latencyMs": 6,
+      "latencyMs": 28,
       "pass": true,
       "failure": null,
-      "sampleBody": "# HELP leetrank_uptime_seconds Process uptime in seconds\n# TYPE leetrank_uptime_seconds gauge\nleetrank_uptime_seconds 7561\n\n# HELP leetrank_users_total Total registered users\n# TYPE leetrank_users_total gauge\nleetrank_users_total 4\n\n# HELP "
+      "sampleBody": "# HELP leetrank_uptime_seconds Process uptime in seconds\n# TYPE leetrank_uptime_seconds gauge\nleetrank_uptime_seconds 14953\n\n# HELP leetrank_users_total Total registered users\n# TYPE leetrank_users_total gauge\nleetrank_users_total 4\n\n# HELP"
     },
     {
       "name": "web.judge.health",
@@ -293,7 +293,7 @@
         503
       ],
       "actualStatus": 200,
-      "latencyMs": 5,
+      "latencyMs": 13,
       "pass": true,
       "failure": null,
       "sampleBody": "{\"status\":\"ok\",\"scheduler\":{\"globalMax\":16,\"perIpMax\":4,\"inUse\":0,\"totalAccepted\":0,\"totalRejected\":0,\"activeIps\":0}}"
@@ -306,7 +306,7 @@
         401
       ],
       "actualStatus": 401,
-      "latencyMs": 2,
+      "latencyMs": 5,
       "pass": true,
       "failure": null,
       "sampleBody": "{\"error\":\"Unauthorized\"}"
@@ -319,7 +319,7 @@
         401
       ],
       "actualStatus": 401,
-      "latencyMs": 2,
+      "latencyMs": 5,
       "pass": true,
       "failure": null,
       "sampleBody": "{\"error\":\"Unauthorized\"}"
@@ -333,7 +333,7 @@
         401
       ],
       "actualStatus": 200,
-      "latencyMs": 3,
+      "latencyMs": 8,
       "pass": true,
       "failure": null,
       "sampleBody": "{\"success\":true}"
@@ -346,7 +346,7 @@
         400
       ],
       "actualStatus": 400,
-      "latencyMs": 4,
+      "latencyMs": 12,
       "pass": true,
       "failure": null,
       "sampleBody": "{\"error\":\"Username must be at least 3 characters\"}"
@@ -360,7 +360,7 @@
         401
       ],
       "actualStatus": 400,
-      "latencyMs": 3,
+      "latencyMs": 9,
       "pass": true,
       "failure": null,
       "sampleBody": "{\"error\":\"Required\"}"
@@ -374,7 +374,7 @@
         403
       ],
       "actualStatus": 401,
-      "latencyMs": 2,
+      "latencyMs": 6,
       "pass": true,
       "failure": null,
       "sampleBody": "{\"error\":\"Unauthorized\"}"
@@ -388,7 +388,7 @@
         403
       ],
       "actualStatus": 401,
-      "latencyMs": 2,
+      "latencyMs": 6,
       "pass": true,
       "failure": null,
       "sampleBody": "{\"error\":\"Unauthorized\"}"
@@ -402,7 +402,7 @@
         403
       ],
       "actualStatus": 401,
-      "latencyMs": 2,
+      "latencyMs": 6,
       "pass": true,
       "failure": null,
       "sampleBody": "{\"error\":\"Unauthorized\"}"
@@ -416,7 +416,7 @@
         403
       ],
       "actualStatus": 401,
-      "latencyMs": 3,
+      "latencyMs": 7,
       "pass": true,
       "failure": null,
       "sampleBody": "{\"error\":\"Unauthorized\"}"
@@ -430,7 +430,7 @@
         200
       ],
       "actualStatus": 401,
-      "latencyMs": 2,
+      "latencyMs": 7,
       "pass": true,
       "failure": null,
       "sampleBody": "{\"error\":\"Unauthorized\"}"
@@ -443,7 +443,7 @@
         400
       ],
       "actualStatus": 400,
-      "latencyMs": 2,
+      "latencyMs": 5,
       "pass": true,
       "failure": null,
       "sampleBody": "{\"error\":\"problemId is required\"}"
@@ -456,7 +456,7 @@
         200
       ],
       "actualStatus": 200,
-      "latencyMs": 5,
+      "latencyMs": 13,
       "pass": true,
       "failure": null,
       "sampleBody": "{\"discussions\":[],\"total\":0,\"page\":1,\"limit\":20}"
@@ -471,7 +471,7 @@
         503
       ],
       "actualStatus": 401,
-      "latencyMs": 3,
+      "latencyMs": 8,
       "pass": true,
       "failure": null,
       "sampleBody": "{\"error\":\"Unauthorized\"}"
@@ -484,7 +484,7 @@
         200
       ],
       "actualStatus": 200,
-      "latencyMs": 4,
+      "latencyMs": 8,
       "pass": true,
       "failure": null,
       "sampleBody": "{\"service\":\"leetrank-api\",\"version\":\"0.1.0\",\"docs\":\"/api/openapi\"}"
@@ -497,10 +497,10 @@
         200
       ],
       "actualStatus": 200,
-      "latencyMs": 2,
+      "latencyMs": 3,
       "pass": true,
       "failure": null,
-      "sampleBody": "{\"status\":\"ok\",\"service\":\"leetrank-api\",\"uptimeSeconds\":23669.439,\"timestamp\":\"2026-05-19T08:04:57.041Z\"}"
+      "sampleBody": "{\"status\":\"ok\",\"service\":\"leetrank-api\",\"uptimeSeconds\":31060.943,\"timestamp\":\"2026-05-19T10:08:08.545Z\"}"
     },
     {
       "name": "api.readyz",
@@ -510,10 +510,10 @@
         200
       ],
       "actualStatus": 200,
-      "latencyMs": 2,
+      "latencyMs": 4,
       "pass": true,
       "failure": null,
-      "sampleBody": "{\"status\":\"ok\",\"service\":\"leetrank-api\",\"uptimeSeconds\":23669.44,\"version\":\"0.1.0\",\"timestamp\":\"2026-05-19T08:04:57.042Z\",\"services\":{\"database\":{\"status\":\"ok\",\"latencyMs\":1}}}"
+      "sampleBody": "{\"status\":\"ok\",\"service\":\"leetrank-api\",\"uptimeSeconds\":31060.946,\"version\":\"0.1.0\",\"timestamp\":\"2026-05-19T10:08:08.548Z\",\"services\":{\"database\":{\"status\":\"ok\",\"latencyMs\":1}}}"
     },
     {
       "name": "api.health",
@@ -523,10 +523,10 @@
         200
       ],
       "actualStatus": 200,
-      "latencyMs": 2,
+      "latencyMs": 4,
       "pass": true,
       "failure": null,
-      "sampleBody": "{\"status\":\"ok\",\"service\":\"leetrank-api\",\"uptimeSeconds\":23669.442,\"version\":\"0.1.0\",\"timestamp\":\"2026-05-19T08:04:57.044Z\",\"services\":{\"database\":{\"status\":\"ok\",\"latencyMs\":1}}}"
+      "sampleBody": "{\"status\":\"ok\",\"service\":\"leetrank-api\",\"uptimeSeconds\":31060.95,\"version\":\"0.1.0\",\"timestamp\":\"2026-05-19T10:08:08.552Z\",\"services\":{\"database\":{\"status\":\"ok\",\"latencyMs\":1}}}"
     },
     {
       "name": "api.metrics",
@@ -536,10 +536,10 @@
         200
       ],
       "actualStatus": 200,
-      "latencyMs": 3,
+      "latencyMs": 10,
       "pass": true,
       "failure": null,
-      "sampleBody": "# HELP leetrank_api_http_requests_total Total HTTP requests\n# TYPE leetrank_api_http_requests_total counter\nleetrank_api_http_requests_total{method=\"HEAD\",path=\"/health\",status=\"200\"} 609\nleetrank_api_http_requests_total{method=\"GET\",path=\""
+      "sampleBody": "# HELP leetrank_api_http_requests_total Total HTTP requests\n# TYPE leetrank_api_http_requests_total counter\nleetrank_api_http_requests_total{method=\"HEAD\",path=\"/health\",status=\"200\"} 854\nleetrank_api_http_requests_total{method=\"GET\",path=\""
     },
     {
       "name": "api.problems",
@@ -549,7 +549,7 @@
         200
       ],
       "actualStatus": 200,
-      "latencyMs": 21,
+      "latencyMs": 49,
       "pass": true,
       "failure": null,
       "sampleBody": "{\"problems\":[{\"id\":\"cmpbd3lwz000ada4ohfvco1vw\",\"title\":\"Two Sum\",\"slug\":\"two-sum\",\"difficulty\":\"Easy\",\"tags\":[{\"id\":\"cmpbd3lu90000da4or9hcutnq\",\"name\":\"Array\",\"slug\":\"array\"},{\"id\":\"cmpbd3lwg0008da4o8fkrw86j\",\"name\":\"Hash Table\",\"slug\":\"has"
@@ -562,7 +562,7 @@
         200
       ],
       "actualStatus": 200,
-      "latencyMs": 4,
+      "latencyMs": 14,
       "pass": true,
       "failure": null,
       "sampleBody": "{\"problems\":[{\"id\":\"cmpbd3lwz000ada4ohfvco1vw\",\"title\":\"Two Sum\",\"slug\":\"two-sum\",\"difficulty\":\"Easy\",\"tags\":[{\"id\":\"cmpbd3lu90000da4or9hcutnq\",\"name\":\"Array\",\"slug\":\"array\"},{\"id\":\"cmpbd3lwg0008da4o8fkrw86j\",\"name\":\"Hash Table\",\"slug\":\"has"
@@ -576,7 +576,7 @@
         404
       ],
       "actualStatus": 200,
-      "latencyMs": 5,
+      "latencyMs": 11,
       "pass": true,
       "failure": null,
       "sampleBody": "{\"problem\":{\"id\":\"cmpbd3lwz000ada4ohfvco1vw\",\"title\":\"Two Sum\",\"slug\":\"two-sum\",\"description\":\"Given an array of integers `nums` and an integer `target`, return indices of the two numbers such that they add up to `target`.\\n\\nYou may assume"
@@ -589,7 +589,7 @@
         200
       ],
       "actualStatus": 200,
-      "latencyMs": 3,
+      "latencyMs": 12,
       "pass": true,
       "failure": null,
       "sampleBody": "{\"problems\":[]}"
@@ -603,10 +603,10 @@
         404
       ],
       "actualStatus": 200,
-      "latencyMs": 3,
+      "latencyMs": 13,
       "pass": true,
       "failure": null,
-      "sampleBody": "{\"problem\":{\"id\":\"cmpbd3m5g001kda4oym5gg0nc\",\"title\":\"Longest Substring Without Repeating Characters\",\"slug\":\"longest-substring-without-repeating-characters\",\"difficulty\":\"Hard\"}}"
+      "sampleBody": "{\"problem\":{\"id\":\"cmpbd3m250012da4oou3wy9y8\",\"title\":\"Merge Two Sorted Lists\",\"slug\":\"merge-two-sorted-lists\",\"difficulty\":\"Medium\"}}"
     },
     {
       "name": "api.tags",
@@ -616,7 +616,7 @@
         200
       ],
       "actualStatus": 200,
-      "latencyMs": 2,
+      "latencyMs": 8,
       "pass": true,
       "failure": null,
       "sampleBody": "{\"tags\":[{\"id\":\"cmpbd3lu90000da4or9hcutnq\",\"name\":\"Array\",\"slug\":\"array\"},{\"id\":\"cmpbd3lvo0005da4o7i5m0038\",\"name\":\"Binary Search\",\"slug\":\"binary-search\"},{\"id\":\"cmpbd3lw70007da4ooun5lx41\",\"name\":\"Dynamic Programming\",\"slug\":\"dynamic-progra"
@@ -630,7 +630,7 @@
         404
       ],
       "actualStatus": 200,
-      "latencyMs": 5,
+      "latencyMs": 16,
       "pass": true,
       "failure": null,
       "sampleBody": "{\"tag\":{\"id\":\"cmpbd3lu90000da4or9hcutnq\",\"name\":\"Array\",\"slug\":\"array\"},\"problems\":[{\"id\":\"cmpbd3lwz000ada4ohfvco1vw\",\"title\":\"Two Sum\",\"slug\":\"two-sum\",\"difficulty\":\"Easy\",\"tags\":[{\"id\":\"cmpbd3lu90000da4or9hcutnq\",\"name\":\"Array\",\"slug\":\"ar"
@@ -643,7 +643,7 @@
         200
       ],
       "actualStatus": 200,
-      "latencyMs": 4,
+      "latencyMs": 11,
       "pass": true,
       "failure": null,
       "sampleBody": "{\"contests\":[{\"id\":\"cmpbd3mep001zda4o0fmmo38x\",\"title\":\"LeetRank Weekly Contest #1\",\"slug\":\"weekly-contest-1\",\"description\":\"Kick off the first LeetRank weekly contest! Solve as many problems as you can within 2 hours.\",\"startTime\":\"2026-05"
@@ -656,7 +656,7 @@
         200
       ],
       "actualStatus": 200,
-      "latencyMs": 4,
+      "latencyMs": 9,
       "pass": true,
       "failure": null,
       "sampleBody": "{\"contests\":[]}"
@@ -669,7 +669,7 @@
         200
       ],
       "actualStatus": 200,
-      "latencyMs": 3,
+      "latencyMs": 10,
       "pass": true,
       "failure": null,
       "sampleBody": "{\"contests\":[{\"id\":\"cmpbd3mep001zda4o0fmmo38x\",\"title\":\"LeetRank Weekly Contest #1\",\"slug\":\"weekly-contest-1\",\"description\":\"Kick off the first LeetRank weekly contest! Solve as many problems as you can within 2 hours.\",\"startTime\":\"2026-05"
@@ -682,7 +682,7 @@
         200
       ],
       "actualStatus": 200,
-      "latencyMs": 3,
+      "latencyMs": 6,
       "pass": true,
       "failure": null,
       "sampleBody": "{\"leaderboard\":[]}"
@@ -695,7 +695,7 @@
         200
       ],
       "actualStatus": 200,
-      "latencyMs": 19,
+      "latencyMs": 34,
       "pass": true,
       "failure": null,
       "sampleBody": "{\"problems\":10,\"contests\":1,\"users\":4,\"accepted\":0}"
@@ -708,10 +708,10 @@
         404
       ],
       "actualStatus": 404,
-      "latencyMs": 2,
+      "latencyMs": 4,
       "pass": true,
       "failure": null,
-      "sampleBody": "{\"error\":\"Not Found\",\"requestId\":\"23badd46-a0ea-4764-aac0-df12f422eb99\"}"
+      "sampleBody": "{\"error\":\"Not Found\",\"requestId\":\"38eb9920-b7f7-41e9-b070-a625ce1f58e1\"}"
     },
     {
       "name": "auth.root",
@@ -721,7 +721,7 @@
         200
       ],
       "actualStatus": 200,
-      "latencyMs": 5,
+      "latencyMs": 10,
       "pass": true,
       "failure": null,
       "sampleBody": "{\"service\":\"leetrank-auth\",\"version\":\"0.1.0\",\"phase\":\"3.1-scaffold\"}"
@@ -734,10 +734,10 @@
         200
       ],
       "actualStatus": 200,
-      "latencyMs": 1,
+      "latencyMs": 6,
       "pass": true,
       "failure": null,
-      "sampleBody": "{\"status\":\"ok\",\"service\":\"leetrank-auth\",\"uptimeSeconds\":23669.586,\"timestamp\":\"2026-05-19T08:04:57.138Z\"}"
+      "sampleBody": "{\"status\":\"ok\",\"service\":\"leetrank-auth\",\"uptimeSeconds\":31061.23,\"timestamp\":\"2026-05-19T10:08:08.782Z\"}"
     },
     {
       "name": "auth.readyz",
@@ -748,10 +748,10 @@
         503
       ],
       "actualStatus": 200,
-      "latencyMs": 4,
+      "latencyMs": 13,
       "pass": true,
       "failure": null,
-      "sampleBody": "{\"status\":\"ok\",\"service\":\"leetrank-auth\",\"uptimeSeconds\":23669.587,\"version\":\"0.1.0\",\"timestamp\":\"2026-05-19T08:04:57.139Z\",\"services\":{\"database\":{\"status\":\"ok\",\"latencyMs\":3}}}"
+      "sampleBody": "{\"status\":\"ok\",\"service\":\"leetrank-auth\",\"uptimeSeconds\":31061.234,\"version\":\"0.1.0\",\"timestamp\":\"2026-05-19T10:08:08.786Z\",\"services\":{\"database\":{\"status\":\"ok\",\"latencyMs\":9}}}"
     },
     {
       "name": "auth.metrics",
@@ -761,10 +761,10 @@
         200
       ],
       "actualStatus": 200,
-      "latencyMs": 2,
+      "latencyMs": 8,
       "pass": true,
       "failure": null,
-      "sampleBody": "# HELP leetrank_auth_http_requests_total Total HTTP requests\n# TYPE leetrank_auth_http_requests_total counter\nleetrank_auth_http_requests_total{method=\"HEAD\",path=\"/healthz\",status=\"200\"} 609\nleetrank_auth_http_requests_total{method=\"GET\",p"
+      "sampleBody": "# HELP leetrank_auth_http_requests_total Total HTTP requests\n# TYPE leetrank_auth_http_requests_total counter\nleetrank_auth_http_requests_total{method=\"HEAD\",path=\"/healthz\",status=\"200\"} 854\nleetrank_auth_http_requests_total{method=\"GET\",p"
     },
     {
       "name": "auth.jwks",
@@ -774,7 +774,7 @@
         200
       ],
       "actualStatus": 200,
-      "latencyMs": 1,
+      "latencyMs": 4,
       "pass": true,
       "failure": null,
       "sampleBody": "{\"keys\":[]}"
@@ -802,7 +802,7 @@
         501
       ],
       "actualStatus": 501,
-      "latencyMs": 2,
+      "latencyMs": 6,
       "pass": true,
       "failure": null,
       "sampleBody": "{\"error\":\"Not implemented yet — auth migration in progress\"}"
@@ -815,10 +815,10 @@
         200
       ],
       "actualStatus": 200,
-      "latencyMs": 3,
+      "latencyMs": 7,
       "pass": true,
       "failure": null,
-      "sampleBody": "{\"scheduler\":{\"globalMax\":16,\"perIpMax\":4,\"inUse\":0,\"totalAccepted\":0,\"totalRejected\":0,\"activeIps\":0},\"service\":\"leetrank-judge\",\"status\":\"ok\",\"time\":\"2026-05-19T08:04:57Z\"}"
+      "sampleBody": "{\"scheduler\":{\"globalMax\":16,\"perIpMax\":4,\"inUse\":0,\"totalAccepted\":0,\"totalRejected\":0,\"activeIps\":0},\"service\":\"leetrank-judge\",\"status\":\"ok\",\"time\":\"2026-05-19T10:08:08Z\"}"
     }
   ]
 }
