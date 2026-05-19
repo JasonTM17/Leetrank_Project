@@ -10,8 +10,16 @@ import { clientIp } from "@/lib/client-ip";
 // RULES §4: rate-limit auth routes. Registration is a write path that
 // allocates DB rows + runs bcrypt — uncapped traffic here is both a spam
 // vector and a cheap CPU exhaustion attack.
+//
+// Bug #8: a single corporate NAT can legitimately register multiple
+// accounts; the previous 5-per-15-minutes ceiling tripped on a 2nd
+// account from the same IP. Bumped to 5/hour per IP, with a separate
+// per-email-prefix bucket so attackers can't churn the same mailbox
+// even from a fresh IP.
 const RATE_LIMIT_MAX = 5;
-const RATE_LIMIT_WINDOW_MS = 15 * 60_000;
+const RATE_LIMIT_WINDOW_MS = 60 * 60_000;
+const EMAIL_BUCKET_MAX = 3;
+const EMAIL_BUCKET_WINDOW_MS = 60 * 60_000;
 
 // RULES §4: bcrypt cost ≥ 10 minimum, 12 for auth endpoints. The cost is
 // a per-hash CPU tax; 12 is ~four-fold heavier than 10 and aligns with
@@ -38,12 +46,29 @@ export async function POST(request: NextRequest) {
 
     const { email, username, password } = parsed.data;
 
+    // Per-IP bucket — covers naive scripted spam.
     const ip = clientIp(request);
-    const limit = rateLimit(`register:${ip}`, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_MS);
-    if (!limit.allowed) {
-      const retryAfter = Math.max(1, Math.ceil((limit.resetAt - Date.now()) / 1000));
+    const ipLimit = rateLimit(`register:ip:${ip}`, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_MS);
+    if (!ipLimit.allowed) {
+      const retryAfter = Math.max(1, Math.ceil((ipLimit.resetAt - Date.now()) / 1000));
       return Response.json(
         { error: "Too many registration attempts. Try again later." },
+        { status: 429, headers: { "Retry-After": String(retryAfter) } }
+      );
+    }
+
+    // Per-email-prefix bucket — protects against churning the *same*
+    // mailbox while letting genuine 2nd accounts from the same IP through.
+    const emailPrefix = email.split("@")[0]?.toLowerCase() ?? "";
+    const emailLimit = rateLimit(
+      `register:email:${emailPrefix}`,
+      EMAIL_BUCKET_MAX,
+      EMAIL_BUCKET_WINDOW_MS
+    );
+    if (!emailLimit.allowed) {
+      const retryAfter = Math.max(1, Math.ceil((emailLimit.resetAt - Date.now()) / 1000));
+      return Response.json(
+        { error: "Too many registration attempts for this email. Try again later." },
         { status: 429, headers: { "Retry-After": String(retryAfter) } }
       );
     }
