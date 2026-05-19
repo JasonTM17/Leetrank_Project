@@ -5,6 +5,7 @@ import { executeCode, JudgeUnavailableError } from "@/services/judge";
 import { submitCodeSchema } from "@/lib/validations";
 import { enqueueJudgeSubmission } from "@/lib/submission-jobs";
 import { logger } from "@/lib/logger";
+import { recordDailySolveIfApplicable } from "@/lib/daily-challenge";
 
 export async function GET(request: NextRequest) {
   try {
@@ -168,6 +169,20 @@ export async function POST(request: NextRequest) {
           output: outputStr,
         },
       });
+
+      // Daily-challenge streak: only on AC. Failures here are non-fatal —
+      // the submission is the source of truth and a missed streak update
+      // will be re-attempted on the next AC of today's problem.
+      if (status === "accepted") {
+        try {
+          await recordDailySolveIfApplicable(prisma, session.userId, problemId);
+        } catch (err) {
+          logger.warn("daily-challenge streak update failed", {
+            scope: "api/submissions",
+            err: err instanceof Error ? err.message : String(err),
+          });
+        }
+      }
 
       return Response.json({ submission, results }, { status: 201 });
     }
