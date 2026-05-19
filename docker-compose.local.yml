@@ -26,7 +26,7 @@ services:
     ports: !override
       - "16379:6379"
 
-  app:
+  web:
     ports: !override
       - "13000:3000"
     environment:
@@ -44,17 +44,23 @@ services:
     environment:
       <<: *postgres-url
 
+  identity:
+    ports: !override
+      - "14011:4011"
+    environment:
+      <<: *postgres-url
+
   judge:
     ports: !override
       - "19090:9090"
 
-  submissions-go:
+  submissions:
     ports: !override
       - "14012:4012"
     environment:
       <<: *postgres-url
 
-  problems-go:
+  problems:
     ports: !override
       - "14013:4013"
     environment:
