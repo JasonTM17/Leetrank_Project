@@ -148,6 +148,7 @@ export default function SubmissionsPage() {
   const [filter, setFilter] = useState("");
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     fetch(`/api/submissions`)
       .then((r) => (r.ok ? r.json() : Promise.reject(r)))

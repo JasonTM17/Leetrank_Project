@@ -39,7 +39,6 @@ export default function SubmissionDetailPage({ params }: { params: Promise<{ id:
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    /* eslint-disable react-hooks/set-state-in-effect */
     fetch(`/api/submissions/${encodeURIComponent(id)}`)
       .then(async (r) => {
         if (r.status === 401) { setError("unauthorized"); return null; }

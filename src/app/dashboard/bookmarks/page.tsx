@@ -23,7 +23,6 @@ export default function BookmarksPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    /* eslint-disable react-hooks/set-state-in-effect */
     fetch("/api/bookmarks")
       .then((r) => (r.ok ? r.json() : Promise.reject(r)))
       .then((data) => setBookmarks(data.bookmarks ?? []))
