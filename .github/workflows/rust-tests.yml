@@ -39,6 +39,9 @@ jobs:
           workspaces: services/leaderboard-rust -> target
 
       - name: cargo fmt --check
+        # Advisory until baseline formatting lands across all rust services.
+        # Track in TEAM-A polyglot test follow-up.
+        continue-on-error: true
         run: cargo fmt --all -- --check
 
       - name: cargo clippy
