@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useTranslations, useLocale } from "next-intl";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { Card, CardContent } from "@/components/ui/card";
@@ -24,6 +25,8 @@ interface Contest {
 }
 
 export default function ContestsPage() {
+  const t = useTranslations("contests");
+  const locale = useLocale();
   const [contests, setContests] = useState<Contest[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -43,26 +46,27 @@ export default function ContestsPage() {
       case "active":
         return (
           <Badge variant="success" className="inline-flex items-center">
-            {dot("bg-green-500")}Live
+            {dot("bg-green-500")}{t("live")}
           </Badge>
         );
       case "upcoming":
         return (
           <Badge variant="warning" className="inline-flex items-center">
-            {dot("bg-amber-500")}Upcoming
+            {dot("bg-amber-500")}{t("upcoming")}
           </Badge>
         );
       default:
         return (
           <Badge variant="secondary" className="inline-flex items-center">
-            {dot("bg-muted-foreground/60")}Ended
+            {dot("bg-muted-foreground/60")}{t("ended")}
           </Badge>
         );
     }
   }
 
   function formatDateTime(date: string) {
-    return new Date(date).toLocaleDateString("en-US", {
+    const localeTag = locale === "vi" ? "vi-VN" : "en-US";
+    return new Date(date).toLocaleDateString(localeTag, {
       month: "short",
       day: "numeric",
       year: "numeric",
@@ -72,9 +76,9 @@ export default function ContestsPage() {
   }
 
   function ctaTooltip(status: string, startTime: string) {
-    if (status === "active") return "Limited to 10 join requests per minute";
-    if (status === "upcoming") return "Opens at " + formatDateTime(startTime);
-    return "Final standings + your placement";
+    if (status === "active") return t("tooltipLive");
+    if (status === "upcoming") return t("tooltipUpcoming", { time: formatDateTime(startTime) });
+    return t("tooltipEnded");
   }
 
   return (
@@ -90,14 +94,14 @@ export default function ContestsPage() {
           <div className="relative mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-12">
             <Breadcrumb
               className="mb-6"
-              items={[{ label: "Home", href: "/" }, { label: "Contests" }]}
+              items={[{ label: t("breadcrumbHome"), href: "/" }, { label: t("breadcrumbContests") }]}
             />
             <div className="animate-fade-in-up">
               <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
-                <span className="gradient-text">Contests</span>
+                <span className="gradient-text">{t("title")}</span>
               </h1>
               <p className="mt-3 text-muted-foreground text-lg max-w-xl">
-                Compete with others and test your skills under pressure. Weekly rounds, live leaderboards, and ratings that follow you.
+                {t("heroSubtitle")}
               </p>
             </div>
           </div>
@@ -111,8 +115,8 @@ export default function ContestsPage() {
           ) : contests.length === 0 ? (
             <EmptyState
               icon={Calendar}
-              title="No contests available yet"
-              description="New contests are posted weekly. Bookmark this page or check back soon."
+              title={t("noContestsTitle")}
+              description={t("noContestsBody")}
             />
           ) : (
             <div className="space-y-4">
@@ -135,14 +139,14 @@ export default function ContestsPage() {
                           </div>
                           <div className="flex items-center gap-1">
                             <Users className="h-4 w-4" />
-                            {contest._count?.entries || 0} participants
+                            {t("participantsCount", { count: contest._count?.entries || 0 })}
                           </div>
                         </div>
                       </div>
                       <Tooltip content={ctaTooltip(contest.status, contest.startTime)} side="left">
                         <Link href={`/contests/${contest.slug}`}>
                           <Button variant={contest.status === "active" ? "default" : "outline"} size="sm" className={contest.status === "active" ? "shadow-glow" : ""}>
-                            {contest.status === "active" ? "Join Now" : contest.status === "upcoming" ? "View Details" : "View Results"}
+                            {contest.status === "active" ? t("joinNow") : contest.status === "upcoming" ? t("viewDetails") : t("viewResults")}
                           </Button>
                         </Link>
                       </Tooltip>

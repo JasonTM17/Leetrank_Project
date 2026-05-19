@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,9 +17,8 @@ interface LeaderboardEntry {
   score: number;
 }
 
-const SCORING_FORMULA = "Score = solved × 100 + recent-acceptance bonus. Refreshed every 60s.";
-
 export default function LeaderboardPage() {
+  const t = useTranslations("leaderboard");
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -51,8 +51,8 @@ export default function LeaderboardPage() {
         </div>
         <div className={`rounded-full p-3 ${accent} mb-1`}>{icon}</div>
         <div className="text-sm font-semibold truncate max-w-full px-2">{entry.username}</div>
-        <div className="text-xs text-muted-foreground">{entry.solved} solved</div>
-        <div className="text-base font-bold gradient-text">{entry.score} pts</div>
+        <div className="text-xs text-muted-foreground">{t("solvedCount", { count: entry.solved })}</div>
+        <div className="text-base font-bold gradient-text">{t("points", { score: entry.score })}</div>
       </div>
     );
   }
@@ -64,14 +64,14 @@ export default function LeaderboardPage() {
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-8">
           <Breadcrumb
             className="mb-4"
-            items={[{ label: "Home", href: "/" }, { label: "Leaderboard" }]}
+            items={[{ label: t("breadcrumbHome"), href: "/" }, { label: t("breadcrumbLeaderboard") }]}
           />
 
           <div className="mb-8 animate-fade-in-up">
             <h1 className="text-3xl font-bold">
-              <span className="gradient-text">Leaderboard</span>
+              <span className="gradient-text">{t("title")}</span>
             </h1>
-            <p className="text-muted-foreground mt-1">Top performers on LeetRank</p>
+            <p className="text-muted-foreground mt-1">{t("tagline")}</p>
           </div>
 
           {loading ? (
@@ -81,8 +81,8 @@ export default function LeaderboardPage() {
           ) : entries.length === 0 ? (
             <EmptyState
               icon={Trophy}
-              title="No entries yet"
-              description="Be the first to solve a problem and you'll show up here within a minute."
+              title={t("noEntriesTitle")}
+              description={t("noEntriesBody")}
             />
           ) : (
             <>
@@ -126,7 +126,7 @@ export default function LeaderboardPage() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Global Rankings</CardTitle>
+                  <CardTitle className="text-lg">{t("globalRankings")}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-1">
@@ -135,7 +135,7 @@ export default function LeaderboardPage() {
                         key={entry.rank}
                         className="flex items-center gap-4 rounded-lg px-4 py-3 transition-colors hover:bg-muted/30"
                       >
-                        <Tooltip content={SCORING_FORMULA} side="right">
+                        <Tooltip content={t("scoringFormula")} side="right">
                           <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-muted text-sm font-medium text-muted-foreground">
                             {entry.rank}
                           </span>
@@ -144,10 +144,10 @@ export default function LeaderboardPage() {
                           <span className="font-medium">{entry.username}</span>
                         </div>
                         <div className="text-sm text-muted-foreground">
-                          {entry.solved} solved
+                          {t("solvedCount", { count: entry.solved })}
                         </div>
                         <div className="text-sm font-medium text-primary w-20 text-right">
-                          {entry.score} pts
+                          {t("points", { score: entry.score })}
                         </div>
                       </div>
                     ))}
