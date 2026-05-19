@@ -121,7 +121,9 @@ async function topLanguagesBySubmissions(limit = 10): Promise<CategoryBucket[]> 
  * concurrent admin page loads collapse to one DB hit.
  */
 export async function loadAnalytics(): Promise<AnalyticsPayload> {
-  return cache.remember(CACHE_KEY, TTL_MS, async () => {
+  // The shared cache singleton is typed `TTLCache<unknown>`, so cast the
+  // memoised return back to our payload type at the boundary.
+  const result = await cache.remember(CACHE_KEY, TTL_MS, async () => {
     const [userGrowth, submissionVolume, problemDifficulty, topLanguages] =
       await Promise.all([
         userGrowthLast12Months(),
@@ -137,4 +139,5 @@ export async function loadAnalytics(): Promise<AnalyticsPayload> {
       generatedAt: new Date().toISOString(),
     };
   });
+  return result as AnalyticsPayload;
 }
