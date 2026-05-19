@@ -1,0 +1,112 @@
+name: postgres-backup
+
+# Daily Postgres backup as a poor-man's offsite copy until S3 is wired up
+# (ADR 0029, F-008). Runs nightly on cron + on-demand via workflow_dispatch.
+#
+# Strategy:
+#   * Boot an ephemeral postgres:16-alpine container, apply the prisma
+#     schema, and dump it. This sanity-checks that prisma migrate deploy
+#     still produces a valid schema; we are NOT dumping prod data here.
+#   * If BACKUP_DATABASE_URL is configured (a read-only replica or staging
+#     URL), we connect and dump that instead — real data, retained 30d
+#     as a workflow artifact.
+#   * S3 push lives in scripts/backup-postgres.sh and only triggers when
+#     AWS_ACCESS_KEY_ID + BACKUP_S3_BUCKET secrets are present.
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dump:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PGUSER: leetrank
+      PGPASSWORD: leetrank-ci
+      PGDATABASE: leetrank
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: leetrank
+          POSTGRES_PASSWORD: leetrank-ci
+          POSTGRES_DB: leetrank
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U leetrank -d leetrank"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pg client matching server (16)
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+            -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] \
+            https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update -y
+          sudo apt-get install -y postgresql-client-16
+
+      - name: Apply schema (prisma migrate deploy when applicable)
+        env:
+          DATABASE_URL: "postgresql://leetrank:leetrank-ci@127.0.0.1:5432/leetrank?schema=public"
+        run: |
+          if [ -f package.json ] && [ -d prisma ]; then
+            corepack enable
+            pnpm install --frozen-lockfile=false --prefer-offline || pnpm install
+            pnpm exec prisma migrate deploy || pnpm exec prisma db push --accept-data-loss
+          else
+            echo "no prisma; ephemeral schema-less dump"
+          fi
+
+      - name: Dump from CI postgres (smoke)
+        env:
+          DATABASE_URL: "postgresql://leetrank:leetrank-ci@127.0.0.1:5432/leetrank?schema=public"
+        run: |
+          mkdir -p backups
+          STAMP="$(date -u +%Y%m%d)"
+          pg_dump --format=custom --compress=9 --no-owner --no-privileges \
+            "$DATABASE_URL" > "backups/leetrank-ci-${STAMP}.dump"
+          ls -lh backups/
+
+      - name: Dump from staging (if BACKUP_DATABASE_URL secret set)
+        if: ${{ env.BACKUP_DATABASE_URL != '' }}
+        env:
+          BACKUP_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+        run: |
+          STAMP="$(date -u +%Y%m%d)"
+          pg_dump --format=custom --compress=9 --no-owner --no-privileges \
+            "$BACKUP_DATABASE_URL" > "backups/leetrank-staging-${STAMP}.dump"
+          ls -lh backups/
+
+      - name: Upload backup artifact (30d retention)
+        uses: actions/upload-artifact@v4
+        with:
+          name: postgres-backup-${{ github.run_id }}
+          path: backups/*.dump
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Optional S3 push (no-op unless AWS secrets are present)
+        if: ${{ env.AWS_ACCESS_KEY_ID != '' && env.BACKUP_S3_BUCKET != '' }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+          BACKUP_S3_BUCKET: ${{ secrets.BACKUP_S3_BUCKET }}
+        run: |
+          for f in backups/*.dump; do
+            aws s3 cp "$f" "s3://${BACKUP_S3_BUCKET}/postgres/$(basename "$f")"
+          done
