@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
         ...(problemId ? { problemId } : {}),
         ...(contestId ? { contestId } : {}),
         message: redactedMessage,
-        history: history.reverse().map((m) => ({ role: m.role, content: m.content })),
+        history: history.reverse().map((m: { role: string; content: string }) => ({ role: m.role, content: m.content })),
       }),
       signal: AbortSignal.timeout(30_000),
     });
