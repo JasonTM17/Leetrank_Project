@@ -25,7 +25,7 @@ describe("GET /api/users", () => {
     await GET(asNextRequest(new Request("http://x/api/users?search=al")));
 
     const args = prismaMock.user.findMany.mock.calls[0]?.[0];
-    expect(args?.where).toEqual({ username: { contains: "al" } });
+    expect(args?.where).toEqual({ username: { contains: "al", mode: "insensitive" } });
   });
 
   it("clamps limit to 100", async () => {
