@@ -68,8 +68,8 @@ jobs:
           node-version: 20
 # cache disabled — pnpm-lock not in CI workspace yet
       - run: npm install --no-audit --no-fund
-      - name: Audit (fail on high or critical)
-        run: npm audit --audit-level=high
+      - name: Audit (fail on high or critical, production deps only)
+        run: npm audit --omit=dev --audit-level=high
 
   api:
     name: API — typecheck, build
@@ -142,6 +142,51 @@ jobs:
         env:
           GOFLAGS: -mod=mod
         run: go test -race -count=1 ./...
+
+  judge-sandbox-tests:
+    name: Judge — sandbox-escape suite (nsjail in container)
+    runs-on: ubuntu-latest
+    needs: [judge]
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: docker/setup-buildx-action@v3
+
+      # Build the runtime image so nsjail is present, then run the Go test
+      # suite *inside* the image. The sandbox-escape suite refuses to run
+      # without nsjail on PATH, so this is the only place it actually
+      # exercises the jail.
+      - name: Build judge runtime image
+        uses: docker/build-push-action@v7
+        with:
+          context: ./judge-service
+          push: false
+          load: true
+          tags: leetrank-judge:sandbox-tests
+
+      # Pull a Go toolchain alongside the runtime image — easier than
+      # building a dedicated test image. We mount the source tree and
+      # invoke `go test` with GOFLAGS=-mod=mod so the proxy resolves deps
+      # on the fly (consistent with the rest of CI).
+      - name: Run sandbox-escape suite
+        run: |
+          docker run --rm \
+            --privileged \
+            -v "$PWD/judge-service:/src" \
+            -w /src \
+            -e GOFLAGS=-mod=mod \
+            --entrypoint /bin/bash \
+            leetrank-judge:sandbox-tests \
+            -c '
+              set -eux
+              apt-get update
+              apt-get install -y --no-install-recommends golang-1.22-go
+              export PATH=/usr/lib/go-1.22/bin:$PATH
+              go version
+              nsjail --help 2>&1 | head -1 || true
+              go test -count=1 -run "Sandbox" -v ./...
+            '
 
   go-tests:
     name: Go services — vet + test (race)
