@@ -23,7 +23,7 @@ jobs:
 # cache disabled — pnpm-lock not in CI workspace yet
 
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
+        run: npm install --no-audit --no-fund --legacy-peer-deps
 
       - name: Typecheck
         run: npm run typecheck
@@ -31,8 +31,26 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Test
-        run: npm test
+      - name: Test (with coverage)
+        run: npm run test:coverage
+
+      - name: Upload coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ github.run_id }}
+          path: coverage/
+          retention-days: 14
+
+      - name: Upload coverage to Codecov
+        if: always()
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./coverage/lcov.info
+          flags: unittests
+          fail_ci_if_error: false
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Build
         run: npm run build
@@ -124,6 +142,92 @@ jobs:
         env:
           GOFLAGS: -mod=mod
         run: go test -race -count=1 ./...
+
+  go-tests:
+    name: Go services — vet + test (race)
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [auth-go, problems-go, submissions-go]
+    defaults:
+      run:
+        working-directory: services/${{ matrix.service }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Vet
+        env:
+          GOFLAGS: -mod=mod
+        run: go vet ./...
+
+      - name: Test (race + verbose + count=1)
+        env:
+          GOFLAGS: -mod=mod
+        run: go test -v -race -count=1 ./...
+
+  e2e:
+    name: Web — Playwright golden path
+    runs-on: ubuntu-latest
+    needs: [web]
+    timeout-minutes: 25
+    env:
+      DATABASE_URL: file:./dev.db
+      JWT_SECRET: ci-e2e-secret-32-chars-aaaaaaaaa
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      E2E_BASE_URL: http://localhost:3000
+      CI: "true"
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund --legacy-peer-deps
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Apply schema (sqlite)
+        run: npx prisma db push --skip-generate
+
+      - name: Install Playwright (chromium only)
+        run: npx playwright install --with-deps chromium
+
+      - name: Build Next.js
+        run: npm run build
+
+      - name: Start app in background
+        run: nohup npm start > .next-start.log 2>&1 &
+
+      - name: Wait for /api/health
+        run: |
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:3000/api/health > /dev/null; then
+              echo "app is ready"; exit 0
+            fi
+            sleep 2
+          done
+          echo "app failed to become ready"
+          tail -200 .next-start.log
+          exit 1
+
+      - name: Run Playwright golden path
+        run: npx playwright test golden-path.spec.ts --project=chromium-desktop
+
+      - name: Upload Playwright HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ github.run_id }}
+          path: playwright-report/
+          retention-days: 14
 
   docker:
     name: Docker — image builds
