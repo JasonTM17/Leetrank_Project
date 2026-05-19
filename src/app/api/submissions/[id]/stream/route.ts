@@ -44,7 +44,7 @@ export async function GET(
 
   const submission = await prisma.submission.findUnique({
     where: { id },
-    select: { id: true, userId: true, status: true },
+    select: { id: true, userId: true, status: true, problemId: true },
   });
   if (!submission) {
     return Response.json({ error: "Submission not found" }, { status: 404 });
@@ -52,6 +52,15 @@ export async function GET(
   if (submission.userId !== session.userId && session.role !== "admin") {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
+
+  // Count test cases up front so the very first SSE frame can tell the
+  // client how many verdicts to expect. Backend (judge dispatcher) will
+  // later push `progress` events as each testcase clears; today we emit
+  // 0/N → N/N once the row leaves 'pending' so the UI can render a real
+  // progress bar instead of a spinner.
+  const totalTests = await prisma.testCase.count({
+    where: { problemId: submission.problemId },
+  });
 
   const encoder = new TextEncoder();
   let lastStatus = submission.status;
@@ -81,6 +90,11 @@ export async function GET(
       const heartbeat = () => safeEnqueue(encoder.encode(`: ping\n\n`));
 
       send("status", { id: submission.id, status: lastStatus });
+      // Tell the client how many testcases there are so it can render a
+      // proper progress bar. The judge will later emit per-testcase
+      // `progress` events; this initial frame is `progress 0/N`.
+      send("progress", { id: submission.id, completed: 0, total: totalTests });
+      let lastProgress = 0;
 
       const startedAt = Date.now();
       heartbeatTimer = setInterval(heartbeat, HEARTBEAT_INTERVAL_MS);
@@ -94,6 +108,13 @@ export async function GET(
           if (fresh.status !== lastStatus) {
             lastStatus = fresh.status;
             send("status", { id, status: fresh.status, runtime: fresh.runtime, error: fresh.error });
+          }
+          // Once the row is no longer pending the judge has scored every
+          // testcase. Emit one final progress=N/N frame so the bar fills
+          // before the `done` event closes the stream.
+          if (fresh.status !== "pending" && lastProgress < totalTests) {
+            lastProgress = totalTests;
+            send("progress", { id, completed: lastProgress, total: totalTests });
           }
           if (fresh.status !== "pending" || Date.now() - startedAt > MAX_DURATION_MS) {
             stopTimers();
