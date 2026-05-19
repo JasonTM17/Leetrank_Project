@@ -70,6 +70,7 @@ model ProblemTag {
   tagId     String
 
   @@id([problemId, tagId])
+  @@index([tagId])
 }
 
 model TestCase {
@@ -81,6 +82,8 @@ model TestCase {
   order     Int     @default(0)
 
   problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@index([problemId])
 }
 
 model Submission {
@@ -132,6 +135,7 @@ model ContestProblem {
   problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
 
   @@id([contestId, problemId])
+  @@index([problemId])
 }
 
 model ContestEntry {
