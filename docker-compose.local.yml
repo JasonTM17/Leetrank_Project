@@ -2,12 +2,20 @@
 # Docker projects on the same host. The `!override` tag tells Compose to
 # REPLACE the parent ports list rather than merge (Compose v2.24+).
 #
+# Also overrides DATABASE_URL because the user's .env keeps the legacy
+# SQLite URL ("file:./dev.db") for the app's local Prisma Studio path.
+# Containers MUST hit the postgres service over the docker network — point
+# them at it explicitly so the .env value never reaches the inside.
+#
 # Usage:
 #   docker compose -f docker-compose.yml -f docker-compose.local.yml \
 #     up -d --build postgres redis app api auth judge
 #
 # Then open: http://localhost:13000 (app), :14000 (api), :14001 (auth),
 # :19090 (judge). Internals: postgres :15432, redis :16379.
+
+x-postgres-url: &postgres-url
+  DATABASE_URL: postgresql://leetrank:leetrank-dev@postgres:5432/leetrank?schema=public
 
 services:
   postgres:
@@ -21,14 +29,20 @@ services:
   app:
     ports: !override
       - "13000:3000"
+    environment:
+      <<: *postgres-url
 
   api:
     ports: !override
       - "14000:4000"
+    environment:
+      <<: *postgres-url
 
   auth:
     ports: !override
       - "14001:4001"
+    environment:
+      <<: *postgres-url
 
   judge:
     ports: !override
