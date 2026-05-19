@@ -5,6 +5,8 @@ import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { CommandPalette } from "@/components/layout/command-palette";
+import { ServiceWorkerRegister } from "@/components/pwa/sw-register";
+import { InstallPrompt } from "@/components/pwa/install-prompt";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -75,6 +77,8 @@ export default async function RootLayout({
             {children}
             <CommandPalette />
             <Toaster />
+            <ServiceWorkerRegister />
+            <InstallPrompt />
           </ThemeProvider>
         </NextIntlClientProvider>
       </body>
