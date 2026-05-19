@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { seedAchievements } from "./seed-achievements";
 
 const prisma = new PrismaClient();
 
@@ -691,6 +692,11 @@ async function main() {
     },
   });
   console.log("Created 1 contest");
+
+  // Gamification — seed the 20 HackerRank-parity achievements once the
+  // user/contest fixture exists so admin reviews can see the catalog.
+  await seedAchievements();
+  console.log("Seeded achievements");
 
   console.log("Seeding complete.");
 }
