@@ -31,6 +31,11 @@ services:
       - "13000:3000"
     environment:
       <<: *postgres-url
+      # Local-only override so the dev `/api/auth/login` (HS256) keeps
+      # working when the image is built with NODE_ENV=production. Identity
+      # JWKS service is wired up in staging/prod, not in this single-host
+      # screenshot stack — without this flag the cookie verifies as null.
+      LEGACY_HS256_FALLBACK: "true"
 
   api:
     ports: !override
