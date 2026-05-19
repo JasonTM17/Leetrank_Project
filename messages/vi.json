@@ -26,6 +26,7 @@
   },
   "nav": {
     "problems": "Bài tập",
+    "studyPlans": "Lộ trình học",
     "leaderboard": "Bảng xếp hạng",
     "contests": "Cuộc thi",
     "dashboard": "Tổng quan",
@@ -253,6 +254,31 @@
     "finalizeRating": "Chốt rating",
     "ratingFinalized": "Đã chốt rating"
   },
+  "studyPlans": {
+    "title": "Lộ trình học",
+    "heroSubtitle": "Các lộ trình tuyển chọn theo từng ngày. Chọn lộ trình, giải lần lượt, về đích vững vàng.",
+    "breadcrumbHome": "Trang chủ",
+    "breadcrumbStudyPlans": "Lộ trình học",
+    "officialBadge": "Chính thức",
+    "problemCount": "{count} bài",
+    "estimatedHours": "~{hours} giờ",
+    "progressLabel": "{solved} / {total} đã giải",
+    "notStarted": "Chưa bắt đầu",
+    "noPlansTitle": "Chưa có lộ trình nào",
+    "noPlansBody": "Lộ trình mới được cập nhật hàng tuần. Quay lại sau hoặc tự tạo từ tập bài tập bất kỳ.",
+    "notFoundTitle": "Không tìm thấy lộ trình",
+    "notFoundBody": "Lộ trình này đã đổi tên hoặc không tồn tại. Xem danh sách để chọn lộ trình khác.",
+    "backToList": "Về danh sách lộ trình",
+    "startCta": "Bắt đầu lộ trình",
+    "loginToStart": "Đăng nhập để bắt đầu",
+    "abandonCta": "Hủy lộ trình",
+    "startedOn": "Bắt đầu ngày {date}",
+    "dayLabel": "Ngày {day}",
+    "noProblemsTitle": "Lộ trình chưa có bài tập",
+    "noProblemsBody": "Người tạo chưa thêm bài tập vào lộ trình này. Hãy thử lộ trình khác.",
+    "problemMeta": "{difficulty} · tỉ lệ AC {acceptance}",
+    "errorGeneric": "Có lỗi xảy ra. Vui lòng thử lại."
+  },
   "leaderboard": {
     "title": "Bảng xếp hạng",
     "subtitle": "Những người giải tốt nhất trên nền tảng.",
@@ -338,5 +364,17 @@
     "solvedToday": "Tuyệt — bạn đã giải xong thử thách hôm nay.",
     "keepStreak": "Giữ chuỗi của bạn.",
     "startStreak": "Bắt đầu một chuỗi mới hôm nay."
+  },
+  "playback": {
+    "title": "Phát lại code",
+    "emptyTitle": "Bài nộp này chưa có bản ghi",
+    "emptyDescription": "Các bài nộp trước khi tính năng phát lại được bật, hoặc khi recorder bị tắt, sẽ không có dữ liệu phát lại.",
+    "play": "Phát",
+    "pause": "Tạm dừng",
+    "rewind": "Quay về đầu",
+    "speed": "Tốc độ phát",
+    "scrub": "Tua thời gian",
+    "durationLabel": "Đã ghi {seconds}s",
+    "frameLabel": "Khung {current} / {total}"
   }
 }

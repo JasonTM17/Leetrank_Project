@@ -26,6 +26,7 @@
   },
   "nav": {
     "problems": "Problems",
+    "studyPlans": "Study Plans",
     "leaderboard": "Leaderboard",
     "contests": "Contests",
     "dashboard": "Dashboard",
@@ -253,6 +254,31 @@
     "finalizeRating": "Finalize rating",
     "ratingFinalized": "Rating finalized"
   },
+  "studyPlans": {
+    "title": "Study Plans",
+    "heroSubtitle": "Curated, day-by-day curricula. Pick a plan, solve in sequence, finish strong.",
+    "breadcrumbHome": "Home",
+    "breadcrumbStudyPlans": "Study Plans",
+    "officialBadge": "Official",
+    "problemCount": "{count} problems",
+    "estimatedHours": "~{hours}h",
+    "progressLabel": "{solved} / {total} solved",
+    "notStarted": "Not started",
+    "noPlansTitle": "No study plans yet",
+    "noPlansBody": "New plans drop weekly. Check back soon or start a custom one from any problem set.",
+    "notFoundTitle": "Study plan not found",
+    "notFoundBody": "This plan was renamed or never existed. Browse all plans to pick another.",
+    "backToList": "Back to study plans",
+    "startCta": "Start plan",
+    "loginToStart": "Log in to start",
+    "abandonCta": "Abandon plan",
+    "startedOn": "Started {date}",
+    "dayLabel": "Day {day}",
+    "noProblemsTitle": "Plan has no problems yet",
+    "noProblemsBody": "The curator has not added problems to this plan. Try another from the catalogue.",
+    "problemMeta": "{difficulty} · {acceptance} acceptance",
+    "errorGeneric": "Something went wrong. Try again."
+  },
   "leaderboard": {
     "title": "Leaderboard",
     "subtitle": "Top solvers across the platform.",
@@ -338,5 +364,17 @@
     "solvedToday": "Nice — you've solved today's challenge.",
     "keepStreak": "Keep your streak alive.",
     "startStreak": "Start a new streak today."
+  },
+  "playback": {
+    "title": "Code playback",
+    "emptyTitle": "No recording for this submission",
+    "emptyDescription": "Submissions written before code playback launched, or with the recorder disabled, have no replay.",
+    "play": "Play",
+    "pause": "Pause",
+    "rewind": "Rewind to start",
+    "speed": "Playback speed",
+    "scrub": "Scrub timeline",
+    "durationLabel": "{seconds}s recorded",
+    "frameLabel": "Frame {current} / {total}"
   }
 }
