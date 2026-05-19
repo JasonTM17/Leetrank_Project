@@ -23,8 +23,16 @@ const MAX_DURATION_MS = 60_000;
 
 export const dynamic = "force-dynamic";
 
+/**
+ * IMPORTANT: auth + lookup MUST happen BEFORE the ReadableStream is
+ * constructed. Once the response body is a stream the Content-Type is
+ * locked to text/event-stream and any JSON we emit looks like a parse
+ * error to EventSource clients. The block below short-circuits with a
+ * normal application/json response (Response.json default) on every
+ * failure path before a single SSE byte is ever flushed.
+ */
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getSession();
@@ -47,20 +55,36 @@ export async function GET(
 
   const encoder = new TextEncoder();
   let lastStatus = submission.status;
+  let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+  let pollTimer: ReturnType<typeof setInterval> | null = null;
+  const stopTimers = () => {
+    if (heartbeatTimer) clearInterval(heartbeatTimer);
+    if (pollTimer) clearInterval(pollTimer);
+    heartbeatTimer = null;
+    pollTimer = null;
+  };
 
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
-      const send = (event: string, data: unknown) => {
-        controller.enqueue(encoder.encode(`event: ${event}\n`));
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+      const safeEnqueue = (chunk: Uint8Array) => {
+        try {
+          controller.enqueue(chunk);
+        } catch {
+          // Stream already closed by client disconnect; stop polling.
+          stopTimers();
+        }
       };
-      const heartbeat = () => controller.enqueue(encoder.encode(`: ping\n\n`));
+      const send = (event: string, data: unknown) => {
+        safeEnqueue(encoder.encode(`event: ${event}\n`));
+        safeEnqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+      };
+      const heartbeat = () => safeEnqueue(encoder.encode(`: ping\n\n`));
 
       send("status", { id: submission.id, status: lastStatus });
 
       const startedAt = Date.now();
-      const heartbeatTimer = setInterval(heartbeat, HEARTBEAT_INTERVAL_MS);
-      const pollTimer = setInterval(async () => {
+      heartbeatTimer = setInterval(heartbeat, HEARTBEAT_INTERVAL_MS);
+      pollTimer = setInterval(async () => {
         try {
           const fresh = await prisma.submission.findUnique({
             where: { id },
@@ -72,15 +96,32 @@ export async function GET(
             send("status", { id, status: fresh.status, runtime: fresh.runtime, error: fresh.error });
           }
           if (fresh.status !== "pending" || Date.now() - startedAt > MAX_DURATION_MS) {
-            clearInterval(pollTimer);
-            clearInterval(heartbeatTimer);
+            stopTimers();
             send("done", { id });
-            controller.close();
+            try {
+              controller.close();
+            } catch {
+              // already closed
+            }
           }
         } catch {
           // Swallow transient errors; another poll will retry.
         }
       }, POLL_INTERVAL_MS);
+
+      // Client disconnect / request abort: tear down timers so we don't
+      // leak intervals or keep hammering Prisma after the consumer is gone.
+      request.signal.addEventListener("abort", () => {
+        stopTimers();
+        try {
+          controller.close();
+        } catch {
+          // already closed
+        }
+      });
+    },
+    cancel() {
+      stopTimers();
     },
   });
 
