@@ -108,6 +108,28 @@ export const voteSchema = z.object({
   value: z.union([z.literal(1), z.literal(-1)]),
 });
 
+// Shared solutions (LeetCode-parity).
+// Writeup minimum is 100 chars per anti-spam rule — short writeups are
+// indistinguishable from "see code" no-effort posts that the discussion
+// surface already covers. Markdown is allowed; sanitization happens at
+// render-time via rehype-sanitize.
+export const createSharedSolutionSchema = z.object({
+  submissionId: z.string().min(1, "Submission ID is required"),
+  title: z
+    .string()
+    .min(3, "Title must be at least 3 characters")
+    .max(200, "Title too long"),
+  writeup: z
+    .string()
+    .min(100, "Writeup must be at least 100 characters")
+    .max(20_000, "Writeup too long"),
+});
+
+export const updateSharedSolutionSchema = z.object({
+  title: z.string().min(3).max(200).optional(),
+  writeup: z.string().min(100).max(20_000).optional(),
+});
+
 export function firstZodError(error: { errors: Array<{ message: string }> }): string {
   return error.errors[0]?.message ?? "Invalid input";
 }
