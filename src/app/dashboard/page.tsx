@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,6 +28,7 @@ type SortKey = "recent" | "oldest" | "difficulty";
 const DIFFICULTY_ORDER: Record<string, number> = { easy: 0, medium: 1, hard: 2 };
 
 export default function DashboardPage() {
+  const t = useTranslations("dashboard");
   const { user } = useAuth();
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [bookmarks, setBookmarks] = useState<Array<{ id: string; problem?: { title: string; slug: string; difficulty: string } }>>([]);
@@ -86,7 +88,7 @@ export default function DashboardPage() {
     );
   }
 
-  const sortLabel = sortKey === "recent" ? "Most recent" : sortKey === "oldest" ? "Oldest first" : "By difficulty";
+  const sortLabel = sortKey === "recent" ? t("sortRecent") : sortKey === "oldest" ? t("sortOldest") : t("sortDifficulty");
 
   return (
     <>
@@ -95,29 +97,29 @@ export default function DashboardPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
           <Breadcrumb
             className="mb-4"
-            items={[{ label: "Home", href: "/" }, { label: "Dashboard" }]}
+            items={[{ label: t("breadcrumbHome"), href: "/" }, { label: t("breadcrumbDashboard") }]}
           />
 
           <div className="mb-8 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <div>
-              <h1 className="text-3xl font-bold">Dashboard</h1>
+              <h1 className="text-3xl font-bold">{t("title")}</h1>
               <p className="text-muted-foreground mt-1">
-                Welcome back{user ? `, ${user.username}` : ""}! Keep up the great work.
+                {user ? t("welcomeNamed", { name: user.username }) : t("welcomeFallback")}
               </p>
             </div>
             <DropdownMenu
               trigger={
                 <span className="inline-flex items-center gap-2 rounded-md border bg-card px-3 py-2 text-sm hover:bg-accent transition-colors">
                   <ArrowUpDown className="h-4 w-4" />
-                  Sort: {sortLabel}
+                  {t("sortLabel")}: {sortLabel}
                 </span>
               }
             >
-              <DropdownMenuLabel>Sort by</DropdownMenuLabel>
+              <DropdownMenuLabel>{t("sortBy")}</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onSelect={() => setSortKey("recent")}>Most recent</DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => setSortKey("oldest")}>Oldest first</DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => setSortKey("difficulty")}>By difficulty</DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setSortKey("recent")}>{t("sortRecent")}</DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setSortKey("oldest")}>{t("sortOldest")}</DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setSortKey("difficulty")}>{t("sortDifficulty")}</DropdownMenuItem>
             </DropdownMenu>
           </div>
 
@@ -129,7 +131,7 @@ export default function DashboardPage() {
                 </div>
                 <div>
                   <div className="text-2xl font-bold">{stats.solved}</div>
-                  <div className="text-xs text-muted-foreground">Problems Solved</div>
+                  <div className="text-xs text-muted-foreground">{t("problemsSolved")}</div>
                 </div>
               </CardContent>
             </Card>
@@ -140,7 +142,7 @@ export default function DashboardPage() {
                 </div>
                 <div>
                   <div className="text-2xl font-bold">{submissions.length}</div>
-                  <div className="text-xs text-muted-foreground">Submissions</div>
+                  <div className="text-xs text-muted-foreground">{t("submissionsLabel")}</div>
                 </div>
               </CardContent>
             </Card>
@@ -151,7 +153,7 @@ export default function DashboardPage() {
                 </div>
                 <div>
                   <div className="text-2xl font-bold">{stats.streak}</div>
-                  <div className="text-xs text-muted-foreground">Day Streak</div>
+                  <div className="text-xs text-muted-foreground">{t("dayStreak")}</div>
                 </div>
               </CardContent>
             </Card>
@@ -162,7 +164,7 @@ export default function DashboardPage() {
                 </div>
                 <div>
                   <div className="text-2xl font-bold">#{Math.max(1, 100 - stats.solved * 5)}</div>
-                  <div className="text-xs text-muted-foreground">Ranking</div>
+                  <div className="text-xs text-muted-foreground">{t("ranking")}</div>
                 </div>
               </CardContent>
             </Card>
@@ -170,29 +172,29 @@ export default function DashboardPage() {
 
           <Tabs defaultValue="solved" className="mb-8">
             <TabsList>
-              <TabsTrigger value="solved">Solved ({solvedProblems.length})</TabsTrigger>
-              <TabsTrigger value="bookmarks">Bookmarks ({bookmarks.length})</TabsTrigger>
-              <TabsTrigger value="submissions">Submissions ({submissions.length})</TabsTrigger>
+              <TabsTrigger value="solved">{t("tabSolved", { count: solvedProblems.length })}</TabsTrigger>
+              <TabsTrigger value="bookmarks">{t("tabBookmarks", { count: bookmarks.length })}</TabsTrigger>
+              <TabsTrigger value="submissions">{t("tabSubmissions", { count: submissions.length })}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="solved">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Solved problems</CardTitle>
+                  <CardTitle className="text-lg">{t("solvedProblems")}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {sortedSolved.length === 0 ? (
                     <EmptyState
                       icon={ListChecks}
-                      title="No solved problems yet"
-                      description="Pick a problem and submit an accepted solution to see it here."
+                      title={t("noSolvedTitle")}
+                      description={t("noSolvedBody")}
                     />
                   ) : (
                     <div className="space-y-3">
                       {sortedSolved.map((sub) => (
                         <div key={sub.id} className="flex items-center justify-between">
                           <Link href={`/problems/${sub.problem?.slug ?? ""}`} className="text-sm font-medium hover:text-primary">
-                            {sub.problem?.title ?? "Unknown"}
+                            {sub.problem?.title ?? t("unknownProblem")}
                           </Link>
                           <Badge variant="success" className="text-xs">{sub.problem?.difficulty ?? "—"}</Badge>
                         </div>
@@ -206,21 +208,21 @@ export default function DashboardPage() {
             <TabsContent value="bookmarks">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Bookmarks</CardTitle>
+                  <CardTitle className="text-lg">{t("bookmarks")}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {bookmarks.length === 0 ? (
                     <EmptyState
                       icon={Bookmark}
-                      title="No bookmarks yet"
-                      description="Tap the bookmark icon on any problem page to save it for later."
+                      title={t("noBookmarksTitle")}
+                      description={t("noBookmarksBody")}
                     />
                   ) : (
                     <div className="space-y-3">
                       {bookmarks.map((bm) => (
                         <div key={bm.id} className="flex items-center justify-between">
                           <Link href={`/problems/${bm.problem?.slug ?? ""}`} className="text-sm font-medium hover:text-primary">
-                            {bm.problem?.title ?? "Unknown"}
+                            {bm.problem?.title ?? t("unknownProblem")}
                           </Link>
                           {bm.problem?.difficulty && (
                             <Badge variant="secondary" className="text-xs">{bm.problem.difficulty}</Badge>
@@ -236,14 +238,14 @@ export default function DashboardPage() {
             <TabsContent value="submissions">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">All submissions</CardTitle>
+                  <CardTitle className="text-lg">{t("allSubmissions")}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {sortedSubmissions.length === 0 ? (
                     <EmptyState
                       icon={TrendingUp}
-                      title="No submissions yet"
-                      description="Run or submit code on any problem to populate this feed."
+                      title={t("noSubmissionsTitle")}
+                      description={t("noSubmissionsBody")}
                     />
                   ) : (
                     <div className="space-y-3">
@@ -251,12 +253,12 @@ export default function DashboardPage() {
                         <div key={sub.id} className="flex items-center justify-between">
                           <div>
                             <Link href={`/problems/${sub.problem?.slug ?? ""}`} className="text-sm font-medium hover:text-primary">
-                              {sub.problem?.title ?? "Unknown"}
+                              {sub.problem?.title ?? t("unknownProblem")}
                             </Link>
                             <div className="text-xs text-muted-foreground">{sub.language}</div>
                           </div>
                           <Badge variant={sub.status === "accepted" ? "success" : "destructive"} className="text-xs">
-                            {sub.status === "accepted" ? "AC" : sub.status === "wrong_answer" ? "WA" : "RE"}
+                            {sub.status === "accepted" ? t("statusAccepted") : sub.status === "wrong_answer" ? t("statusWrongAnswer") : t("statusRuntimeError")}
                           </Badge>
                         </div>
                       ))}
@@ -269,13 +271,13 @@ export default function DashboardPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Progress by Difficulty</CardTitle>
+              <CardTitle className="text-lg">{t("progressTitle")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {[
-                { label: "Easy", count: stats.easy, total: Math.max(stats.easy, 4), color: "bg-green-500" },
-                { label: "Medium", count: stats.medium, total: Math.max(stats.medium, 4), color: "bg-yellow-500" },
-                { label: "Hard", count: stats.hard, total: Math.max(stats.hard, 2), color: "bg-red-500" },
+                { label: t("easy"), count: stats.easy, total: Math.max(stats.easy, 4), color: "bg-green-500" },
+                { label: t("medium"), count: stats.medium, total: Math.max(stats.medium, 4), color: "bg-yellow-500" },
+                { label: t("hard"), count: stats.hard, total: Math.max(stats.hard, 2), color: "bg-red-500" },
               ].map((item) => (
                 <div key={item.label} className="space-y-1">
                   <div className="flex justify-between text-sm">
