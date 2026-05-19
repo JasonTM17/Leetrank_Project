@@ -116,8 +116,6 @@ See [ADR 0010](adr/0010-monaco-editor-dynamic-import.md) for the rationale.
 
 The AI assistant mounts on the problem detail page via `ChatWidget.tsx`. It sends `POST /api/chat` with the user message and conversation history. The Next.js route handler forwards the request to n8n at `N8N_CHATBOT_WEBHOOK_URL`. See [infra/n8n/README.md](../infra/n8n/README.md) for the workflow shape.
 
-<!-- TODO: add docs/screenshots/web-app-*.png once screenshot tooling is set up -->
-
 ---
 
 **Author:** Nguyễn Sơn — jasonbmt06@gmail.com — [@JasonTM17](https://github.com/JasonTM17)
