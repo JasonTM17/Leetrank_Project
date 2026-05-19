@@ -38,7 +38,6 @@ export const LANGUAGES: LanguageDef[] = [
   { id: "csharp", label: "C# (Mono)", extension: ".cs", monacoLanguage: "csharp", category: "compiled" },
   { id: "d", label: "D (gdc)", extension: ".d", monacoLanguage: "d", category: "compiled" },
   { id: "pascal", label: "Pascal (fpc)", extension: ".pas", monacoLanguage: "pascal", category: "compiled" },
-  { id: "nim", label: "Nim", extension: ".nim", monacoLanguage: "nim", category: "compiled" },
   { id: "fortran", label: "Fortran (gfortran)", extension: ".f90", monacoLanguage: "fortran", category: "compiled" },
 
   // ── JVM ────────────────────────────────────────────────────────────────────
@@ -59,7 +58,6 @@ export const LANGUAGES: LanguageDef[] = [
   // ── Data / numeric ─────────────────────────────────────────────────────────
   { id: "sql", label: "SQL (sqlite)", extension: ".sql", monacoLanguage: "sql", category: "data" },
   { id: "r", label: "R", extension: ".r", monacoLanguage: "r", category: "data" },
-  { id: "julia", label: "Julia", extension: ".jl", monacoLanguage: "julia", category: "data" },
 
   // ── Esoteric / classic Unix ────────────────────────────────────────────────
   { id: "tcl", label: "Tcl", extension: ".tcl", monacoLanguage: "tcl", category: "esoteric" },
