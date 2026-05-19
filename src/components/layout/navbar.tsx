@@ -41,6 +41,7 @@ export function Navbar() {
 
   const navLinks = [
     { href: "/problems", label: t("problems") },
+    { href: "/study-plans", label: t("studyPlans") },
     { href: "/leaderboard", label: t("leaderboard") },
     { href: "/contests", label: t("contests") },
   ];
