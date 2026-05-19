@@ -50,16 +50,6 @@ updates:
           - "hono"
           - "@hono/*"
 
-  # ── apps/auth ─────────────────────────────────────────────────────────
-  - package-ecosystem: "npm"
-    directory: "/apps/auth"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 3
-    labels:
-      - "dependencies"
-      - "scope:auth"
-
   # ── packages/api-contracts ────────────────────────────────────────────
   - package-ecosystem: "npm"
     directory: "/packages/api-contracts"
@@ -102,15 +92,6 @@ updates:
 
   - package-ecosystem: "docker"
     directory: "/apps/api"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 2
-    labels:
-      - "dependencies"
-      - "scope:docker"
-
-  - package-ecosystem: "docker"
-    directory: "/apps/auth"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 2

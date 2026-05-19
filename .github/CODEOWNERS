@@ -1,0 +1,22 @@
+# Code owners for LeetRank
+# Reference: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-security/customizing-your-repository/about-code-owners
+#
+# Solo-maintainer model: every PR is reviewed by the sole contributor.
+# See CONTRIBUTING.md ("Review model") and docs/release.md for the
+# branch-protection rules that pair with this file.
+
+# Default owner for everything in the repo.
+*                           @JasonTM17
+
+# CI / release tooling
+/.github/                   @JasonTM17
+/docs/release.md            @JasonTM17
+/docker-compose*.yml        @JasonTM17
+/Dockerfile                 @JasonTM17
+
+# Service boundaries — kept explicit so future contributors can't
+# bypass review of high-blast-radius areas (auth, judge sandbox, etc.).
+/apps/auth/                 @JasonTM17
+/services/auth-go/          @JasonTM17
+/judge-service/             @JasonTM17
+/prisma/                    @JasonTM17
