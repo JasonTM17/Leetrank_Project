@@ -1,0 +1,515 @@
+openapi: 3.1.0
+info:
+  title: LeetRank Auth API (Go)
+  version: 1.0.0
+  summary: Authentication, session, and JWKS endpoints for LeetRank.
+  description: |
+    Production Go implementation of the LeetRank auth surface — owns
+    register, login, me, logout, and change-password. Issues HS256-signed
+    session cookies (Ed25519 in Phase 3.1.5+).
+
+    Sliding-window rate limit: 5 attempts per 15 minutes per IP **and** per
+    account on `/login` and `/register`. Bcrypt cost 12. Dummy-hash
+    timing-attack mitigation on login miss.
+
+    See [ADR 0017](../../docs/adr/0017-auth-go-rewrite.md) for the rewrite
+    rationale and [ADR 0013](../../docs/adr/0013-service-to-service-auth.md)
+    for the Ed25519 JWKS plan.
+  contact:
+    name: LeetRank Engineering
+    email: jasonbmt06@gmail.com
+    url: https://github.com/JasonTM17/Leetrank_Project
+  license:
+    name: MIT
+    url: https://github.com/JasonTM17/Leetrank_Project/blob/main/LICENSE
+
+servers:
+  - url: http://localhost:4011
+    description: Local dev (direct)
+  - url: http://localhost:3000/api/v1/auth
+    description: Local dev (via Caddy, mounted at /api/v1/auth)
+  - url: https://leetrank.example.com/api/v1/auth
+    description: Production
+
+tags:
+  - name: Auth
+    description: Account creation, sign-in, session management.
+  - name: JWKS
+    description: Public-key publication for service-to-service verification.
+  - name: Health
+    description: Liveness, readiness, metrics.
+
+paths:
+  /healthz:
+    get:
+      tags: [Health]
+      summary: Liveness probe
+      operationId: liveness
+      responses:
+        "200":
+          description: Process is alive.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HealthOK" }
+              examples:
+                ok: { value: { status: ok } }
+
+  /readyz:
+    get:
+      tags: [Health]
+      summary: Readiness probe (Postgres ping)
+      operationId: readiness
+      responses:
+        "200":
+          description: Ready.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HealthOK" }
+              examples:
+                ok: { value: { status: ok, db: up } }
+        "503":
+          description: Dependency failure.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /metrics:
+    get:
+      tags: [Health]
+      summary: Prometheus metrics
+      operationId: metrics
+      responses:
+        "200":
+          description: Prometheus text exposition.
+          content:
+            text/plain:
+              schema: { type: string }
+              examples:
+                sample:
+                  value: |
+                    # HELP http_requests_total Total HTTP requests.
+                    # TYPE http_requests_total counter
+                    http_requests_total{route="/v1/auth/login",method="POST",status="200"} 17
+
+  /jwks:
+    get:
+      tags: [JWKS]
+      summary: JSON Web Key Set
+      description: |
+        Returns the public keys used to verify JWTs issued by this service.
+        Phase 3.1.5+ publishes Ed25519 keys; the current build returns an
+        HS256 placeholder structure.
+      operationId: getJWKS
+      responses:
+        "200":
+          description: Public key set.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/JWKS" }
+              examples:
+                ed25519:
+                  summary: Ed25519 (Phase 3.1.5+)
+                  value:
+                    keys:
+                      - kty: OKP
+                        crv: Ed25519
+                        kid: "2026-05-19-001"
+                        use: sig
+                        alg: EdDSA
+                        x: "11qYAYKxCrfVS_7TyWQHOg7hcvPapiMlrwIaaPcHURo"
+
+  /.well-known/jwks.json:
+    get:
+      tags: [JWKS]
+      summary: Alias for `/jwks`
+      operationId: getJWKSWellKnown
+      responses:
+        "200":
+          description: Same as `/jwks`.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/JWKS" }
+
+  /v1/auth/register:
+    post:
+      tags: [Auth]
+      summary: Create an account
+      description: |
+        Validates email, username, and password. Hashes the password with
+        bcrypt cost 12. On success, sets a `leetrank_session` cookie and
+        returns the public profile. Rate-limited 5/15min per IP and per
+        email.
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RegisterRequest" }
+            examples:
+              default:
+                value:
+                  email: alice@example.com
+                  username: alice
+                  password: "Sup3rSecret!"
+      responses:
+        "201":
+          description: Account created. Session cookie set.
+          headers:
+            Set-Cookie:
+              schema: { type: string }
+              description: |
+                `leetrank_session=<jwt>; Path=/; HttpOnly; SameSite=Lax;
+                Secure; Max-Age=604800`
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UserProfile" }
+              examples:
+                default:
+                  value:
+                    id: "01H8X8VH8M3Q1SAMPLE0000001"
+                    email: alice@example.com
+                    username: alice
+                    role: user
+                    rating: 1500
+                    createdAt: "2026-05-19T07:49:00Z"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /v1/auth/login:
+    post:
+      tags: [Auth]
+      summary: Sign in
+      description: |
+        Verifies email + password (bcrypt cost 12). On hit, sets a session
+        cookie. On miss, runs a dummy bcrypt comparison so timing does not
+        leak whether the email exists. Rate-limited 5/15min per IP and per
+        email.
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LoginRequest" }
+            examples:
+              default:
+                value:
+                  email: alice@example.com
+                  password: "Sup3rSecret!"
+      responses:
+        "200":
+          description: Authenticated. Session cookie set.
+          headers:
+            Set-Cookie:
+              schema: { type: string }
+              description: |
+                `leetrank_session=<jwt>; Path=/; HttpOnly; SameSite=Lax;
+                Secure; Max-Age=604800`
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UserProfile" }
+              examples:
+                default:
+                  value:
+                    id: "01H8X8VH8M3Q1SAMPLE0000001"
+                    email: alice@example.com
+                    username: alice
+                    role: user
+                    rating: 1500
+                    createdAt: "2026-05-19T07:49:00Z"
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/InvalidCredentials"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /v1/auth/logout:
+    post:
+      tags: [Auth]
+      summary: Sign out
+      description: Clears the session cookie. Idempotent.
+      operationId: logout
+      responses:
+        "200":
+          description: Cookie cleared.
+          headers:
+            Set-Cookie:
+              schema: { type: string }
+              description: |
+                `leetrank_session=; Path=/; HttpOnly; SameSite=Lax;
+                Secure; Max-Age=0`
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status: { type: string, example: ok }
+              examples:
+                default:
+                  value: { status: ok }
+
+  /v1/auth/me:
+    get:
+      tags: [Auth]
+      summary: Inspect the current session
+      description: |
+        Verifies the `leetrank_session` cookie and returns the public
+        profile. Returns 401 if the cookie is absent, malformed, expired,
+        or signed by an unknown key.
+      operationId: getCurrentUser
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Current authenticated user.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UserProfile" }
+              examples:
+                default:
+                  value:
+                    id: "01H8X8VH8M3Q1SAMPLE0000001"
+                    email: alice@example.com
+                    username: alice
+                    role: user
+                    rating: 1500
+                    createdAt: "2026-05-19T07:49:00Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/auth/change-password:
+    post:
+      tags: [Auth]
+      summary: Change password
+      description: |
+        Requires the caller to be authenticated and to provide the
+        current password. Bumps the JWT key version so any other open
+        sessions are invalidated.
+      operationId: changePassword
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ChangePasswordRequest" }
+            examples:
+              default:
+                value:
+                  currentPassword: "Sup3rSecret!"
+                  newPassword: "NewEv3nMor3Secret!"
+      responses:
+        "200":
+          description: Password changed; new session cookie set.
+          headers:
+            Set-Cookie:
+              schema: { type: string }
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status: { type: string, example: ok }
+              examples:
+                default:
+                  value: { status: ok }
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/auth/sessions:
+    get:
+      tags: [Auth]
+      summary: List active sessions (501 — not yet implemented)
+      operationId: listSessions
+      responses:
+        "501":
+          description: Not implemented — session model not yet in schema.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+              examples:
+                default:
+                  value:
+                    error: not_implemented
+                    message: "Session listing lands in a future phase."
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: leetrank_session
+      description: |
+        HS256-signed JWT (Ed25519 in Phase 3.1.5+). Set by `/login` and
+        `/register`, cleared by `/logout`. `HttpOnly`, `Secure`,
+        `SameSite=Lax`, 7-day max-age.
+
+  responses:
+    Unauthorized:
+      description: Missing, malformed, or invalid session cookie.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          examples:
+            default:
+              value: { error: unauthorized, message: "Authentication required." }
+
+    InvalidCredentials:
+      description: Wrong email/password (rate-limited).
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          examples:
+            default:
+              value: { error: invalid_credentials, message: "Email or password is incorrect." }
+
+    ValidationError:
+      description: Request body failed validation.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ValidationError" }
+          examples:
+            default:
+              value:
+                error: validation_failed
+                message: "Validation failed."
+                fields:
+                  - path: password
+                    message: "Password must be at least 8 characters."
+
+    Conflict:
+      description: Email or username already taken.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          examples:
+            email:
+              value: { error: email_taken, message: "Email already in use." }
+            username:
+              value: { error: username_taken, message: "Username already in use." }
+
+    RateLimited:
+      description: Too many attempts in the current window.
+      headers:
+        Retry-After:
+          schema: { type: integer, example: 537 }
+          description: Seconds until the next request will be accepted.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          examples:
+            default:
+              value:
+                error: rate_limited
+                message: "Too many attempts. Try again in 9 minutes."
+
+  schemas:
+    HealthOK:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string, enum: [ok], example: ok }
+        db: { type: string, enum: [up, down], example: up }
+
+    Error:
+      type: object
+      required: [error, message]
+      properties:
+        error: { type: string, example: invalid_credentials }
+        message: { type: string, example: "Email or password is incorrect." }
+        requestId: { type: string, example: "01H8X8VH8M3Q1REQUEST00000001" }
+
+    ValidationError:
+      type: object
+      required: [error, message]
+      properties:
+        error: { type: string, enum: [validation_failed], example: validation_failed }
+        message: { type: string, example: "Validation failed." }
+        fields:
+          type: array
+          items:
+            type: object
+            required: [path, message]
+            properties:
+              path: { type: string, example: password }
+              message: { type: string, example: "Password must be at least 8 characters." }
+
+    JWKS:
+      type: object
+      required: [keys]
+      properties:
+        keys:
+          type: array
+          items: { $ref: "#/components/schemas/JWK" }
+
+    JWK:
+      type: object
+      required: [kty, kid, use, alg]
+      properties:
+        kty: { type: string, example: OKP }
+        crv: { type: string, example: Ed25519 }
+        kid: { type: string, example: "2026-05-19-001" }
+        use: { type: string, enum: [sig], example: sig }
+        alg: { type: string, example: EdDSA }
+        x:
+          type: string
+          description: Base64url-encoded public key bytes (Ed25519).
+          example: "11qYAYKxCrfVS_7TyWQHOg7hcvPapiMlrwIaaPcHURo"
+        n:
+          type: string
+          description: Modulus (RSA), base64url.
+        e:
+          type: string
+          description: Exponent (RSA), base64url.
+
+    UserProfile:
+      type: object
+      required: [id, email, username, role, createdAt]
+      properties:
+        id: { type: string, example: "01H8X8VH8M3Q1SAMPLE0000001" }
+        email: { type: string, format: email, example: alice@example.com }
+        username: { type: string, example: alice }
+        role: { type: string, enum: [user, admin], example: user }
+        rating: { type: integer, nullable: true, example: 1500 }
+        createdAt: { type: string, format: date-time, example: "2026-05-19T07:49:00Z" }
+
+    RegisterRequest:
+      type: object
+      required: [email, username, password]
+      properties:
+        email: { type: string, format: email, example: alice@example.com }
+        username:
+          type: string
+          minLength: 3
+          maxLength: 30
+          pattern: "^[a-z0-9_]{3,30}$"
+          example: alice
+        password:
+          type: string
+          minLength: 8
+          example: "Sup3rSecret!"
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email, example: alice@example.com }
+        password: { type: string, example: "Sup3rSecret!" }
+
+    ChangePasswordRequest:
+      type: object
+      required: [currentPassword, newPassword]
+      properties:
+        currentPassword: { type: string, example: "Sup3rSecret!" }
+        newPassword:
+          type: string
+          minLength: 8
+          example: "NewEv3nMor3Secret!"

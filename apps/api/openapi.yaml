@@ -1,0 +1,630 @@
+openapi: 3.1.0
+info:
+  title: LeetRank Read API
+  version: 1.0.0
+  summary: Public read-only API for problems, contests, tags, leaderboard, and platform stats.
+  description: |
+    Stateless HTTP service that owns the public read surface of LeetRank.
+    Auth is **not** required for any route in this spec — auth-gated and
+    write paths live in `services/auth-go` and `services/submissions-go`.
+
+    See [ADR 0011](../../docs/adr/0011-split-backend-frontend.md) for the
+    backend/frontend split rationale and [ADR 0018](../../docs/adr/0018-go-services-buildout.md)
+    for the rewrite plan.
+  contact:
+    name: LeetRank Engineering
+    email: jasonbmt06@gmail.com
+    url: https://github.com/JasonTM17/Leetrank_Project
+  license:
+    name: MIT
+    url: https://github.com/JasonTM17/Leetrank_Project/blob/main/LICENSE
+
+servers:
+  - url: http://localhost:4000
+    description: Local dev (direct)
+  - url: http://localhost:3000/api/v1
+    description: Local dev (via Caddy)
+  - url: https://leetrank.example.com/api/v1
+    description: Production (via Caddy)
+
+tags:
+  - name: Health
+    description: Liveness, readiness, and metrics for ops.
+  - name: Problems
+    description: Problem catalogue reads.
+  - name: Contests
+    description: Contest catalogue reads.
+  - name: Tags
+    description: Topic tags applied to problems.
+  - name: Leaderboard
+    description: Top-N user rankings.
+  - name: Stats
+    description: Platform-wide aggregate counts.
+
+paths:
+  /:
+    get:
+      tags: [Health]
+      summary: Service identity
+      operationId: getServiceInfo
+      responses:
+        "200":
+          description: Service name and version.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceInfo"
+              examples:
+                default:
+                  value:
+                    service: leetrank-api
+                    version: "1.0.0"
+
+  /healthz:
+    get:
+      tags: [Health]
+      summary: Liveness probe
+      description: Always 200 while the process is up. Suitable for Kubernetes `livenessProbe`.
+      operationId: liveness
+      responses:
+        "200":
+          description: Process is alive.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HealthOK" }
+              examples:
+                ok:
+                  value: { status: ok }
+
+  /readyz:
+    get:
+      tags: [Health]
+      summary: Readiness probe
+      description: Probes Postgres. Returns 503 when the DB is unreachable.
+      operationId: readiness
+      responses:
+        "200":
+          description: Service is ready.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HealthOK" }
+              examples:
+                ok:
+                  value: { status: ok, db: up }
+        "503":
+          description: Dependency failure.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /health:
+    get:
+      tags: [Health]
+      summary: Alias for `/readyz`
+      operationId: healthAlias
+      responses:
+        "200":
+          description: Same as `/readyz`.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HealthOK" }
+
+  /metrics:
+    get:
+      tags: [Health]
+      summary: Prometheus metrics
+      description: Prometheus text exposition format.
+      operationId: metrics
+      responses:
+        "200":
+          description: Metrics payload.
+          content:
+            text/plain:
+              schema: { type: string }
+              examples:
+                sample:
+                  value: |
+                    # HELP http_requests_total Total HTTP requests.
+                    # TYPE http_requests_total counter
+                    http_requests_total{method="GET",status="200"} 42
+
+  /stats:
+    get:
+      tags: [Stats]
+      summary: Platform aggregate counts
+      operationId: getStats
+      responses:
+        "200":
+          description: Counts of problems, contests, users, accepted submissions.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Stats" }
+              examples:
+                default:
+                  value:
+                    problems: 142
+                    contests: 7
+                    users: 1843
+                    accepted: 21478
+
+  /leaderboard/top:
+    get:
+      tags: [Leaderboard]
+      summary: Top-N leaderboard entries
+      operationId: getLeaderboardTop
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 50, default: 10 }
+          description: How many entries to return.
+      responses:
+        "200":
+          description: Ordered top-N entries by solved-count or rating.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/LeaderboardEntry" }
+              examples:
+                top3:
+                  value:
+                    - rank: 1
+                      userId: "01H8X8VH8M3Q1SAMPLE0000001"
+                      username: alice
+                      rating: 2350
+                      solved: 412
+                    - rank: 2
+                      userId: "01H8X8VH8M3Q1SAMPLE0000002"
+                      username: bob
+                      rating: 2188
+                      solved: 388
+                    - rank: 3
+                      userId: "01H8X8VH8M3Q1SAMPLE0000003"
+                      username: carol
+                      rating: 2102
+                      solved: 354
+
+  /tags:
+    get:
+      tags: [Tags]
+      summary: List all tags
+      operationId: listTags
+      responses:
+        "200":
+          description: All tags with problem counts.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/TagSummary" }
+              examples:
+                default:
+                  value:
+                    - slug: arrays
+                      name: Arrays
+                      problemCount: 38
+                    - slug: dynamic-programming
+                      name: Dynamic Programming
+                      problemCount: 22
+
+  /tags/{slug}:
+    get:
+      tags: [Tags]
+      summary: Tag detail with paginated problems
+      operationId: getTagDetail
+      parameters:
+        - $ref: "#/components/parameters/SlugPath"
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          description: Tag with paginated problem list.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TagDetail" }
+              examples:
+                default:
+                  value:
+                    slug: arrays
+                    name: Arrays
+                    description: Problems involving array indexing, sliding windows, and prefix sums.
+                    page: 1
+                    limit: 50
+                    total: 38
+                    problems:
+                      - slug: two-sum
+                        title: Two Sum
+                        difficulty: easy
+                        accepted: 1287
+                        attempted: 2143
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /contests:
+    get:
+      tags: [Contests]
+      summary: List all contests
+      operationId: listContests
+      responses:
+        "200":
+          description: All contests with entry and problem counts.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ContestSummary" }
+              examples:
+                default:
+                  value:
+                    - slug: weekly-101
+                      title: Weekly Contest 101
+                      startsAt: "2026-05-22T15:00:00Z"
+                      endsAt: "2026-05-22T16:30:00Z"
+                      problemCount: 4
+                      entryCount: 612
+
+  /contests/active:
+    get:
+      tags: [Contests]
+      summary: Currently running contests
+      operationId: listActiveContests
+      responses:
+        "200":
+          description: Contests where `startsAt <= now <= endsAt`.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ContestSummary" }
+              examples:
+                empty:
+                  value: []
+
+  /contests/upcoming:
+    get:
+      tags: [Contests]
+      summary: Upcoming contests
+      operationId: listUpcomingContests
+      responses:
+        "200":
+          description: Contests where `startsAt > now`, soonest first.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ContestSummary" }
+              examples:
+                default:
+                  value:
+                    - slug: weekly-102
+                      title: Weekly Contest 102
+                      startsAt: "2026-05-29T15:00:00Z"
+                      endsAt: "2026-05-29T16:30:00Z"
+                      problemCount: 4
+                      entryCount: 0
+
+  /contests/{slug}:
+    get:
+      tags: [Contests]
+      summary: Contest detail with problem list
+      operationId: getContestDetail
+      parameters:
+        - $ref: "#/components/parameters/SlugPath"
+      responses:
+        "200":
+          description: Contest with its problem list.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ContestDetail" }
+              examples:
+                default:
+                  value:
+                    slug: weekly-101
+                    title: Weekly Contest 101
+                    description: Four problems, ninety minutes.
+                    startsAt: "2026-05-22T15:00:00Z"
+                    endsAt: "2026-05-22T16:30:00Z"
+                    problems:
+                      - slug: a-array-warmup
+                        title: Array Warmup
+                        difficulty: easy
+                        order: 1
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /problems:
+    get:
+      tags: [Problems]
+      summary: Paginated problem list
+      operationId: listProblems
+      parameters:
+        - in: query
+          name: difficulty
+          schema:
+            type: string
+            enum: [easy, medium, hard]
+        - in: query
+          name: tag
+          schema: { type: string }
+          description: Tag slug.
+        - in: query
+          name: search
+          schema: { type: string }
+          description: Title substring (case-insensitive).
+        - $ref: "#/components/parameters/PageQuery"
+        - $ref: "#/components/parameters/LimitQuery"
+      responses:
+        "200":
+          description: Paginated problem summaries.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProblemListResponse" }
+              examples:
+                default:
+                  value:
+                    page: 1
+                    limit: 50
+                    total: 142
+                    items:
+                      - slug: two-sum
+                        title: Two Sum
+                        difficulty: easy
+                        accepted: 1287
+                        attempted: 2143
+                        tags: [arrays, hash-table]
+
+  /problems/trending:
+    get:
+      tags: [Problems]
+      summary: Top problems by recent acceptance
+      operationId: listTrendingProblems
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 50, default: 10 }
+      responses:
+        "200":
+          description: Trending problems.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ProblemSummary" }
+              examples:
+                default:
+                  value:
+                    - slug: two-sum
+                      title: Two Sum
+                      difficulty: easy
+                      accepted: 1287
+                      attempted: 2143
+                      tags: [arrays, hash-table]
+
+  /problems/random:
+    get:
+      tags: [Problems]
+      summary: One random problem
+      operationId: getRandomProblem
+      parameters:
+        - in: query
+          name: difficulty
+          schema:
+            type: string
+            enum: [easy, medium, hard]
+      responses:
+        "200":
+          description: One random problem matching the optional difficulty filter.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProblemSummary" }
+              examples:
+                default:
+                  value:
+                    slug: longest-substring-without-repeating-characters
+                    title: Longest Substring Without Repeating Characters
+                    difficulty: medium
+                    accepted: 412
+                    attempted: 1188
+                    tags: [strings, sliding-window, hash-table]
+
+  /problems/{slug}:
+    get:
+      tags: [Problems]
+      summary: Full problem detail with public test cases
+      operationId: getProblemDetail
+      parameters:
+        - $ref: "#/components/parameters/SlugPath"
+      responses:
+        "200":
+          description: Full problem detail.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProblemDetail" }
+              examples:
+                default:
+                  value:
+                    slug: two-sum
+                    title: Two Sum
+                    difficulty: easy
+                    statementMd: "Given an array of integers..."
+                    timeLimitMs: 2000
+                    memoryLimitMb: 256
+                    tags: [arrays, hash-table]
+                    publicTestCases:
+                      - input: "[2,7,11,15]\n9"
+                        expectedOutput: "[0,1]"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+components:
+  parameters:
+    SlugPath:
+      in: path
+      name: slug
+      required: true
+      schema: { type: string, pattern: "^[a-z0-9-]+$" }
+      description: URL-safe lower-kebab-case identifier.
+    PageQuery:
+      in: query
+      name: page
+      schema: { type: integer, minimum: 1, default: 1 }
+    LimitQuery:
+      in: query
+      name: limit
+      schema: { type: integer, minimum: 1, maximum: 50, default: 50 }
+
+  responses:
+    NotFound:
+      description: No record found for the requested identifier.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          examples:
+            default:
+              value: { error: not_found, message: "Resource not found." }
+
+  schemas:
+    ServiceInfo:
+      type: object
+      required: [service, version]
+      properties:
+        service: { type: string, example: leetrank-api }
+        version: { type: string, example: "1.0.0" }
+
+    HealthOK:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string, enum: [ok], example: ok }
+        db: { type: string, enum: [up, down], example: up }
+
+    Error:
+      type: object
+      required: [error, message]
+      properties:
+        error: { type: string, example: not_found }
+        message: { type: string, example: "Resource not found." }
+        requestId: { type: string, example: "01H8X8VH8M3Q1REQUEST00000001" }
+
+    Stats:
+      type: object
+      required: [problems, contests, users, accepted]
+      properties:
+        problems: { type: integer, example: 142 }
+        contests: { type: integer, example: 7 }
+        users: { type: integer, example: 1843 }
+        accepted: { type: integer, example: 21478 }
+
+    LeaderboardEntry:
+      type: object
+      required: [rank, userId, username, rating, solved]
+      properties:
+        rank: { type: integer, example: 1 }
+        userId: { type: string, example: "01H8X8VH8M3Q1SAMPLE0000001" }
+        username: { type: string, example: alice }
+        rating: { type: integer, example: 2350 }
+        solved: { type: integer, example: 412 }
+
+    TagSummary:
+      type: object
+      required: [slug, name, problemCount]
+      properties:
+        slug: { type: string, example: arrays }
+        name: { type: string, example: Arrays }
+        problemCount: { type: integer, example: 38 }
+
+    TagDetail:
+      allOf:
+        - $ref: "#/components/schemas/TagSummary"
+        - type: object
+          required: [page, limit, total, problems]
+          properties:
+            description: { type: string, nullable: true, example: "Problems involving arrays." }
+            page: { type: integer, example: 1 }
+            limit: { type: integer, example: 50 }
+            total: { type: integer, example: 38 }
+            problems:
+              type: array
+              items: { $ref: "#/components/schemas/ProblemSummary" }
+
+    ContestSummary:
+      type: object
+      required: [slug, title, startsAt, endsAt, problemCount, entryCount]
+      properties:
+        slug: { type: string, example: weekly-101 }
+        title: { type: string, example: "Weekly Contest 101" }
+        startsAt: { type: string, format: date-time, example: "2026-05-22T15:00:00Z" }
+        endsAt: { type: string, format: date-time, example: "2026-05-22T16:30:00Z" }
+        problemCount: { type: integer, example: 4 }
+        entryCount: { type: integer, example: 612 }
+
+    ContestDetail:
+      allOf:
+        - $ref: "#/components/schemas/ContestSummary"
+        - type: object
+          required: [problems]
+          properties:
+            description: { type: string, nullable: true, example: "Four problems, ninety minutes." }
+            problems:
+              type: array
+              items: { $ref: "#/components/schemas/ContestProblem" }
+
+    ContestProblem:
+      type: object
+      required: [slug, title, difficulty, order]
+      properties:
+        slug: { type: string, example: a-array-warmup }
+        title: { type: string, example: "Array Warmup" }
+        difficulty:
+          type: string
+          enum: [easy, medium, hard]
+          example: easy
+        order: { type: integer, example: 1 }
+
+    ProblemSummary:
+      type: object
+      required: [slug, title, difficulty]
+      properties:
+        slug: { type: string, example: two-sum }
+        title: { type: string, example: "Two Sum" }
+        difficulty:
+          type: string
+          enum: [easy, medium, hard]
+          example: easy
+        accepted: { type: integer, example: 1287 }
+        attempted: { type: integer, example: 2143 }
+        tags:
+          type: array
+          items: { type: string }
+          example: [arrays, hash-table]
+
+    ProblemListResponse:
+      type: object
+      required: [page, limit, total, items]
+      properties:
+        page: { type: integer, example: 1 }
+        limit: { type: integer, example: 50 }
+        total: { type: integer, example: 142 }
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/ProblemSummary" }
+
+    ProblemDetail:
+      allOf:
+        - $ref: "#/components/schemas/ProblemSummary"
+        - type: object
+          required: [statementMd, timeLimitMs, memoryLimitMb]
+          properties:
+            statementMd: { type: string, example: "Given an array of integers..." }
+            timeLimitMs: { type: integer, example: 2000 }
+            memoryLimitMb: { type: integer, example: 256 }
+            publicTestCases:
+              type: array
+              items: { $ref: "#/components/schemas/PublicTestCase" }
+
+    PublicTestCase:
+      type: object
+      required: [input, expectedOutput]
+      properties:
+        input: { type: string, example: "[2,7,11,15]\n9" }
+        expectedOutput: { type: string, example: "[0,1]" }
