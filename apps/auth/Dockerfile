@@ -2,9 +2,14 @@
 # Build context: REPO ROOT (so prisma schema is reachable).
 
 # --- Build stage ---
-FROM node:20-alpine AS builder
+# node:20-slim (Debian) — see apps/api/Dockerfile for why we left Alpine.
+FROM node:20-slim AS builder
 
 WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    openssl ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
 
 COPY apps/auth/package.json apps/auth/tsconfig.json ./
 COPY apps/auth/src ./src
@@ -15,9 +20,13 @@ RUN npm install --no-audit --no-fund \
  && npx tsc
 
 # --- Runtime stage ---
-FROM node:20-alpine AS runtime
+FROM node:20-slim AS runtime
 
-RUN addgroup -S leetrank && adduser -S leetrank -G leetrank
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    openssl ca-certificates wget \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN groupadd --system leetrank && useradd --system --gid leetrank leetrank
 
 WORKDIR /app
 

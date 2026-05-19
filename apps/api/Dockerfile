@@ -4,9 +4,17 @@
 #   or:      docker build -f apps/api/Dockerfile -t leetrank-api .
 
 # --- Build stage ---
-FROM node:20-alpine AS builder
+# node:20-slim (Debian) instead of alpine: Prisma's musl-openssl-3 engine
+# detection is unreliable on Alpine 3.18+ (libssl.so.1.1 removed, the
+# legacy `linux-musl` engine still tries to dlopen it). Debian slim ships
+# OpenSSL 3 that Prisma natively recognises as `debian-openssl-3.0.x`.
+FROM node:20-slim AS builder
 
 WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    openssl ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
 
 COPY apps/api/package.json apps/api/tsconfig.json ./
 COPY apps/api/src ./src
@@ -21,10 +29,14 @@ RUN npm install --no-audit --no-fund \
  && npx tsc
 
 # --- Runtime stage ---
-FROM node:20-alpine AS runtime
+FROM node:20-slim AS runtime
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    openssl ca-certificates wget \
+ && rm -rf /var/lib/apt/lists/*
 
 # Drop root for the runtime process.
-RUN addgroup -S leetrank && adduser -S leetrank -G leetrank
+RUN groupadd --system leetrank && useradd --system --gid leetrank leetrank
 
 WORKDIR /app
 
