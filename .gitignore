@@ -41,6 +41,10 @@ __pycache__/
 *.pyc
 .pytest_cache/
 
+# go build logs
+.build.log
+*.build.log
+
 # env files
 .env
 .env.*
