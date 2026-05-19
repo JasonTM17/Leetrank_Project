@@ -42,32 +42,32 @@ curl http://localhost:4011/metrics | grep leetrank
 
 All alert definitions live in [`infra/prometheus/alerts.yml`](../../infra/prometheus/alerts.yml).
 
-### `ServiceDown` (severity: critical) — `job=auth`
+### `ServiceDown` (severity: critical) — `job=identity`
 
-**Condition:** `up == 0` for `job=auth` for 2 minutes.
+**Condition:** `up == 0` for `job=identity` for 2 minutes.
 
-**Meaning:** Prometheus cannot scrape `auth:4001`. The container is down or crashed.
+**Meaning:** Prometheus cannot scrape `identity:4011`. The container is down or crashed.
 
 **Triage:**
 
 ```bash
 # 1. Check container state
-docker compose ps auth
+docker compose ps identity
 
 # 2. Tail recent logs
-docker compose logs --tail=100 auth
+docker compose logs --tail=100 identity
 
 # 3. Manual liveness check
-curl http://localhost:4001/healthz
+curl http://localhost:4011/healthz
 
 # 4. Restart if stopped/exited
-docker compose up -d auth
+docker compose up -d identity
 
 # 5. Check for startup crash (env validation failure is common)
-docker compose logs auth | grep -i "error\|fatal\|missing\|required"
+docker compose logs identity | grep -i "error\|fatal\|missing\|required"
 ```
 
-The auth service validates `JWT_SECRET` and `DATABASE_URL` at startup via `env.js`. A missing or malformed env var causes an immediate process exit. Verify `.env` contains both values.
+The identity service validates required env vars at startup (`DATABASE_URL`, JWT keystore paths, optional `LEGACY_HS256_FALLBACK`). A missing or malformed env var causes an immediate process exit. Verify `.env` contains expected values.
 
 Escalate to Nguyễn Sơn (jasonbmt06@gmail.com) if the service does not recover within 10 minutes.
 
@@ -75,7 +75,7 @@ Escalate to Nguyễn Sơn (jasonbmt06@gmail.com) if the service does not recover
 
 ### JWKS endpoint unreachable
 
-This is not a Prometheus alert today but is the most operationally significant failure for the auth service in Phase 3.1.
+This is not a Prometheus alert today but is the most operationally significant failure for the identity service.
 
 **Symptoms:** `GET /jwks` returns non-200, or Caddy logs show 502 for `/api/v1/auth/*` paths.
 
@@ -83,16 +83,16 @@ This is not a Prometheus alert today but is the most operationally significant f
 
 ```bash
 # 1. Check JWKS directly
-curl -v http://localhost:4001/jwks
+curl -v http://localhost:4011/.well-known/jwks.json
 
 # 2. Check Caddy is routing correctly
-docker compose logs --tail=50 caddy | grep "auth"
+docker compose logs --tail=50 caddy | grep "identity"
 
-# 3. Verify auth container is up
-docker compose ps auth
+# 3. Verify identity container is up
+docker compose ps identity
 
-# 4. Check auth logs for errors
-docker compose logs --tail=50 auth
+# 4. Check identity logs for errors
+docker compose logs --tail=50 identity
 ```
 
 ---
@@ -129,7 +129,7 @@ Fix: See [`postgres.md`](postgres.md). Auth uses the same `DATABASE_URL` as `api
 
 Signs: Browser or curl gets 502 for auth paths.
 
-Fix: Auth container is likely down. Run `docker compose up -d auth` and verify with `curl http://localhost:4001/healthz`.
+Fix: Auth container is likely down. Run `docker compose up -d identity` and verify with `curl http://localhost:4011/healthz`.
 
 ---
 

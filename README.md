@@ -68,6 +68,30 @@ Full instructions, port matrix, and native-dev workflow are in [Run locally](#ru
 
 ---
 
+## Status
+
+Live CI signal. Click any badge for the underlying workflow run.
+
+| Lane | Badge |
+|------|-------|
+| Build, lint, typecheck, unit tests | [![CI](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/ci.yml/badge.svg)](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/ci.yml) |
+| Docker images publish to Docker Hub | [![Docker publish](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/docker-publish.yml) |
+| Playwright end-to-end suite | [![E2E](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/e2e.yml/badge.svg)](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/e2e.yml) |
+| API contract tests (Hono read API) | [![API tests](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/api-tests.yml/badge.svg)](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/api-tests.yml) |
+| Lighthouse performance + a11y budget | [![Lighthouse](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/lighthouse.yml/badge.svg)](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/lighthouse.yml) |
+| Bundle size budget | [![Bundle](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/bundle.yml/badge.svg)](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/bundle.yml) |
+| CodeQL SAST | [![CodeQL](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/codeql.yml/badge.svg)](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/codeql.yml) |
+| Trivy vulnerability scan | [![Trivy](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/trivy.yml/badge.svg)](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/trivy.yml) |
+| Gitleaks secret scan | [![Gitleaks](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/gitleaks.yml/badge.svg)](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/gitleaks.yml) |
+| SBOM (SPDX) | [![SBOM](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/sbom.yml/badge.svg)](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/sbom.yml) |
+| Load test harness | [![Load test](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/load-test.yml/badge.svg)](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/load-test.yml) |
+| Postgres backup verification | [![Postgres backup](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/postgres-backup.yml/badge.svg)](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/postgres-backup.yml) |
+| Python service tests | [![Python tests](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/python-tests.yml/badge.svg)](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/python-tests.yml) |
+| Ruby service tests | [![Ruby tests](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/ruby-tests.yml/badge.svg)](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/ruby-tests.yml) |
+| Rust service tests | [![Rust tests](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/rust-tests.yml/badge.svg)](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/rust-tests.yml) |
+
+Live service health for the deployed instance is at `/status` ([screenshot](docs/screenshots/status.png)).
+
 ## Highlights
 
 - **30+ languages judged in isolation.** Python, Go, Rust, C/C++, Java, Kotlin, Scala, JS/TS, Ruby, PHP, C#, Lua, R, SQL — every submission runs in a per-process [nsjail](https://github.com/google/nsjail) (Linux namespaces + cgroups + seccomp + capability drop) with strict CPU/memory/process/file-descriptor caps. Pattern blocklists are pre-flight defence-in-depth, not the boundary. See [ADR 0020](docs/adr/0020-judge-sandbox-model.md).
@@ -262,14 +286,13 @@ Lint specs locally with `pnpm openapi:lint` (uses Redocly).
 ```
 .
 ├── apps/
-│   ├── api/              # Hono read API (port 4000)
-│   └── auth/             # TypeScript auth service (port 4001)
+│   └── api/              # Hono read API (port 4000)
 ├── services/
-│   ├── auth-go/          # Go auth rewrite (port 4011)
+│   ├── auth-go/          # Identity service — sole canonical JWT issuer (port 4011)
 │   ├── problems-go/      # Go problems read API (port 4013)
 │   └── submissions-go/   # Go submissions read/write (port 4012)
 ├── judge-service/        # Go sandbox runner (port 9090)
-├── src/                  # Next.js web app (apps/web placeholder)
+├── src/                  # Next.js 16 web app
 ├── prisma/               # Schema, migrations, seed scripts
 ├── packages/             # Shared workspace packages
 ├── docs/                 # ADRs, runbooks, OpenAPI, onboarding
