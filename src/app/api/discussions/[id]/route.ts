@@ -39,35 +39,6 @@ function buildCommentTree(rows: CommentRow[]): CommentNode[] {
   return roots;
 }
 
-// LeetCode-parity nesting cap. Past 3 the indentation collapses to a
-// single column on mobile and queries get expensive — root + 2 reply tiers.
-const MAX_REPLY_DEPTH = 3;
-
-type CommentRow = {
-  id: string;
-  body: string;
-  parentId: string | null;
-  createdAt: Date;
-  user: { id: string; username: string; avatar: string | null };
-};
-type CommentNode = CommentRow & { replies: CommentNode[] };
-
-// Build a tree from a flat list. Single pass + a map; O(n).
-function buildCommentTree(rows: CommentRow[]): CommentNode[] {
-  const byId = new Map<string, CommentNode>();
-  const roots: CommentNode[] = [];
-  for (const r of rows) byId.set(r.id, { ...r, replies: [] });
-  for (const r of rows) {
-    const node = byId.get(r.id)!;
-    if (r.parentId && byId.has(r.parentId)) {
-      byId.get(r.parentId)!.replies.push(node);
-    } else {
-      roots.push(node);
-    }
-  }
-  return roots;
-}
-
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

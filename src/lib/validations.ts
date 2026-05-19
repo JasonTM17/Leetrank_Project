@@ -101,6 +101,11 @@ export const createDiscussionSchema = z.object({
 
 export const createCommentSchema = z.object({
   body: z.string().min(1, "Body is required").max(5_000, "Body too long"),
+  parentId: z.string().min(1).optional(),
+});
+
+export const voteSchema = z.object({
+  value: z.union([z.literal(1), z.literal(-1)]),
 });
 
 export function firstZodError(error: { errors: Array<{ message: string }> }): string {
