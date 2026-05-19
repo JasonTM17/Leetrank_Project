@@ -1,0 +1,37 @@
+name: Ruby services — rspec
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ruby-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  notifications-ruby:
+    name: notifications-ruby — bundle exec rspec
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: services/notifications-ruby
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      # ruby/setup-ruby pinned to a release SHA so the toolchain bootstrap
+      # is reproducible (consistent with the rest of CI's pin policy).
+      - name: Install Ruby
+        uses: ruby/setup-ruby@a2bbe5b1b236842c1cb7dd11e8e3b51e0a616acc # v1.202.0
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+          working-directory: services/notifications-ruby
+
+      - name: Run RSpec
+        run: bundle exec rspec --format documentation
