@@ -20,15 +20,17 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Languages shipped (per languages.json):
 #   scripting   — python3, ruby, php, bash, lua5.4, perl, elixir, typescript (tsx)
 #   compiled    — go, rust, c (gcc), c++ (g++), c# (mono), d (gdc), pascal (fpc),
-#                 nim, fortran (gfortran)
+#                 fortran (gfortran)
 #   jvm         — java, kotlin, scala, groovy, clojure
 #   functional  — haskell (ghc), ocaml, racket, common-lisp (sbcl), erlang, fsharp
-#   data        — sql (sqlite3), r, julia
+#   data        — sql (sqlite3), r
 #   esoteric    — tcl, awk (gawk)
 # Deferred (toolchain too heavy or needs external apt repo):
 #   swift   — needs packages.swift.org apt key; ~600 MB runtime
 #   dart    — needs Google apt key (dl.google.com/linux/dart/deb)
 #   .NET 8  — needs packages.microsoft.com; ~700 MB. csharp/fsharp use Mono today.
+#   nim     — not in Ubuntu 22.04 universe (was in 22.10+); needs choosenim
+#   julia   — no install candidate on jammy; needs julialang.org tarball
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     curl \
@@ -44,7 +46,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gdc \
     gfortran \
     fpc \
-    nim \
     rustc \
     cargo \
     default-jdk \
@@ -59,7 +60,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     racket \
     sbcl \
     erlang \
-    julia \
     r-base \
     lua5.4 \
     perl \

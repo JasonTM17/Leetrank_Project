@@ -154,16 +154,6 @@
       "category": "compiled"
     },
     {
-      "id": "nim",
-      "label": "Nim",
-      "extension": ".nim",
-      "monacoLanguage": "nim",
-      "kind": "compiled",
-      "compileCmd": ["nim", "compile", "--opt:speed", "-o:{bin}", "{src}"],
-      "runCmd": ["{bin}"],
-      "category": "compiled"
-    },
-    {
       "id": "fortran",
       "label": "Fortran (gfortran)",
       "extension": ".f90",
@@ -293,15 +283,6 @@
       "monacoLanguage": "r",
       "kind": "interpreted",
       "runCmd": ["Rscript", "{src}"],
-      "category": "data"
-    },
-    {
-      "id": "julia",
-      "label": "Julia",
-      "extension": ".jl",
-      "monacoLanguage": "julia",
-      "kind": "interpreted",
-      "runCmd": ["julia", "{src}"],
       "category": "data"
     },
     {
