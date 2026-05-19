@@ -20,7 +20,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 20
-          cache: npm
+# cache disabled — pnpm-lock not in CI workspace yet
 
       - name: Install dependencies
         run: npm ci
@@ -48,7 +48,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 20
-          cache: npm
+# cache disabled — pnpm-lock not in CI workspace yet
       - run: npm ci
       - name: Audit (fail on high or critical)
         run: npm audit --audit-level=high
