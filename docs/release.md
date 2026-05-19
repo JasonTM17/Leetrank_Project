@@ -11,15 +11,43 @@ Branch protection on `main` requires all of the following workflow jobs to succe
 | `.github/workflows/ci.yml` | `web`                 | Typecheck, lint, unit tests + coverage, and Next.js build.    |
 | `.github/workflows/ci.yml` | `api`                 | Hono API typecheck + build.                                   |
 | `.github/workflows/ci.yml` | `judge`               | Judge service `go vet`, build, and race-detector tests.       |
-| `.github/workflows/ci.yml` | `go-tests`            | Vet + race tests for `auth-go`, `problems-go`, `submissions-go`. |
+| `.github/workflows/ci.yml` | `judge-sandbox-tests` | Privileged sandbox integration tests against the judge image. |
+| `.github/workflows/ci.yml` | `go-tests`            | Vet + race tests for `auth-go`, `problems-go`, `submissions-go`, `realtime-go` (matrix). |
 | `.github/workflows/ci.yml` | `audit`               | `pnpm audit --prod --audit-level=high` (production deps).     |
 | `.github/workflows/ci.yml` | `e2e`                 | Playwright golden-path against a freshly built Next app.      |
-| `.github/workflows/codeql.yml` | `analyze`         | CodeQL security + quality queries (JS/TS and Go).             |
-| `.github/workflows/trivy.yml`  | `filesystem`      | Trivy filesystem scan (CRITICAL/HIGH).                        |
+| `.github/workflows/python-tests.yml` | `analytics-python — pytest` | Pytest suite for the Python analytics service.       |
+| `.github/workflows/rust-tests.yml`   | `leaderboard-rust — cargo test` | Rustfmt + clippy + cargo test for the leaderboard service. |
+| `.github/workflows/ruby-tests.yml`   | `notifications-ruby — rspec`    | RSpec suite for the Ruby notifications service.       |
+| `.github/workflows/codeql.yml`   | `CodeQL`              | CodeQL security + quality queries (JS/TS and Go).             |
+| `.github/workflows/trivy.yml`    | `Trivy`               | Trivy filesystem scan (CRITICAL/HIGH).                        |
+| `.github/workflows/gitleaks.yml` | `Gitleaks`            | Secret scan over the full history.                            |
+| `.github/workflows/sbom.yml`     | `SBOM`                | CycloneDX SBOM generation must succeed.                       |
 | Codecov status check       | `codecov/project`     | Project coverage stays at or above 80% (per `codecov.yml`).   |
 | Codecov status check       | `codecov/patch`       | Changed lines covered at 80%+ (per `codecov.yml`).            |
 
-The `judge-sandbox-tests` job is allowed to be a non-blocking signal because it requires a privileged container; treat its failures as urgent but not merge-blocking.
+The exact GitHub status-check names to paste into branch protection (one per line):
+
+```
+web
+api
+judge
+judge-sandbox-tests
+go-tests (auth-go)
+go-tests (problems-go)
+go-tests (submissions-go)
+go-tests (realtime-go)
+audit
+e2e
+analytics-python — pytest
+leaderboard-rust — cargo test
+notifications-ruby — rspec
+CodeQL
+Trivy
+Gitleaks
+SBOM
+codecov/project
+codecov/patch
+```
 
 ## Branch protection rules
 

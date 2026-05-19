@@ -89,6 +89,8 @@ Live CI signal. Click any badge for the underlying workflow run.
 | Python service tests | [![Python tests](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/python-tests.yml/badge.svg)](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/python-tests.yml) |
 | Ruby service tests | [![Ruby tests](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/ruby-tests.yml/badge.svg)](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/ruby-tests.yml) |
 | Rust service tests | [![Rust tests](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/rust-tests.yml/badge.svg)](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/rust-tests.yml) |
+| Tagged release publish | [![Release](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/release.yml/badge.svg)](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/release.yml) |
+| Stale issue + PR sweep | [![Stale](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/stale.yml/badge.svg)](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/stale.yml) |
 
 Live service health for the deployed instance is at `/status` ([screenshot](docs/screenshots/status.png)).
 
