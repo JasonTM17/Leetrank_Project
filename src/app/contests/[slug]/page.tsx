@@ -21,12 +21,19 @@ interface ContestDetail {
   startTime: string;
   endTime: string;
   status: string;
+  division?: string | null;
   problems: {
     problem: { id: string; title: string; slug: string; difficulty: string };
     points: number;
     order: number;
   }[];
-  entries: { user: { username: string }; score: number; rank?: number }[];
+  entries: {
+    user: { username: string };
+    score: number;
+    rank?: number;
+    rating?: number;
+    ratingDelta?: number | null;
+  }[];
 }
 
 // ── Countdown ─────────────────────────────────────────────────────────────────
@@ -202,6 +209,18 @@ export default function ContestDetailPage({
               <div className="flex flex-wrap items-center gap-3 mb-2">
                 <h1 className="text-3xl font-bold">{contest.title}</h1>
                 <StatusPill status={contest.status} />
+                {contest.division && (
+                  <Badge variant="outline" className="inline-flex items-center text-xs uppercase tracking-wide">
+                    <span aria-hidden="true" className="mr-1.5 inline-block h-2 w-2 rounded-full bg-primary/70" />
+                    {contest.division === "div1"
+                      ? "Div. 1"
+                      : contest.division === "div2"
+                        ? "Div. 2"
+                        : contest.division === "div3"
+                          ? "Div. 3"
+                          : "Open"}
+                  </Badge>
+                )}
               </div>
               {contest.description && (
                 <p className="text-muted-foreground mt-1 max-w-2xl">{contest.description}</p>
@@ -312,9 +331,26 @@ export default function ContestDetailPage({
                           </span>
                           <span className="font-medium">{entry.user.username}</span>
                         </div>
-                        <span className="text-sm text-primary font-medium tabular-nums">
-                          {entry.score} pts
-                        </span>
+                        <div className="flex items-center gap-3 tabular-nums">
+                          {typeof entry.ratingDelta === "number" && (
+                            <span
+                              className={`text-xs font-semibold ${
+                                entry.ratingDelta > 0
+                                  ? "text-success"
+                                  : entry.ratingDelta < 0
+                                    ? "text-destructive"
+                                    : "text-muted-foreground"
+                              }`}
+                              aria-label={`Rating delta ${entry.ratingDelta}`}
+                            >
+                              {entry.ratingDelta > 0 ? "+" : ""}
+                              {entry.ratingDelta}
+                            </span>
+                          )}
+                          <span className="text-sm text-primary font-medium">
+                            {entry.score} pts
+                          </span>
+                        </div>
                       </div>
                     ))}
                   </div>

@@ -34,15 +34,31 @@ export async function GET(
       orderBy: [{ score: "desc" }, { joinedAt: "asc" }],
       take: limit,
       include: {
-        user: { select: { id: true, username: true, avatar: true } },
+        user: { select: { id: true, username: true, avatar: true, rating: true } },
       },
     });
 
-    const ranked = entries.map((e, i) => ({
-      rank: i + 1,
-      score: e.score,
-      user: e.user,
-    }));
+    // Once a contest is finalised, RatingChange rows exist and we can show
+    // a delta column. Pre-finalisation the column stays null in the API.
+    const userIds = entries.map((e) => e.user.id);
+    const ratingChanges = userIds.length === 0
+      ? []
+      : await prisma.ratingChange.findMany({
+          where: { contestId: contest.id, userId: { in: userIds } },
+          select: { userId: true, beforeRating: true, afterRating: true, delta: true },
+        });
+    const deltaByUser = new Map(ratingChanges.map((rc) => [rc.userId, rc]));
+
+    const ranked = entries.map((e, i) => {
+      const rc = deltaByUser.get(e.user.id);
+      return {
+        rank: i + 1,
+        score: e.score,
+        user: { id: e.user.id, username: e.user.username, avatar: e.user.avatar },
+        rating: rc?.afterRating ?? e.user.rating,
+        ratingDelta: rc?.delta ?? null,
+      };
+    });
 
     return Response.json({ contestStatus: contest.status, leaderboard: ranked });
   } catch (err) {
