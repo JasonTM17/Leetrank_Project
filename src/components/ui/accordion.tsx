@@ -80,18 +80,17 @@ export function AccordionItem({ value, title, children, className }: AccordionIt
         onClick={() => toggle(value)}
         onKeyDown={handleKeyDown}
         className={cn(
-          "flex w-full items-center justify-between px-4 py-3 text-sm font-medium",
-          "text-left transition-colors hover:bg-muted/50",
+          "flex w-full items-center justify-between px-4 py-3 text-sm font-medium text-left",
+          "transition-colors motion-safe:duration-200 hover:bg-muted/50",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
-          isOpen && "text-foreground",
-          !isOpen && "text-muted-foreground"
+          isOpen ? "text-foreground" : "text-muted-foreground"
         )}
       >
         <span>{title}</span>
         <ChevronDown
           aria-hidden="true"
           className={cn(
-            "h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200",
+            "h-4 w-4 shrink-0 text-muted-foreground motion-safe:transition-transform motion-safe:duration-200",
             isOpen && "rotate-180"
           )}
         />
@@ -103,7 +102,7 @@ export function AccordionItem({ value, title, children, className }: AccordionIt
         role="region"
         aria-labelledby={triggerId}
         className={cn(
-          "grid transition-[grid-template-rows] duration-200 ease-in-out",
+          "grid motion-safe:transition-[grid-template-rows] motion-safe:duration-200 motion-safe:ease-in-out",
           isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
         )}
       >

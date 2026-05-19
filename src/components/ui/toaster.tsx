@@ -1,22 +1,22 @@
 "use client";
 
-import { useToastStore, useAutoDismiss, type ToastVariant } from "@/hooks/useToast";
 import { CheckCircle2, AlertCircle, Info, AlertTriangle, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useToastStore, useAutoDismiss, type ToastVariant } from "@/hooks/useToast";
 
 const ICONS: Record<ToastVariant, React.ComponentType<{ className?: string }>> = {
   default: Info,
   success: CheckCircle2,
-  error: AlertCircle,
-  info: Info,
+  error:   AlertCircle,
+  info:    Info,
   warning: AlertTriangle,
 };
 
 const VARIANT_STYLES: Record<ToastVariant, string> = {
   default: "border-border bg-card text-card-foreground",
   success: "border-success/30 bg-success/10 text-success",
-  error: "border-destructive/30 bg-destructive/10 text-destructive",
-  info: "border-primary/30 bg-primary/10 text-primary",
+  error:   "border-destructive/30 bg-destructive/10 text-destructive",
+  info:    "border-primary/30 bg-primary/10 text-primary",
   warning: "border-warning/30 bg-warning/10 text-warning",
 };
 
@@ -54,8 +54,12 @@ export function Toaster() {
             </div>
             <button
               onClick={() => dismiss(t.id)}
-              className="shrink-0 rounded p-1 hover:bg-foreground/10 transition-colors"
               aria-label="Dismiss notification"
+              className={cn(
+                "shrink-0 rounded p-1",
+                "transition-colors motion-safe:duration-200 hover:bg-foreground/10",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              )}
             >
               <X className="h-4 w-4" />
             </button>

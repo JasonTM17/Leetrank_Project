@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface DialogProps {
   open: boolean;
@@ -54,7 +54,8 @@ export function Dialog({ open, onClose, title, description, children, size = "md
         if (e.target === ref.current) onClose();
       }}
       className={cn(
-        "rounded-xl border bg-card text-card-foreground p-6 w-full shadow-elevated backdrop:bg-foreground/40 backdrop:backdrop-blur-sm animate-fade-in-up",
+        "rounded-xl border bg-card text-card-foreground p-6 w-full shadow-elevated",
+        "backdrop:bg-foreground/40 backdrop:backdrop-blur-sm animate-fade-in-up",
         SIZE_CLASS[size]
       )}
     >
@@ -67,9 +68,13 @@ export function Dialog({ open, onClose, title, description, children, size = "md
         </div>
         <button
           onClick={onClose}
-          className="rounded-md p-1 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-          aria-label="Close dialog"
           type="button"
+          aria-label="Close dialog"
+          className={cn(
+            "rounded-md p-1 text-muted-foreground",
+            "transition-colors motion-safe:duration-200 hover:text-foreground hover:bg-accent",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          )}
         >
           <X className="h-4 w-4" />
         </button>

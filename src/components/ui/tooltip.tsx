@@ -19,9 +19,8 @@ interface TooltipProps {
  * keyboard focus shows the bubble. Uses native title-style timing without
  * relying on the browser's `title=` (which is unstyled and inaccessible).
  *
- * For icon-only buttons, RULES §3 recommends pairing this with an
- * `aria-label` on the trigger so screen readers always have access to the
- * label, even if the tooltip is dismissed.
+ * For icon-only buttons, pair this with an `aria-label` on the trigger so
+ * screen readers always have access to the label even if the tooltip is dismissed.
  */
 export function Tooltip({ children, content, side = "top", delayMs = 200 }: TooltipProps) {
   const [open, setOpen] = useState(false);
@@ -62,7 +61,7 @@ export function Tooltip({ children, content, side = "top", delayMs = 200 }: Tool
         role="tooltip"
         className={cn(
           "pointer-events-none absolute z-50 whitespace-nowrap rounded-md bg-foreground px-2 py-1 text-xs text-background shadow-elevated",
-          "transition-opacity duration-150",
+          "motion-safe:transition-opacity motion-safe:duration-150",
           open ? "opacity-100" : "opacity-0",
           sideClass
         )}

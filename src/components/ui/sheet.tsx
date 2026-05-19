@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, type ReactNode } from "react";
-import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface SheetProps {
   open: boolean;
@@ -20,24 +20,24 @@ const SIZE_BY_SIDE: Record<
   NonNullable<SheetProps["side"]>,
   Record<NonNullable<SheetProps["size"]>, string>
 > = {
-  right: { sm: "w-72", md: "w-96", lg: "w-[28rem]" },
-  left: { sm: "w-72", md: "w-96", lg: "w-[28rem]" },
+  right:  { sm: "w-72", md: "w-96", lg: "w-[28rem]" },
+  left:   { sm: "w-72", md: "w-96", lg: "w-[28rem]" },
   bottom: { sm: "h-1/3", md: "h-1/2", lg: "h-2/3" },
-  top: { sm: "h-1/3", md: "h-1/2", lg: "h-2/3" },
+  top:    { sm: "h-1/3", md: "h-1/2", lg: "h-2/3" },
 };
 
 const SIDE_BASE: Record<NonNullable<SheetProps["side"]>, string> = {
-  right: "inset-y-0 right-0 border-l",
-  left: "inset-y-0 left-0 border-r",
+  right:  "inset-y-0 right-0 border-l",
+  left:   "inset-y-0 left-0 border-r",
   bottom: "inset-x-0 bottom-0 border-t",
-  top: "inset-x-0 top-0 border-b",
+  top:    "inset-x-0 top-0 border-b",
 };
 
 const SIDE_TRANSLATE: Record<NonNullable<SheetProps["side"]>, string> = {
-  right: "translate-x-full",
-  left: "-translate-x-full",
+  right:  "translate-x-full",
+  left:   "-translate-x-full",
   bottom: "translate-y-full",
-  top: "-translate-y-full",
+  top:    "-translate-y-full",
 };
 
 /**
@@ -80,7 +80,7 @@ export function Sheet({
       <div
         onClick={onClose}
         className={cn(
-          "absolute inset-0 bg-foreground/40 transition-opacity",
+          "absolute inset-0 bg-foreground/40 motion-safe:transition-opacity motion-safe:duration-200",
           open ? "opacity-100" : "opacity-0"
         )}
       />
@@ -90,7 +90,8 @@ export function Sheet({
         aria-modal="true"
         aria-label={title}
         className={cn(
-          "absolute flex flex-col bg-card text-card-foreground shadow-elevated transition-transform duration-200",
+          "absolute flex flex-col bg-card text-card-foreground shadow-elevated",
+          "motion-safe:transition-transform motion-safe:duration-200",
           SIDE_BASE[side],
           SIZE_BY_SIDE[side][size],
           open ? "translate-x-0 translate-y-0" : SIDE_TRANSLATE[side]
@@ -108,7 +109,11 @@ export function Sheet({
               type="button"
               onClick={onClose}
               aria-label="Close panel"
-              className="rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+              className={cn(
+                "rounded-md p-1 text-muted-foreground",
+                "transition-colors motion-safe:duration-200 hover:bg-accent hover:text-foreground",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              )}
             >
               <X className="h-4 w-4" />
             </button>

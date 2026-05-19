@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { cn } from "@/lib/utils";
 import { ChevronDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface DropdownMenuProps {
   /** Element that opens the menu when clicked. */
@@ -52,7 +52,7 @@ export function DropdownMenu({
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
-        className="inline-flex items-center gap-1 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="inline-flex items-center gap-1 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
       >
         {trigger}
         <ChevronDown className="h-3.5 w-3.5 opacity-60" aria-hidden />
@@ -92,6 +92,7 @@ export function DropdownMenuItem({
 }: DropdownMenuItemProps) {
   const className = cn(
     "flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none",
+    "transition-colors motion-safe:duration-200",
     "hover:bg-accent hover:text-accent-foreground",
     "focus-visible:bg-accent focus-visible:text-accent-foreground",
     disabled && "pointer-events-none opacity-50"
