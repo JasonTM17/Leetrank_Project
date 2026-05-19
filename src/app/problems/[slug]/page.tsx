@@ -9,16 +9,19 @@ import { DiscussionsPanel } from "@/components/problem/discussions-panel";
 import { BookmarkButton } from "@/components/problem/bookmark-button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Tooltip } from "@/components/ui/tooltip";
+import { Dialog } from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { Play, Send, Loader2, RotateCcw } from "lucide-react";
+import { Play, Send, Loader2, RotateCcw, LogIn } from "lucide-react";
+import Link from "next/link";
 import dynamic from "next/dynamic";
 import { LANGUAGES, monacoLanguageFor, languageLabel, type LanguageDef } from "@/lib/languages";
 import { useAuth } from "@/hooks/useAuth";
+import { toast } from "@/hooks/useToast";
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), { ssr: false });
 const ChatBot = dynamic(
@@ -79,7 +82,7 @@ export default function ProblemDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = use(params);
-  const { user } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading, setUser } = useAuth();
   const isAdmin = user?.role === "admin";
 
   const [problem, setProblem] = useState<Problem | null>(null);
@@ -90,6 +93,12 @@ export default function ProblemDetailPage({
   const [submitting, setSubmitting] = useState(false);
   const [results, setResults] = useState<TestResult[]>([]);
   const [submitStatus, setSubmitStatus] = useState<string | null>(null);
+  // Anonymous users get a friendly modal explaining why Submit is gated.
+  // Authed users with a stale cookie (401 mid-session) reuse the same
+  // modal but with `expired = true` so we can swap copy without a second
+  // dialog component.
+  const [authPromptOpen, setAuthPromptOpen] = useState(false);
+  const [authPromptExpired, setAuthPromptExpired] = useState(false);
 
   // Keep parsed starter codes so reset can restore them without re-fetching.
   const startersRef = useRef<Record<string, string>>({});
@@ -154,6 +163,13 @@ export default function ProblemDetailPage({
 
   async function handleSubmit() {
     if (!problem) return;
+    // Gate 1: anonymous users never hit the network. We surface a clear
+    // modal CTA instead of letting the API return 401 + opaque toast.
+    if (!authLoading && !isAuthenticated) {
+      setAuthPromptExpired(false);
+      setAuthPromptOpen(true);
+      return;
+    }
     setSubmitting(true);
     setSubmitStatus(null);
     try {
@@ -162,10 +178,63 @@ export default function ProblemDetailPage({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code, language, problemId: problem.id }),
       });
+      // Distinguish error classes by status so the user gets actionable
+      // feedback instead of a single "Submission Error" pill for every
+      // failure mode. 401 also clears the auth store so the navbar
+      // updates immediately.
+      if (!res.ok) {
+        let errMsg = "";
+        try {
+          const data = await res.json();
+          errMsg = (data?.error as string) || "";
+        } catch {
+          // body might be empty / non-JSON; fall through to status-based copy
+        }
+        if (res.status === 401) {
+          setUser(null);
+          setAuthPromptExpired(true);
+          setAuthPromptOpen(true);
+          setSubmitStatus(null);
+          return;
+        }
+        if (res.status === 403) {
+          toast.error(
+            "Permission denied",
+            "You don't have permission to submit. Contact support if this is wrong."
+          );
+          setSubmitStatus("error");
+          return;
+        }
+        if (res.status === 429) {
+          toast.warning(
+            "Too many submissions",
+            "Wait a moment and try again."
+          );
+          setSubmitStatus("error");
+          return;
+        }
+        if (res.status >= 500) {
+          toast.error(
+            "Couldn't reach the judge",
+            "The judge service is unavailable. Try again in a moment."
+          );
+          setSubmitStatus("error");
+          return;
+        }
+        toast.error("Submission failed", errMsg || `Request failed (${res.status})`);
+        setSubmitStatus("error");
+        return;
+      }
       const data = await res.json();
-      setSubmitStatus((data.submission?.status as string) || "error");
+      setSubmitStatus((data.submission?.status as string) || "queued");
       if (data.results) setResults(data.results as TestResult[]);
     } catch {
+      // Network-level failure (DNS, offline, CORS) — distinct from any
+      // HTTP status the server returned.
+      toast.error(
+        "Couldn't reach the judge",
+        "Network error. Check your connection and try again."
+      );
       setSubmitStatus("error");
     } finally {
       setSubmitting(false);
@@ -281,15 +350,28 @@ export default function ProblemDetailPage({
           </Button>
         </Tooltip>
 
-        <Tooltip content="Submit solution" side="top">
+        <Tooltip
+          content={
+            !authLoading && !isAuthenticated
+              ? "Sign in to submit"
+              : "Submit solution"
+          }
+          side="top"
+        >
           <Button
             size="sm"
             onClick={handleSubmit}
             disabled={submitting}
-            aria-label="Submit solution"
+            aria-label={
+              !authLoading && !isAuthenticated
+                ? "Sign in to submit solution"
+                : "Submit solution"
+            }
           >
             {submitting ? (
               <Loader2 className="h-4 w-4 animate-spin mr-1" />
+            ) : !authLoading && !isAuthenticated ? (
+              <LogIn className="h-4 w-4 mr-1" />
             ) : (
               <Send className="h-4 w-4 mr-1" />
             )}
@@ -364,6 +446,48 @@ export default function ProblemDetailPage({
       </div>
 
       <ChatBot userId={user?.id ?? null} problemId={problem.id} />
+
+      {/*
+        Auth-required modal — surfaced when an anon user hits Submit, or
+        when an authed user's session expired (401 on POST). We share one
+        Dialog and swap copy via `authPromptExpired` so the modal stays
+        compact and the user always sees the same visual hierarchy.
+        `from` carries the current slug so login can bounce them back.
+      */}
+      <Dialog
+        open={authPromptOpen}
+        onClose={() => setAuthPromptOpen(false)}
+        title={
+          authPromptExpired
+            ? "Your session expired"
+            : "Sign in to submit your solution"
+        }
+        description={
+          authPromptExpired
+            ? "Sign in again to submit your solution."
+            : "Track your progress, climb the leaderboard, and join contests."
+        }
+        size="sm"
+      >
+        <div className="flex flex-col gap-2 mt-2">
+          <Link
+            href={`/login?from=/problems/${slug}`}
+            className="inline-flex items-center justify-center h-10 px-4 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors motion-safe:duration-200"
+            onClick={() => setAuthPromptOpen(false)}
+          >
+            Sign in
+          </Link>
+          {!authPromptExpired && (
+            <Link
+              href="/register"
+              className="inline-flex items-center justify-center h-10 px-4 rounded-md border border-input bg-background text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors motion-safe:duration-200"
+              onClick={() => setAuthPromptOpen(false)}
+            >
+              Create account
+            </Link>
+          )}
+        </div>
+      </Dialog>
     </>
   );
 }

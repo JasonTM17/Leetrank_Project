@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useMemo } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +23,16 @@ const STATIC_STATS = [
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  // `?from=/problems/two-sum` is set by the auth-required modal so we
+  // bounce the user back to where they were instead of dropping them
+  // on /problems. Only allow same-origin paths to avoid open-redirect
+  // abuse via the URL bar.
+  const fromPath = useMemo(() => {
+    const raw = searchParams.get("from");
+    if (!raw) return "/problems";
+    return raw.startsWith("/") && !raw.startsWith("//") ? raw : "/problems";
+  }, [searchParams]);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -63,7 +73,7 @@ export default function LoginPage() {
         return;
       }
 
-      router.push("/problems");
+      router.push(fromPath);
       router.refresh();
     } catch {
       setError("Something went wrong");
