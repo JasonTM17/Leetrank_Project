@@ -5,6 +5,134 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-05-19
+
+Roughly 500+ commits since `v0.1.0` close most of the gaps identified in
+[`docs/research/2026-05-COMPETITIVE-ANALYSIS.md`](docs/research/2026-05-COMPETITIVE-ANALYSIS.md)
+and harden the platform across security, observability, and CI lanes.
+
+### Added — product features
+
+- **Study plans.** `Plan`, `PlanStep`, `UserPlanProgress` schema + migration.
+  `/plans` index, `/plans/[slug]` linear step list with lock/unlock state,
+  `/api/plans*` endpoints, profile-side "in progress" surface, EN + VI i18n.
+- **Daily challenge + streaks.** `DailyChallenge` + `UserActivity` schema,
+  pure streak math lib, `/api/daily-challenge` GET + history routes,
+  homepage banner with countdown, dashboard heatmap + streak badge,
+  `daily-challenge` GitHub Actions picker workflow.
+- **Achievements + badges.** Achievements catalogue + `UserAchievement`
+  schema, pure `evaluateAchievements` engine with criteria types, accept
+  hook fired on AC, `/achievements` page with `<AchievementBadge>` grid.
+- **Code playback (feature-flagged).** `SubmissionEvent` model +
+  migration, `POST /api/submission-events` recorder + `GET /api/playback/[id]`
+  reader, recorder + viewer mounted on submission page. Gated by
+  `PLAYBACK_ENABLED` env flag.
+- **Editorial + progressive hints.** `Editorial` model, `/api/editorial/[slug]`,
+  problem-detail Editorial tab with progressive hint reveal (one click =
+  next hint), gated until first AC or contest end.
+- **Solution sharing + community votes.** `SharedSolution` + `SolutionVote`
+  models + migration, `/api/solutions*` endpoints, vote API, optimistic UI.
+- **Elo rating + divisions.** Glicko-2 engine in pure TS (no deps),
+  `Rating`, `RatingChange`, `Division` schema, idempotent admin
+  `finalize-rating` endpoint, RD inflation cron, division badge on profiles
+  + delta column on submissions, leaderboard rating display, EN + VI i18n.
+- **Admin analytics dashboard.** Aggregation lib + `/api/admin/analytics`
+  endpoint, `/admin/analytics` page with `<SvgBarChart>`, `<SvgSparkline>`,
+  `<SvgPieChart>` primitives, navbar link from `/admin`.
+- **Editor preferences.** `useEditorPreferences` hook (vim mode, theme,
+  font size, tab width), settings popover with live preview.
+- **DevOps console.** Aggregator lib + snapshot API, devops grid component
+  with CI runs, queue depth, error budget tiles.
+- **Recommendations engine.** Pure scorer (tag overlap + difficulty
+  progression + freshness), `/api/recommendations`, home component with
+  EN + VI i18n.
+- **Tags taxonomy expansion.** Topics + companies seeder, tag taxonomy +
+  per-problem acceptance-rate field, collapsible topic + company filter
+  chips on `/problems`, acceptance-rate refresher metric.
+- **PWA + offline support.** Service worker with shell + API caching,
+  offline fallback page, install-prompt component.
+- **Per-page metadata SEO.** `generateMetadata` exports for every dynamic
+  segment (problems, contests, profiles, plans, solutions) feeding from
+  real DB rows — title, description, OpenGraph, Twitter card.
+- **i18n (EN + VI) for all surfaces.** Rating, divisions, achievements,
+  study plans, playback, recommendations, admin analytics, dashboard,
+  contests, leaderboard.
+
+### Added — backend hardening
+
+- **Ed25519 + JWKS auth.** `services/auth-go` is the sole canonical issuer;
+  web tier verifies via JWKS only. Three-phase cutover ([ADR 0030]) with
+  `LEGACY_HS256_FALLBACK` flag.
+- **Account lockout.** `failed_login_count` + `locked_until` columns on
+  `users`. Pairs with the per-IP rate limiter.
+- **nsjail sandbox.** Per-submission Linux NS + cgroups + seccomp +
+  capability drop on the judge runner ([ADR 0020]).
+- **Redis-backed sliding-window rate limiter.** Replaces the in-process
+  fixed-window prototype on auth + admin paths.
+- **Observability.** Slow-query log on Prisma, `X-Request-Id` middleware,
+  `Server-Timing` headers on API routes, slow-query + missing-request-id
+  alerts.
+- **Graceful shutdown drain.** SIGTERM hook drains in-flight requests
+  before exit on every Go service.
+- **Submission percentile + runtime distribution.** `analytics-helpers`
+  lib (percentile + distribution), `GET /submissions/[id]/percentile`,
+  submission percentile card UI.
+- **Defensive null-guards.** `ratingChange.findMany` paths in user +
+  leaderboard endpoints; structured error logging on 500 catch blocks.
+- **Discussion replies + votes.** Nested replies (max depth 3), vote
+  endpoint + sort modes, markdown rendering with syntax highlight.
+
+### Added — CI/CD
+
+- **SHA-pinned actions.** Every workflow pins by SHA, not tag.
+- **Dual Docker Hub + GHCR publish** ([ADR 0026]).
+- **k6 load tests.** Scenarios for login, submission, leaderboard.
+- **Chaos drills.** `kill-judge`, `kill-redis`, `flood-rate-limit`,
+  `network-partition`.
+- **Weekly perf regression workflow.**
+- **Polyglot test matrix.** `realtime-go`, `leaderboard-rust`,
+  `notifications-ruby`, `analytics-python` all run on CI.
+- **Coverage thresholds raised** to 86 lines / 90 functions / 85 branches /
+  86 statements.
+
+### Changed
+
+- Coverage thresholds raised; advisory rust `clippy` + `fmt` lanes added
+  per the "advisory before strict" pattern.
+- Discussion buttons gain disabled state on async ops.
+- Auth + profile + discussion forms trim user input on submit.
+- Private `no-store` cache headers on session-scoped GET endpoints.
+
+### Fixed
+
+- `judge-service` Dockerfile missing `profiles.go` from the `COPY` layer.
+- Gitleaks false positive on the JWT test fixture marked.
+- `ratingChange.findMany` defensive null-guard in user + leaderboard.
+
+### Security
+
+- Generic auth-failure responses (no email-existence leak).
+- HMAC `X-Signature-SHA256` on every outbound n8n webhook with
+  timing-safe verify.
+- Prisma `$on('query')` slow-query hook surfaces N+1 hot paths.
+
+### Migration notes
+
+- Run `pnpm prisma migrate deploy` before bringing the new web image up.
+  New tables: `Plan`, `PlanStep`, `UserPlanProgress`, `DailyChallenge`,
+  `UserActivity`, `Achievement`, `UserAchievement`, `SubmissionEvent`,
+  `Editorial`, `SharedSolution`, `SolutionVote`, `Rating`, `RatingChange`,
+  `Division`, `Company`, `ProblemCompany`.
+- Set `LEGACY_HS256_FALLBACK=true` on the web tier on the first deploy
+  of this version, then flip to `false` once all in-flight HS256 tokens
+  drain (≥ 1 token TTL window). See [ADR 0030].
+- Optional: set `PLAYBACK_ENABLED=true` to expose the code-playback
+  recorder + viewer.
+
+[ADR 0020]: docs/adr/0020-judge-sandbox-model.md
+[ADR 0026]: docs/adr/0026-dual-registry-publish.md
+[ADR 0030]: docs/adr/0030-web-tier-jwt-cutover.md
+
 ## [Unreleased]
 
 ### Added
