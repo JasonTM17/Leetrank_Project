@@ -21,6 +21,7 @@ interface Contest {
   startTime: string;
   endTime: string;
   status: string;
+  division?: string | null;
   _count?: { entries: number };
 }
 
@@ -128,6 +129,22 @@ export default function ContestsPage() {
                         <div className="flex items-center gap-3 mb-2">
                           <h3 className="text-lg font-semibold">{contest.title}</h3>
                           {getStatusBadge(contest.status)}
+                          {contest.division && (
+                            <Badge
+                              variant="outline"
+                              className="inline-flex items-center text-xs uppercase tracking-wide"
+                              aria-label={t("divisionAria", { div: contest.division })}
+                            >
+                              <span aria-hidden="true" className="mr-1.5 inline-block h-2 w-2 rounded-full bg-primary/70" />
+                              {contest.division === "div1"
+                                ? t("divisionDiv1")
+                                : contest.division === "div2"
+                                  ? t("divisionDiv2")
+                                  : contest.division === "div3"
+                                    ? t("divisionDiv3")
+                                    : t("divisionOpen")}
+                            </Badge>
+                          )}
                         </div>
                         {contest.description && (
                           <p className="text-sm text-muted-foreground mb-3">{contest.description}</p>

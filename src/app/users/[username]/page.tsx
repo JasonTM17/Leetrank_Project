@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
+import { RatingSparkline } from "@/components/rating/rating-sparkline";
 import { formatRelativeTime, getDifficultyBg } from "@/lib/utils";
 import { Trophy, Target, Calendar, User as UserIcon } from "lucide-react";
 
@@ -19,6 +20,8 @@ interface ProfileData {
     avatar?: string;
     bio?: string;
     createdAt: string;
+    rating?: number;
+    maxRating?: number;
   };
   stats: {
     totalSubmissions: number;
@@ -32,6 +35,15 @@ interface ProfileData {
     language: string;
     createdAt: string;
     problem: { id: string; title: string; slug: string; difficulty: string };
+  }>;
+  ratingHistory?: Array<{
+    contestId: string;
+    contestSlug?: string;
+    contestTitle?: string;
+    afterRating: number;
+    delta: number;
+    rank: number;
+    createdAt: string;
   }>;
 }
 
@@ -93,7 +105,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
     );
   }
 
-  const { user, stats, recentSubmissions } = data;
+  const { user, stats, recentSubmissions, ratingHistory } = data;
   const acceptanceRate = stats.totalSubmissions === 0 ? 0 : Math.round((stats.accepted / stats.totalSubmissions) * 100);
 
   return (
@@ -127,6 +139,21 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
                   <span className="gradient-text">{user.username}</span>
                 </h1>
                 {user.bio && <p className="mt-2 text-muted-foreground text-base max-w-2xl leading-relaxed">{user.bio}</p>}
+                {typeof user.rating === "number" && (
+                  <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border bg-card/60 px-3 py-1 font-semibold tabular-nums">
+                      <span aria-hidden="true" className="inline-block h-2 w-2 rounded-full bg-primary" />
+                      <span className="text-muted-foreground text-xs uppercase tracking-wide">Rating</span>
+                      <span>{user.rating}</span>
+                    </span>
+                    {typeof user.maxRating === "number" && user.maxRating > user.rating && (
+                      <span className="inline-flex items-center gap-1.5 rounded-full border bg-card/60 px-3 py-1 text-muted-foreground tabular-nums">
+                        <span className="text-xs uppercase tracking-wide">Max</span>
+                        <span>{user.maxRating}</span>
+                      </span>
+                    )}
+                  </div>
+                )}
                 <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
                   <Calendar className="h-4 w-4" aria-hidden="true" />
                   <span>Joined {new Date(user.createdAt).toLocaleDateString("en-US", { month: "long", year: "numeric" })}</span>
@@ -230,6 +257,46 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
               </CardContent>
             </Card>
           </div>
+
+          {ratingHistory && ratingHistory.length > 0 && (
+            <div className="mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Trophy className="h-4 w-4 text-primary" /> Rating history
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <RatingSparkline points={ratingHistory.map((r) => r.afterRating)} />
+                  <ul className="mt-4 divide-y text-sm">
+                    {ratingHistory.slice(-8).reverse().map((r) => (
+                      <li key={r.contestId} className="flex items-center justify-between py-2 gap-3 tabular-nums">
+                        <span className="truncate text-muted-foreground">
+                          {r.contestTitle ?? r.contestSlug ?? r.contestId}
+                        </span>
+                        <span className="flex items-center gap-3">
+                          <span className="text-xs text-muted-foreground">#{r.rank}</span>
+                          <span
+                            className={`text-xs font-semibold ${
+                              r.delta > 0
+                                ? "text-success"
+                                : r.delta < 0
+                                  ? "text-destructive"
+                                  : "text-muted-foreground"
+                            }`}
+                          >
+                            {r.delta > 0 ? "+" : ""}
+                            {r.delta}
+                          </span>
+                          <span className="font-medium">{r.afterRating}</span>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </div>
       </main>
       <Footer />

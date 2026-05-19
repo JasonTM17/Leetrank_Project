@@ -17,6 +17,8 @@ export async function GET(
         avatar: true,
         bio: true,
         createdAt: true,
+        rating: true,
+        maxRating: true,
       },
     });
 
@@ -25,7 +27,7 @@ export async function GET(
     }
 
     // Aggregate stats: total submissions, accepted count, unique solved.
-    const [totalSubmissions, accepted, acceptedRows, recentSubmissions] = await Promise.all([
+    const [totalSubmissions, accepted, acceptedRows, recentSubmissions, ratingHistoryRows] = await Promise.all([
       prisma.submission.count({ where: { userId: user.id } }),
       prisma.submission.count({ where: { userId: user.id, status: "accepted" } }),
       prisma.submission.findMany({
@@ -45,6 +47,19 @@ export async function GET(
           problem: { select: { id: true, title: true, slug: true, difficulty: true } },
         },
       }),
+      prisma.ratingChange.findMany({
+        where: { userId: user.id },
+        orderBy: { createdAt: "asc" },
+        take: 50,
+        select: {
+          contestId: true,
+          afterRating: true,
+          delta: true,
+          rank: true,
+          createdAt: true,
+          contest: { select: { slug: true, title: true } },
+        },
+      }),
     ]);
 
     const solved = acceptedRows.length;
@@ -56,6 +71,16 @@ export async function GET(
       }
     }
 
+    const ratingHistory = ratingHistoryRows.map((rc) => ({
+      contestId: rc.contestId,
+      contestSlug: rc.contest?.slug,
+      contestTitle: rc.contest?.title,
+      afterRating: rc.afterRating,
+      delta: rc.delta,
+      rank: rc.rank,
+      createdAt: rc.createdAt,
+    }));
+
     return Response.json({
       user,
       stats: {
@@ -65,6 +90,7 @@ export async function GET(
         byDifficulty,
       },
       recentSubmissions,
+      ratingHistory,
     });
   } catch (err) {
     logger.error("users/[username] GET failed", { scope: "api/users/[username]", err: err instanceof Error ? err.message : String(err) });
