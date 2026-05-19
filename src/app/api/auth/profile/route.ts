@@ -12,6 +12,38 @@ const updateProfileSchema = z.object({
 const RATE_LIMIT_MAX = 10;
 const RATE_LIMIT_WINDOW_MS = 60_000;
 
+// GET returns the current user's public profile (no email — this endpoint
+// mirrors what /api/users/{username} exposes, scoped to the signed-in user).
+// /api/auth/me is the private "session inspector" (includes email, role); this
+// is the symmetric read counterpart to PATCH for editing public fields.
+export async function GET() {
+  try {
+    const session = await getSession();
+    if (!session) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: session.userId },
+      select: {
+        id: true,
+        username: true,
+        avatar: true,
+        bio: true,
+        createdAt: true,
+      },
+    });
+
+    if (!user) {
+      return Response.json({ error: "User not found" }, { status: 404 });
+    }
+
+    return Response.json({ user });
+  } catch {
+    return Response.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
 export async function PATCH(request: NextRequest) {
   try {
     const session = await getSession();

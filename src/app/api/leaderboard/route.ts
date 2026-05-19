@@ -1,17 +1,13 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
-
-const DEFAULT_LIMIT = 50;
-const MAX_LIMIT = 100;
+import { parseLimit, parsePage } from "@/lib/pagination";
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = request.nextUrl;
-    const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10) || 1);
-    const limit = Math.min(
-      MAX_LIMIT,
-      Math.max(1, parseInt(searchParams.get("limit") ?? String(DEFAULT_LIMIT), 10) || DEFAULT_LIMIT)
-    );
+    const page = parsePage(request.nextUrl);
+    // Centralised parseLimit defaults to max=50 — same cap as /api/problems
+    // so the two endpoints don't disagree on what "a page" means (Bug #27).
+    const limit = parseLimit(request.nextUrl);
 
     // Aggregate accepted submissions to a (userId -> uniqueSolvedCount) ranking.
     // groupBy on (userId, problemId) then count problems per user keeps the

@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = request.nextUrl;
     const problemId = searchParams.get("problemId");
     if (!problemId) {
-      return Response.json({ error: "problemId is required" }, { status: 400 });
+      return Response.json({ error: "Problem ID is required." }, { status: 400 });
     }
 
     const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10) || 1);

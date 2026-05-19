@@ -5,7 +5,7 @@ import { rateLimit } from "@/lib/rate-limit";
 import { z } from "zod";
 
 const toggleSchema = z.object({
-  problemId: z.string().min(1, "problemId is required"),
+  problemId: z.string().min(1, "Problem ID is required."),
 });
 
 // RULES §4: rate-limit toggle writes. 30/min per user is generous; the
@@ -106,6 +106,48 @@ export async function POST(request: NextRequest) {
       data: { userId: session.userId, problemId },
     });
     return Response.json({ bookmarked: true });
+  } catch {
+    return Response.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
+// DELETE removes a bookmark by ?problemId=… — the RESTful counterpart to
+// POST. POST stays as a back-compat toggle for the existing UI button; new
+// clients should prefer DELETE for explicit removal. Idempotent: deleting a
+// bookmark that doesn't exist is treated as success.
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await getSession();
+    if (!session) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const limit = rateLimit(`bookmark:${session.userId}`, TOGGLE_LIMIT_MAX, TOGGLE_LIMIT_WINDOW_MS);
+    if (!limit.allowed) {
+      const retryAfter = Math.max(1, Math.ceil((limit.resetAt - Date.now()) / 1000));
+      return Response.json(
+        { error: "Too many bookmark toggles. Slow down." },
+        { status: 429, headers: { "Retry-After": String(retryAfter) } }
+      );
+    }
+
+    const { searchParams } = request.nextUrl;
+    const problemId = searchParams.get("problemId");
+    if (!problemId) {
+      return Response.json({ error: "Problem ID is required." }, { status: 400 });
+    }
+
+    const existing = await prisma.bookmark.findUnique({
+      where: { userId_problemId: { userId: session.userId, problemId } },
+      select: { id: true },
+    });
+    if (!existing) {
+      // Idempotent: nothing to delete is still a successful end-state.
+      return Response.json({ bookmarked: false });
+    }
+
+    await prisma.bookmark.delete({ where: { id: existing.id } });
+    return Response.json({ bookmarked: false });
   } catch {
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }

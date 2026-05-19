@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = request.nextUrl;
     const tagSlug = searchParams.get("tag");
     if (!tagSlug) {
-      return Response.json({ error: "tag query param is required" }, { status: 400 });
+      return Response.json({ error: "Tag query parameter is required." }, { status: 400 });
     }
 
     const limit = Math.min(

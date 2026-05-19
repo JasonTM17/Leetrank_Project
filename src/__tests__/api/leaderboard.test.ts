@@ -45,13 +45,13 @@ describe("GET /api/leaderboard", () => {
     expect(data.total).toBe(5);
   });
 
-  it("clamps limit to 100 max", async () => {
+  it("clamps limit to 50 max (shared parseLimit cap)", async () => {
     prismaMock.submission.groupBy.mockResolvedValue([]);
     prismaMock.user.findMany.mockResolvedValue([]);
 
     const res = await GET(asNextRequest(new Request("http://x/api/leaderboard?limit=9999")));
     const data = await res.json();
-    expect(data.limit).toBe(100);
+    expect(data.limit).toBe(50);
   });
 
   it("returns empty leaderboard when nobody has solved anything", async () => {
