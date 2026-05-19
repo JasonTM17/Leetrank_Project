@@ -39,7 +39,7 @@ The stack exposes:
 
 ### Native
 
-Requirements: Node 20, pnpm 9, Go 1.22, PostgreSQL 16, Redis 7.
+Requirements: Node 20, pnpm 10+, Go 1.22, PostgreSQL 16, Redis 7.
 
 ```bash
 pnpm install
@@ -192,6 +192,15 @@ For UI changes.
 ## Related
 ADRs, issues, prior PRs.
 ```
+
+## Release process
+
+Releases follow [Semantic Versioning](https://semver.org/). The full policy — version bumps, release checklist, hotfix workflow, and version history — lives in [`docs/release.md`](docs/release.md).
+
+Quick reference:
+- `feat` commit → minor bump (0.x.0)
+- `fix` commit → patch bump (0.0.x)
+- Breaking change (`!` suffix or `BREAKING CHANGE:` footer) → major bump (x.0.0)
 
 ## Reporting bugs
 
