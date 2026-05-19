@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { withTiming } from "@/lib/server-timing";
 
 const API_URL = process.env.API_INTERNAL_URL ?? "http://api:4000";
 const AUTH_URL = process.env.AUTH_INTERNAL_URL ?? "http://identity:4011";
@@ -80,7 +81,7 @@ async function checkJudge(): Promise<ServiceResult> {
   };
 }
 
-export async function GET() {
+export const GET = withTiming("status", async () => {
   const services = await Promise.all([checkWeb(), checkApi(), checkAuth(), checkJudge()]);
 
   const hasDown = services.some((s) => s.status === "down");
@@ -96,4 +97,4 @@ export async function GET() {
   return Response.json(body, {
     headers: { "Cache-Control": "no-store" },
   });
-}
+});

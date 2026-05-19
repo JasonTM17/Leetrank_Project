@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { envOr } from "@/lib/env";
+import { withTiming } from "@/lib/server-timing";
 
 const JUDGE_URL = envOr("JUDGE_SERVICE_URL", "http://localhost:9090");
 const startedAt = Date.now();
@@ -37,7 +38,7 @@ async function checkJudge(): Promise<ServiceStatus> {
   }
 }
 
-export async function GET() {
+export const GET = withTiming("health", async () => {
   const [db, judge] = await Promise.all([checkDb(), checkJudge()]);
   const overall = db.status === "ok" && judge.status === "ok" ? "ok" : "degraded";
   const httpStatus = db.status === "down" ? 503 : 200;
@@ -51,4 +52,4 @@ export async function GET() {
     },
     { status: httpStatus }
   );
-}
+});
