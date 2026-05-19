@@ -8,6 +8,9 @@ import { ProblemDescription } from "@/components/problem/problem-description";
 import { TestResultsPanel } from "@/components/problem/test-results-panel";
 import { DiscussionsPanel } from "@/components/problem/discussions-panel";
 import { BookmarkButton } from "@/components/problem/bookmark-button";
+import { EditorSettingsPopover } from "@/components/problem/editor-settings";
+import { useEditorPrefs } from "@/hooks/useEditorPrefs";
+import type { editor } from "monaco-editor";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Tooltip } from "@/components/ui/tooltip";
 import { Dialog } from "@/components/ui/dialog";
@@ -23,6 +26,7 @@ import dynamic from "next/dynamic";
 import { LANGUAGES, monacoLanguageFor, languageLabel, type LanguageDef } from "@/lib/languages";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/useToast";
+import { cn } from "@/lib/utils";
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), { ssr: false });
 const ChatBot = dynamic(
@@ -102,6 +106,12 @@ export default function ProblemDetailPage({
   const [authPromptOpen, setAuthPromptOpen] = useState(false);
   const [authPromptExpired, setAuthPromptExpired] = useState(false);
 
+  // Editor prefs (vim/theme/font/tab/wrap) — persisted to localStorage.
+  const { prefs, setPrefs } = useEditorPrefs();
+  const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
+  const vimStatusRef = useRef<HTMLDivElement | null>(null);
+  const vimDisposeRef = useRef<(() => void) | null>(null);
+
   // Keep parsed starter codes so reset can restore them without re-fetching.
   const startersRef = useRef<Record<string, string>>({});
 
@@ -136,6 +146,33 @@ export default function ProblemDetailPage({
     const starter = startersRef.current[language];
     if (starter !== undefined) setCode(starter);
   }
+
+  // Lazy-load monaco-vim only when vim mode flips on. The package
+  // pulls in a substantial chunk so we keep it out of the main bundle.
+  // Re-runs whenever prefs.vimMode toggles or the editor instance is
+  // (re)mounted; the cleanup tears down the previous binding so toggling
+  // off restores native Monaco keybindings cleanly.
+  useEffect(() => {
+    if (!prefs.vimMode) {
+      vimDisposeRef.current?.();
+      vimDisposeRef.current = null;
+      return;
+    }
+    if (!editorRef.current || !vimStatusRef.current) return;
+    let cancelled = false;
+    let cleanup: (() => void) | null = null;
+    import("monaco-vim").then((mod) => {
+      if (cancelled || !editorRef.current || !vimStatusRef.current) return;
+      const vimMode = mod.initVimMode(editorRef.current, vimStatusRef.current);
+      cleanup = () => vimMode.dispose();
+      vimDisposeRef.current = cleanup;
+    });
+    return () => {
+      cancelled = true;
+      cleanup?.();
+      vimDisposeRef.current = null;
+    };
+  }, [prefs.vimMode, problem]);
 
   async function handleRun() {
     if (!problem) return;
@@ -324,6 +361,8 @@ export default function ProblemDetailPage({
       <div className="flex items-center gap-2">
         <BookmarkButton problemId={problem.id} isAuthenticated={!!user} />
 
+        <EditorSettingsPopover prefs={prefs} setPrefs={setPrefs} />
+
         <Tooltip content={t("resetTooltip")} side="top">
           <Button
             size="sm"
@@ -391,20 +430,36 @@ export default function ProblemDetailPage({
         <MonacoEditor
           height="100%"
           language={monacoLanguageFor(language)}
-          theme="vs-dark"
+          theme={prefs.theme}
           value={code}
           onChange={(value) => setCode(value ?? "")}
+          onMount={(ed) => {
+            editorRef.current = ed;
+          }}
           options={{
             minimap: { enabled: false },
-            fontSize: 14,
+            fontSize: prefs.fontSize,
             lineNumbers: "on",
             scrollBeyondLastLine: false,
             automaticLayout: true,
-            tabSize: 2,
-            wordWrap: "on",
+            tabSize: prefs.tabWidth,
+            wordWrap: prefs.wordWrap ? "on" : "off",
           }}
         />
       </div>
+      {/*
+        Vim status line. Always rendered so the ref is stable when vim
+        mode flips on; we only show the bar when vim mode is active so
+        non-vim users don't see an empty strip below the editor.
+      */}
+      <div
+        ref={vimStatusRef}
+        className={cn(
+          "border-t bg-muted/40 px-3 py-1 text-xs font-mono tabular-nums text-muted-foreground",
+          !prefs.vimMode && "hidden"
+        )}
+        aria-live="polite"
+      />
       <TestResultsPanel results={results} submitStatus={submitStatus} />
     </div>
   );
