@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -51,10 +50,20 @@ func (s *server) executeFromConfig(ctx context.Context, lc LanguageConfig, code 
 		if len(argv) == 0 {
 			return errorResult(tc, fmt.Sprintf("Empty compileCmd for %s", lc.ID), start)
 		}
-		cc := exec.CommandContext(compileCtx, argv[0], argv[1:]...)
-		cc.Dir = workdir
-		out, cerr := cc.CombinedOutput()
-		if compileCtx.Err() == context.DeadlineExceeded {
+		// Compile under the sandbox too — toolchains have historically
+		// shipped CVEs that let crafted source escape into RCE during
+		// the compile pass (see go-1.18 -toolexec, gcc -plugin, etc.).
+		// Compile gets a slightly higher mem cap because gcc/javac/scalac
+		// hit several hundred MB easily.
+		out, exitCode, timedOut, cerr := SandboxedCombinedOutput(compileCtx, workdir, argv, nil, SandboxLimits{
+			MemMB:        512,
+			CPUSeconds:   15,
+			WallSeconds:  15,
+			MaxProcesses: 32,
+			MaxOpenFiles: 256,
+			MaxFileMB:    64,
+		})
+		if timedOut || compileCtx.Err() == context.DeadlineExceeded {
 			return TestResult{
 				Passed:   false,
 				Input:    tc.Input,
@@ -63,13 +72,17 @@ func (s *server) executeFromConfig(ctx context.Context, lc LanguageConfig, code 
 				Error:    "Compilation Time Limit Exceeded",
 			}
 		}
-		if cerr != nil {
+		if cerr != nil || exitCode != 0 {
+			msg := strings.TrimSpace(string(out))
+			if cerr != nil && msg == "" {
+				msg = cerr.Error()
+			}
 			return TestResult{
 				Passed:   false,
 				Input:    tc.Input,
 				Expected: tc.Expected,
 				Runtime:  int(time.Since(start).Milliseconds()),
-				Error:    "Compilation error: " + strings.TrimSpace(string(out)),
+				Error:    "Compilation error: " + msg,
 			}
 		}
 	}
@@ -79,13 +92,14 @@ func (s *server) executeFromConfig(ctx context.Context, lc LanguageConfig, code 
 	if len(runArgv) == 0 {
 		return errorResult(tc, fmt.Sprintf("Empty runCmd for %s", lc.ID), start)
 	}
-	rc := exec.CommandContext(ctx, runArgv[0], runArgv[1:]...)
-	rc.Dir = workdir
-	rc.Stdin = strings.NewReader(tc.Input)
-	output, runErr := rc.CombinedOutput()
+	output, exitCode, timedOut, runErr := SandboxedCombinedOutput(ctx, workdir, runArgv, []byte(tc.Input), SandboxLimits{
+		MemMB:       limitMBFor(lc, timeLimitMs),
+		CPUSeconds:  cpuSecondsFor(timeLimitMs),
+		WallSeconds: wallSecondsFor(timeLimitMs),
+	})
 	runtime := int(time.Since(start).Milliseconds())
 
-	if ctx.Err() == context.DeadlineExceeded {
+	if timedOut || ctx.Err() == context.DeadlineExceeded {
 		return TestResult{
 			Passed:   false,
 			Input:    tc.Input,
@@ -106,6 +120,17 @@ func (s *server) executeFromConfig(ctx context.Context, lc LanguageConfig, code 
 		}
 	}
 
+	if exitCode != 0 {
+		return TestResult{
+			Passed:   false,
+			Input:    tc.Input,
+			Expected: tc.Expected,
+			Actual:   strings.TrimSpace(string(output)),
+			Runtime:  runtime,
+			Error:    fmt.Sprintf("Runtime error (exit %d): %s", exitCode, strings.TrimSpace(string(output))),
+		}
+	}
+
 	actual := strings.TrimSpace(string(output))
 	expected := strings.TrimSpace(tc.Expected)
 	return TestResult{
@@ -115,4 +140,53 @@ func (s *server) executeFromConfig(ctx context.Context, lc LanguageConfig, code 
 		Actual:   actual,
 		Runtime:  runtime,
 	}
+}
+
+// fileExists is a small convenience used by the compile step to detect
+// silent compile failures where the toolchain printed nothing but did not
+// produce a binary.
+func fileExists(p string) bool {
+	if p == "" {
+		return false
+	}
+	_, err := os.Stat(p)
+	return err == nil
+}
+
+// limitMBFor returns the per-language memory cap. Compiled JVM languages
+// (java, kotlin, scala, groovy, clojure) need extra headroom for the JIT;
+// everything else uses the default.
+func limitMBFor(lc LanguageConfig, _ int) int {
+	switch lc.ID {
+	case "java", "kotlin", "scala", "groovy", "clojure":
+		return 512
+	}
+	return DefaultSandboxLimits.MemMB
+}
+
+// cpuSecondsFor maps the request-level timeLimit (ms) to a CPU-seconds cap.
+// We add 1s of slack so the wall-clock limit is the one that fires for
+// genuine TLE (CPU rlimit kills with SIGKILL, harder to surface as TLE).
+func cpuSecondsFor(timeLimitMs int) int {
+	s := timeLimitMs/1000 + 1
+	if s < DefaultSandboxLimits.CPUSeconds {
+		return DefaultSandboxLimits.CPUSeconds
+	}
+	if s > 30 {
+		return 30
+	}
+	return s
+}
+
+// wallSecondsFor mirrors the request timeLimit but is bounded to keep nsjail
+// from outliving the Go context for too long if the kernel lags on signal.
+func wallSecondsFor(timeLimitMs int) int {
+	s := (timeLimitMs + 999) / 1000
+	if s < DefaultSandboxLimits.WallSeconds {
+		return DefaultSandboxLimits.WallSeconds
+	}
+	if s > 30 {
+		return 30
+	}
+	return s
 }

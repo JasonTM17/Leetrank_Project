@@ -4,18 +4,22 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/exec"
 	"os/signal"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"syscall"
 	"time"
 
+	"github.com/leetrank/judge-service/internal/observability"
 	"github.com/gorilla/mux"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/rs/zerolog"
 )
 
 // ─── Request / Response types ────────────────────────────────────────────────
@@ -299,9 +303,10 @@ type server struct {
 	sched      *scheduler
 	runnersDir string
 	languages  *LanguageRegistry
+	logger     zerolog.Logger
 }
 
-func newServer() *server {
+func newServer(logger zerolog.Logger) *server {
 	// Runners live next to the binary.
 	exe, err := os.Executable()
 	runnersDir := "runners"
@@ -331,15 +336,16 @@ func newServer() *server {
 	}
 	registry, regErr := loadLanguageRegistry(langPath)
 	if regErr != nil {
-		log.Fatalf("loadLanguageRegistry(%s): %v", langPath, regErr)
+		logger.Fatal().Err(regErr).Str("path", langPath).Msg("loadLanguageRegistry")
 	}
-	log.Printf("loaded %d languages: %s", len(registry.IDs()), strings.Join(registry.IDs(), ", "))
+	logger.Info().Int("count", len(registry.IDs())).Strs("languages", registry.IDs()).Msg("languages loaded")
 
 	return &server{
 		rl:         newRateLimiter(),
 		sched:      newScheduler(cfg),
 		runnersDir: runnersDir,
 		languages:  registry,
+		logger:     logger,
 	}
 }
 
@@ -373,12 +379,68 @@ func corsMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func loggingMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		start := time.Now()
-		next.ServeHTTP(w, r)
-		log.Printf("%s %s %s", r.Method, r.URL.Path, time.Since(start))
-	})
+func loggingMiddleware(logger zerolog.Logger) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			start := time.Now()
+			rec := &statusRecorder{ResponseWriter: w, status: http.StatusOK}
+			next.ServeHTTP(rec, r)
+			route := r.URL.Path
+			if route == "" {
+				route = "/"
+			}
+			status := strconv.Itoa(rec.status)
+			judgeRequestsTotal.WithLabelValues(r.Method, route, status).Inc()
+			judgeRequestDuration.WithLabelValues(r.Method, route, status).Observe(time.Since(start).Seconds())
+			logger.Info().
+				Str("method", r.Method).
+				Str("path", r.URL.Path).
+				Int("status", rec.status).
+				Int64("duration_ms", time.Since(start).Milliseconds()).
+				Msg("http_request")
+		})
+	}
+}
+
+type statusRecorder struct {
+	http.ResponseWriter
+	status int
+}
+
+func (s *statusRecorder) WriteHeader(code int) {
+	s.status = code
+	s.ResponseWriter.WriteHeader(code)
+}
+
+// ─── Metrics ──────────────────────────────────────────────────────────────────
+
+var (
+	judgeRequestsTotal = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "http_requests_total",
+			Help: "Total HTTP requests handled by leetrank-judge.",
+		},
+		[]string{"method", "route", "status"},
+	)
+	judgeRequestDuration = prometheus.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:    "http_request_duration_seconds",
+			Help:    "End-to-end HTTP latency in seconds.",
+			Buckets: prometheus.DefBuckets,
+		},
+		[]string{"method", "route", "status"},
+	)
+	judgeExecutionsTotal = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "judge_executions_total",
+			Help: "Code executions by language and final status.",
+		},
+		[]string{"language", "status"},
+	)
+)
+
+func init() {
+	prometheus.MustRegister(judgeRequestsTotal, judgeRequestDuration, judgeExecutionsTotal)
 }
 
 // ─── Handlers ─────────────────────────────────────────────────────────────────
@@ -669,7 +731,8 @@ func writeJSON(w http.ResponseWriter, status int, v interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	if err := json.NewEncoder(w).Encode(v); err != nil {
-		log.Printf("writeJSON encode error: %v", err)
+		// Best effort — connection may already be torn down.
+		_ = err
 	}
 }
 
@@ -681,13 +744,28 @@ func main() {
 		port = "9090"
 	}
 
-	srv := newServer()
+	logger := observability.NewLogger("leetrank-judge", os.Getenv("LOG_LEVEL"), os.Getenv("LOG_PRETTY") == "1")
+
+	shutdownTracer, err := observability.InitTracer(context.Background(), "leetrank-judge", os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT"), os.Getenv("JUDGE_VERSION"))
+	if err != nil {
+		logger.Warn().Err(err).Msg("otel: tracer disabled")
+	}
+	defer func() {
+		if shutdownTracer != nil {
+			_ = shutdownTracer(context.Background())
+		}
+	}()
+
+	srv := newServer(logger)
 
 	r := mux.NewRouter()
 	r.Use(corsMiddleware)
-	r.Use(loggingMiddleware)
+	r.Use(loggingMiddleware(logger))
+	r.Use(observability.OtelMiddleware("leetrank-judge"))
 
 	r.HandleFunc("/health", srv.healthHandler).Methods(http.MethodGet, http.MethodOptions)
+	r.HandleFunc("/healthz", srv.healthHandler).Methods(http.MethodGet, http.MethodOptions)
+	r.Handle("/metrics", promhttp.Handler()).Methods(http.MethodGet)
 	r.HandleFunc("/execute", srv.executeHandler).Methods(http.MethodPost, http.MethodOptions)
 
 	// Legacy alias kept for backward compatibility.
@@ -706,20 +784,20 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
-		log.Printf("Judge service listening on :%s", port)
+		logger.Info().Str("port", port).Msg("judge service listening")
 		if err := httpSrv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("ListenAndServe: %v", err)
+			logger.Fatal().Err(err).Msg("ListenAndServe failed")
 		}
 	}()
 
 	<-quit
-	log.Println("Shutting down judge service...")
+	logger.Info().Msg("shutting down judge service")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
 	if err := httpSrv.Shutdown(ctx); err != nil {
-		log.Fatalf("Graceful shutdown failed: %v", err)
+		logger.Fatal().Err(err).Msg("graceful shutdown failed")
 	}
-	log.Println("Judge service stopped.")
+	logger.Info().Msg("judge service stopped")
 }
