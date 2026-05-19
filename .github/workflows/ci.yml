@@ -5,6 +5,10 @@ on:
     branches: [main, master]
   pull_request:
     branches: [main, master]
+  # Weekly cadence keeps the audit job (and the rest of CI) honest
+  # even when the repo is quiet — Mondays 04:00 UTC (~11:00 ICT).
+  schedule:
+    - cron: '0 4 * * 1'
 
 concurrency:
   group: ci-${{ github.ref }}
