@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useAuth } from "@/hooks/useAuth";
-import { Plus, Trash2, Edit, Users, BookOpen, Trophy, Loader2, ShieldAlert } from "lucide-react";
+import { Plus, Trash2, Edit, Users, BookOpen, Loader2, ShieldAlert } from "lucide-react";
 import { getDifficultyBg } from "@/lib/utils";
 
 interface Problem {
@@ -32,7 +32,7 @@ interface UserItem {
 
 export default function AdminPage() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<"problems" | "users" | "contests">("problems");
+  const [activeTab, setActiveTab] = useState<"problems" | "users">("problems");
   const [problems, setProblems] = useState<Problem[]>([]);
   const [users, setUsers] = useState<UserItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -133,7 +133,6 @@ export default function AdminPage() {
             {[
               { key: "problems", label: "Problems", icon: BookOpen },
               { key: "users", label: "Users", icon: Users },
-              { key: "contests", label: "Contests", icon: Trophy },
             ].map((tab) => (
               <button
                 key={tab.key}
@@ -225,7 +224,7 @@ export default function AdminPage() {
                 </div>
               )}
             </div>
-          ) : activeTab === "users" ? (
+          ) : (
             users.length === 0 ? (
               <EmptyState icon={Users} title="No users found" description="Users will appear here once they register." />
             ) : (
@@ -252,12 +251,6 @@ export default function AdminPage() {
                 </table>
               </div>
             )
-          ) : (
-            <EmptyState
-              icon={Trophy}
-              title="Contest management coming soon"
-              description="This section is under construction. Check back in a future release."
-            />
           )}
         </div>
       </main>
