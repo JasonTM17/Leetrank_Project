@@ -7,6 +7,7 @@ Solve, judge, rank — across 30+ languages, with real-time leaderboards and con
 
 [![CI](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/ci.yml/badge.svg)](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/ci.yml)
 [![Docker Pulls](https://img.shields.io/docker/pulls/nguyenson1710/leetrank-app?logo=docker&label=pulls)](https://hub.docker.com/r/nguyenson1710/leetrank-app)
+[![GHCR](https://img.shields.io/badge/ghcr.io-jasontm17%2Fleetrank-blueviolet?logo=github)](https://github.com/JasonTM17?tab=packages&repo_name=Leetrank_Project)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Contributors](https://img.shields.io/github/contributors/JasonTM17/Leetrank_Project?logo=github)](https://github.com/JasonTM17/Leetrank_Project/graphs/contributors)
 [![Last Commit](https://img.shields.io/github/last-commit/JasonTM17/Leetrank_Project?logo=git)](https://github.com/JasonTM17/Leetrank_Project/commits/main)

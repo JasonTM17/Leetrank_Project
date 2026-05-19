@@ -1,4 +1,4 @@
-name: Docker Hub publish
+name: Container publish (Docker Hub + GHCR)
 
 on:
   push:
@@ -12,6 +12,8 @@ concurrency:
 
 permissions:
   contents: read
+  packages: write
+  id-token: write
 
 jobs:
   publish:
@@ -23,34 +25,50 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - service: app
+          - service: web
             context: .
             dockerfile: Dockerfile
-            image: nguyenson1710/leetrank-app
+            slug: web
           - service: api
             context: .
             dockerfile: apps/api/Dockerfile
-            image: nguyenson1710/leetrank-api
+            slug: api
           - service: auth
             context: .
             dockerfile: apps/auth/Dockerfile
-            image: nguyenson1710/leetrank-auth
-          - service: auth-go
+            slug: auth
+          - service: identity
             context: ./services/auth-go
             dockerfile: services/auth-go/Dockerfile
-            image: nguyenson1710/leetrank-auth-go
+            slug: identity
+          - service: submissions
+            context: ./services/submissions-go
+            dockerfile: services/submissions-go/Dockerfile
+            slug: submissions
+          - service: problems
+            context: ./services/problems-go
+            dockerfile: services/problems-go/Dockerfile
+            slug: problems
+          - service: leaderboard
+            context: ./services/leaderboard-rust
+            dockerfile: services/leaderboard-rust/Dockerfile
+            slug: leaderboard
+          - service: notifications
+            context: ./services/notifications-ruby
+            dockerfile: services/notifications-ruby/Dockerfile
+            slug: notifications
+          - service: analytics
+            context: ./services/analytics-python
+            dockerfile: services/analytics-python/Dockerfile
+            slug: analytics
+          - service: realtime
+            context: ./services/realtime-go
+            dockerfile: services/realtime-go/Dockerfile
+            slug: realtime
           - service: judge
             context: ./judge-service
             dockerfile: judge-service/Dockerfile
-            image: nguyenson1710/leetrank-judge
-          - service: submissions-go
-            context: ./services/submissions-go
-            dockerfile: services/submissions-go/Dockerfile
-            image: nguyenson1710/leetrank-submissions-go
-          - service: problems-go
-            context: ./services/problems-go
-            dockerfile: services/problems-go/Dockerfile
-            image: nguyenson1710/leetrank-problems-go
+            slug: judge
 
     steps:
       - uses: actions/checkout@v6
@@ -65,18 +83,27 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Compute tags
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute tags (dual registry)
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ matrix.image }}
+          images: |
+            nguyenson1710/leetrank-${{ matrix.slug }}
+            ghcr.io/jasontm17/leetrank-${{ matrix.slug }}
           tags: |
             type=ref,event=branch
             type=ref,event=tag
             type=sha,format=short
             type=raw,value=latest,enable={{is_default_branch}}
 
-      - name: Build & push
+      - name: Build & push (Docker Hub + GHCR)
         uses: docker/build-push-action@v7
         with:
           context: ${{ matrix.context }}
@@ -91,7 +118,10 @@ jobs:
           sbom: true
 
       - name: Verify image tag landed on Docker Hub
-        run: docker manifest inspect ${{ matrix.image }}:latest
+        run: docker manifest inspect nguyenson1710/leetrank-${{ matrix.slug }}:latest
+
+      - name: Verify image tag landed on GHCR
+        run: docker manifest inspect ghcr.io/jasontm17/leetrank-${{ matrix.slug }}:latest
 
       # Note: peter-evans/dockerhub-description was removed — the access
       # token used by CI doesn't carry the legacy "Repository Admin"
