@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/providers/theme-provider";
+import { CommandPalette } from "@/components/layout/command-palette";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -55,6 +56,7 @@ export default function RootLayout({
             Skip to content
           </a>
           {children}
+          <CommandPalette />
           <Toaster />
         </ThemeProvider>
       </body>

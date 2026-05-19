@@ -100,57 +100,67 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
     <>
       <Navbar />
       <main id="main-content" className="flex-1">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-12">
-          <Breadcrumb
-            className="mb-6"
-            items={[
-              { label: "Home", href: "/" },
-              { label: "Users" },
-              { label: user.username },
-            ]}
-          />
+        <section className="relative overflow-hidden border-b">
+          <div className="absolute inset-0 bg-grid opacity-30" aria-hidden="true" />
+          <div className="absolute inset-0 bg-radial-fade" aria-hidden="true" />
+          <div className="absolute inset-x-0 -top-16 h-64 bg-gradient-to-b from-primary/15 to-transparent blur-3xl" aria-hidden="true" />
 
-          {/* Header */}
-          <div className="flex flex-col md:flex-row items-start md:items-center gap-6 animate-fade-in-up">
-            <div className="h-24 w-24 rounded-full bg-gradient-to-br from-primary to-primary/40 flex items-center justify-center shadow-glow shrink-0">
-              <span className="text-3xl font-bold text-primary-foreground">
-                {user.username[0].toUpperCase()}
-              </span>
-            </div>
-            <div className="flex-1">
-              <h1 className="text-3xl font-bold">{user.username}</h1>
-              {user.bio && <p className="mt-1 text-muted-foreground">{user.bio}</p>}
-              <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
-                <Calendar className="h-4 w-4" />
-                <span>Joined {new Date(user.createdAt).toLocaleDateString("en-US", { month: "long", year: "numeric" })}</span>
+          <div className="relative mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-12">
+            <Breadcrumb
+              className="mb-6"
+              items={[
+                { label: "Home", href: "/" },
+                { label: "Users" },
+                { label: user.username },
+              ]}
+            />
+
+            {/* Profile header */}
+            <div className="flex flex-col md:flex-row items-start md:items-center gap-6 animate-fade-in-up">
+              <div className="h-24 w-24 rounded-2xl bg-gradient-to-br from-primary via-primary/60 to-primary/30 flex items-center justify-center shadow-glow ring-4 ring-primary/10 shrink-0">
+                <span className="text-3xl font-bold text-primary-foreground">
+                  {user.username[0].toUpperCase()}
+                </span>
+              </div>
+              <div className="flex-1">
+                <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
+                  <span className="gradient-text">{user.username}</span>
+                </h1>
+                {user.bio && <p className="mt-2 text-muted-foreground text-base max-w-2xl leading-relaxed">{user.bio}</p>}
+                <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
+                  <Calendar className="h-4 w-4" aria-hidden="true" />
+                  <span>Joined {new Date(user.createdAt).toLocaleDateString("en-US", { month: "long", year: "numeric" })}</span>
+                </div>
               </div>
             </div>
           </div>
+        </section>
 
+        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-10">
           {/* Stats */}
-          <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Card>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Card className="hover:shadow-elevated hover:-translate-y-0.5 transition-all duration-200">
               <CardContent className="p-4">
                 <div className="text-xs text-muted-foreground uppercase tracking-wide">Solved</div>
                 <div className="mt-1 text-3xl font-bold gradient-text">{stats.solved}</div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="hover:shadow-elevated hover:-translate-y-0.5 transition-all duration-200">
               <CardContent className="p-4">
                 <div className="text-xs text-muted-foreground uppercase tracking-wide">Submissions</div>
-                <div className="mt-1 text-3xl font-bold">{stats.totalSubmissions}</div>
+                <div className="mt-1 text-3xl font-bold tabular-nums">{stats.totalSubmissions}</div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="hover:shadow-elevated hover:-translate-y-0.5 transition-all duration-200">
               <CardContent className="p-4">
                 <div className="text-xs text-muted-foreground uppercase tracking-wide">Acceptance</div>
-                <div className="mt-1 text-3xl font-bold">{acceptanceRate}%</div>
+                <div className="mt-1 text-3xl font-bold tabular-nums">{acceptanceRate}%</div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="hover:shadow-elevated hover:-translate-y-0.5 transition-all duration-200">
               <CardContent className="p-4">
                 <div className="text-xs text-muted-foreground uppercase tracking-wide">Accepted</div>
-                <div className="mt-1 text-3xl font-bold text-success">{stats.accepted}</div>
+                <div className="mt-1 text-3xl font-bold text-success tabular-nums">{stats.accepted}</div>
               </CardContent>
             </Card>
           </div>
@@ -176,7 +186,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
                     </div>
                     <div className="h-2 rounded-full bg-muted overflow-hidden">
                       <div
-                        className={`h-full ${row.color}`}
+                        className={`h-full ${row.color} motion-safe:transition-all duration-500`}
                         style={{ width: `${stats.solved === 0 ? 0 : (row.count / Math.max(stats.solved, 1)) * 100}%` }}
                       />
                     </div>
@@ -198,15 +208,18 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
                   <div className="space-y-2">
                     {recentSubmissions.slice(0, 6).map((s) => (
                       <div key={s.id} className="flex items-center justify-between gap-3 text-sm">
-                        <Link href={`/problems/${s.problem.slug}`} className="font-medium hover:text-primary truncate">
+                        <Link href={`/problems/${s.problem.slug}`} className="font-medium hover:text-primary truncate transition-colors">
                           {s.problem.title}
                         </Link>
                         <div className="flex items-center gap-2 shrink-0">
                           <Badge className={getDifficultyBg(s.problem.difficulty) + " text-xs"}>
                             {s.problem.difficulty}
                           </Badge>
-                          <span className={`text-xs ${s.status === "accepted" ? "text-success" : "text-destructive"}`}>
-                            {s.status === "accepted" ? "AC" : s.status === "wrong_answer" ? "WA" : "RE"}
+                          <span className="inline-flex items-center gap-1 text-xs">
+                            <span aria-hidden="true" className={`inline-block h-1.5 w-1.5 rounded-full ${s.status === "accepted" ? "bg-success" : "bg-destructive"}`} />
+                            <span className={`${s.status === "accepted" ? "text-success" : "text-destructive"}`}>
+                              {s.status === "accepted" ? "AC" : s.status === "wrong_answer" ? "WA" : "RE"}
+                            </span>
                           </span>
                           <span className="text-xs text-muted-foreground">{formatRelativeTime(s.createdAt)}</span>
                         </div>

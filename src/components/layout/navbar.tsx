@@ -94,18 +94,24 @@ export function Navbar() {
 
           {/* Right: search hint + theme + user */}
           <div className="hidden md:flex items-center gap-2">
-            {/* Search placeholder with ⌘K hint */}
-            <div
-              title="Coming soon: command palette"
-              className="flex items-center gap-2 rounded-md border border-border/60 bg-muted/40 px-3 py-1.5 text-sm text-muted-foreground cursor-default hover:border-primary/30 hover:bg-muted/60 motion-safe:transition-all duration-200 select-none"
-              aria-label="Search (coming soon: command palette)"
+            {/* Search trigger — opens the global command palette */}
+            <button
+              type="button"
+              onClick={() => {
+                window.dispatchEvent(
+                  new KeyboardEvent("keydown", { key: "k", metaKey: true, ctrlKey: true, bubbles: true }),
+                );
+              }}
+              title="Open command palette (⌘K)"
+              className="flex items-center gap-2 rounded-md border border-border/60 bg-muted/40 px-3 py-1.5 text-sm text-muted-foreground hover:border-primary/30 hover:bg-muted/60 motion-safe:transition-all duration-200 select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label="Open command palette"
             >
               <Search className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
               <span className="hidden lg:inline text-xs">Search…</span>
               <kbd className="ml-1 hidden lg:inline-flex items-center gap-0.5 rounded border border-border/60 bg-background px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground/70">
                 ⌘K
               </kbd>
-            </div>
+            </button>
 
             <ThemeToggle />
 
