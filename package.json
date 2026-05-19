@@ -26,7 +26,8 @@
     "playwright:install": "playwright install --with-deps",
     "load:smoke": "node scripts/load-test.mjs --scenario smoke",
     "load:stress": "node scripts/load-test.mjs --scenario stress",
-    "load:contest": "node scripts/load-test.mjs --scenario contest-storm"
+    "load:contest": "node scripts/load-test.mjs --scenario contest-storm",
+    "openapi:lint": "redocly lint apps/api/openapi.yaml services/auth-go/openapi.yaml docs/openapi.yaml"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
