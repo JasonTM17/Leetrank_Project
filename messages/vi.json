@@ -240,7 +240,18 @@
     "tooltipUpcoming": "Mở lúc {time}",
     "tooltipEnded": "Kết quả cuối cùng và vị trí của bạn",
     "breadcrumbHome": "Trang chủ",
-    "breadcrumbContests": "Cuộc thi"
+    "breadcrumbContests": "Cuộc thi",
+    "divisionDiv1": "Hạng 1",
+    "divisionDiv2": "Hạng 2",
+    "divisionDiv3": "Hạng 3",
+    "divisionOpen": "Mở",
+    "divisionAria": "Hạng đấu: {div}",
+    "ratingDelta": "Thay đổi rating",
+    "ratingHistory": "Lịch sử rating",
+    "rating": "Rating",
+    "maxRating": "Rating cao nhất",
+    "finalizeRating": "Chốt rating",
+    "ratingFinalized": "Đã chốt rating"
   },
   "leaderboard": {
     "title": "Bảng xếp hạng",

@@ -240,7 +240,18 @@
     "tooltipUpcoming": "Opens at {time}",
     "tooltipEnded": "Final standings + your placement",
     "breadcrumbHome": "Home",
-    "breadcrumbContests": "Contests"
+    "breadcrumbContests": "Contests",
+    "divisionDiv1": "Div. 1",
+    "divisionDiv2": "Div. 2",
+    "divisionDiv3": "Div. 3",
+    "divisionOpen": "Open",
+    "divisionAria": "Division: {div}",
+    "ratingDelta": "Rating delta",
+    "ratingHistory": "Rating history",
+    "rating": "Rating",
+    "maxRating": "Max rating",
+    "finalizeRating": "Finalize rating",
+    "ratingFinalized": "Rating finalized"
   },
   "leaderboard": {
     "title": "Leaderboard",
