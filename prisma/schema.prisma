@@ -39,6 +39,8 @@ model User {
   chatMessages      ChatMessage[]
   ratingChanges     RatingChange[]
   dailyChallengeStreak DailyChallengeStreak?
+  achievements      UserAchievement[]
+  studyPlans        UserStudyPlan[]
 
   @@index([role])
   @@index([rating(sort: Desc)])
@@ -81,6 +83,7 @@ model Problem {
   discussions Discussion[]
   bookmarks   Bookmark[]
   dailyChallenges DailyChallenge[]
+  studyPlans  StudyPlanProblem[]
 
   @@index([difficulty, order])
   @@index([order])
@@ -126,10 +129,34 @@ model Submission {
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
 
+  events  SubmissionEvent[]
+
   @@index([userId, createdAt])
   @@index([userId, problemId, status])
   @@index([problemId, status])
   @@index([status, createdAt])
+}
+
+// LeetCode-style code playback. One row per recorded editor event captured
+// during a coding session and flushed to the backend on submit. `ts` is a
+// millisecond offset from the session start so playback math is timezone-
+// and clock-skew independent. `payload` holds the event-specific shape:
+//   - keystroke: { range, text, rangeLength }
+//   - paste:     { range, text, rangeLength }
+//   - select:    { selection: { startLineNumber, startColumn, endLineNumber, endColumn } }
+//   - snapshot:  { code }
+// Events are append-only; deletion cascades with the parent submission.
+model SubmissionEvent {
+  id           String   @id @default(cuid())
+  submissionId String
+  type         String
+  payload      Json
+  ts           Int
+  createdAt    DateTime @default(now())
+
+  submission Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  @@index([submissionId, ts])
 }
 
 model Contest {
@@ -312,4 +339,106 @@ model RatingChange {
   @@unique([contestId, userId])
   @@index([userId, createdAt(sort: Desc)])
   @@index([contestId])
+}
+
+// Gamification: HackerRank-parity achievement catalog. Each row is a
+// publicly-displayable badge with a machine-readable criteria spec consumed
+// by `src/lib/achievements.ts`. `criteriaJson` stores the type + threshold
+// (e.g. `{ "type": "problemsSolved", "threshold": 100 }`) so seeded rows
+// can be tweaked without code changes. Hidden achievements (`isHidden`) are
+// only revealed once earned.
+model Achievement {
+  id           String   @id @default(cuid())
+  slug         String   @unique
+  title        String
+  description  String
+  icon         String
+  category     String
+  points       Int      @default(0)
+  criteriaJson Json
+  isHidden     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  users UserAchievement[]
+
+  @@index([category])
+}
+
+// Per-user earned achievement record. `progress` is an optional integer that
+// lets the engine show "37 / 50" toward incremental badges before they fire;
+// once the threshold is reached the row also marks `earnedAt`. Composite key
+// guarantees idempotent re-evaluation.
+model UserAchievement {
+  userId        String
+  achievementId String
+  earnedAt      DateTime @default(now())
+  progress      Int      @default(0)
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@id([userId, achievementId])
+  @@index([userId, earnedAt(sort: Desc)])
+  @@index([achievementId])
+}
+
+// LeetCode-style curated study plan: an ordered set of problems grouped into
+// daily lessons. `slug` is URL-safe and stable. `isOfficial` distinguishes the
+// six baseline plans (Top Interview 150, Easy Collection, Dynamic Programming,
+// Graph Theory, Two Pointers, Binary Search) from any user-authored plans
+// added later.
+model StudyPlan {
+  id              String   @id @default(cuid())
+  slug            String   @unique
+  title           String
+  description     String
+  difficulty      String   // "Easy" | "Medium" | "Hard" | "Mixed"
+  estimatedHours  Int      @default(20)
+  coverImage      String?
+  isOfficial      Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  problems StudyPlanProblem[]
+  users    UserStudyPlan[]
+
+  @@index([isOfficial, createdAt])
+  @@index([difficulty])
+}
+
+// Junction model — `order` is the global position inside the plan, `dayNumber`
+// groups problems into LeetCode-style daily lessons (1, 2, 3, ...). Composite
+// PK on (studyPlanId, problemId) prevents a problem appearing twice in the
+// same plan.
+model StudyPlanProblem {
+  studyPlanId String
+  problemId   String
+  order       Int
+  dayNumber   Int
+
+  studyPlan StudyPlan @relation(fields: [studyPlanId], references: [id], onDelete: Cascade)
+  problem   Problem   @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@id([studyPlanId, problemId])
+  @@index([studyPlanId, order])
+  @@index([studyPlanId, dayNumber])
+  @@index([problemId])
+}
+
+// Per-user enrollment record. Idempotent start = upsert on the composite PK.
+// `completedAt` flips when every problem in the plan has at least one accepted
+// submission from the user; `lastActivityAt` is touched whenever the user
+// solves a problem in the plan, so dashboards can sort by recency.
+model UserStudyPlan {
+  userId         String
+  studyPlanId    String
+  startedAt      DateTime  @default(now())
+  completedAt    DateTime?
+  lastActivityAt DateTime  @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  studyPlan StudyPlan @relation(fields: [studyPlanId], references: [id], onDelete: Cascade)
+
+  @@id([userId, studyPlanId])
+  @@index([userId, lastActivityAt(sort: Desc)])
+  @@index([studyPlanId])
 }
