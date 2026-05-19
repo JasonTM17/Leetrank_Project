@@ -1,0 +1,77 @@
+# Files NOT to ship into Docker build contexts. Without this, the entire
+# repo (including .git, node_modules, build artefacts, scripts, docs)
+# gets uploaded to the daemon — slow, leaky, and breaks on stale pnpm
+# binary symlinks.
+
+# Dependencies — every Dockerfile re-installs from package.json
+**/node_modules
+
+# Build artefacts
+**/.next
+**/dist
+**/out
+**/build
+**/.turbo
+**/.tsbuildinfo
+**/*.tsbuildinfo
+
+# Test artefacts
+**/coverage
+**/playwright-report
+**/test-results
+**/load-test-results
+
+# Version control
+.git
+.github
+.gitignore
+.gitattributes
+
+# IDE
+.idea
+.vscode
+.cursor
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local-only files
+.env
+.env.*
+!.env.example
+.envrc
+
+# Docs / private
+.claude
+.claude-private
+.omc
+docs/screenshots
+*.md
+!README.md
+
+# Docker artefacts
+docker-compose*.yml
+Dockerfile*
+.dockerignore
+
+# CI artefacts
+.github
+
+# Lockfiles a service doesn't need (each service installs its own)
+pnpm-lock.yaml
+
+# Random
+*.log
+.next-env.d.ts
+prisma/dev.db
+prisma/dev.db-journal
+
+# E2E + load test infra (not runtime)
+e2e
+scripts
+infra
+
+# IDE / editor
+*.swp
+*.swo

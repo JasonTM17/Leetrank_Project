@@ -1,0 +1,5 @@
+# Next.js convention: this directory ships as static assets at the site root.
+# Currently empty — robots.ts and sitemap.ts are generated dynamically from
+# src/app/. The .gitkeep ensures the folder ships into Docker build contexts
+# so the multi-stage Dockerfile's `COPY /app/public ./public` step doesn't
+# fail on a clean checkout.
