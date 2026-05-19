@@ -49,11 +49,22 @@ async fn main() -> anyhow::Result<()> {
         .route("/v1/leaderboard", get(handlers::list_leaderboard))
         .route("/v1/leaderboard/user/:username", get(handlers::user_rank))
         .route("/v1/leaderboard/contest/:slug", get(handlers::contest_leaderboard))
+        .route("/v1/leaderboard/:period", get(handlers::period_leaderboard))
         .route("/v1/leaderboard/recompute", post(handlers::recompute))
         .layer(CompressionLayer::new())
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http())
-        .with_state(state);
+        .with_state(state.clone());
+
+    // Background recompute job: refreshes weekly + monthly ZSETs every
+    // 60s from postgres so the FE always sees a fresh ranking without
+    // having to write to redis on the submission hot path.
+    {
+        let bg_state = state.clone();
+        tokio::spawn(async move {
+            run_period_recompute_loop(bg_state).await;
+        });
+    }
 
     let addr: SocketAddr = format!("0.0.0.0:{}", cfg.port).parse()?;
     tracing::info!(port = %cfg.port, "leetrank-leaderboard-rust started");

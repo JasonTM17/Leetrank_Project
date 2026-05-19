@@ -8,7 +8,8 @@
 use axum::{body::Body, http::Request, http::StatusCode};
 use http_body_util::BodyExt;
 use leaderboard_rust::{
-    decode_contest_points, empty_list_response, encode_contest_score, health_router,
+    canonical_period, decode_contest_points, empty_list_response, encode_contest_score,
+    health_router,
 };
 use tower::ServiceExt;
 
@@ -102,4 +103,19 @@ fn contest_score_round_trips_points() {
 }
 
 // ---- period parsing -----------------------------------------------------
-// Covered by feat(leaderboard): weekly + monthly periods.
+
+#[test]
+fn period_parsing_accepts_known_aliases() {
+    assert_eq!(canonical_period("weekly"), Some("weekly"));
+    assert_eq!(canonical_period("monthly"), Some("monthly"));
+    assert_eq!(canonical_period("all-time"), Some("all-time"));
+    assert_eq!(canonical_period("alltime"), Some("all-time"));
+    assert_eq!(canonical_period("all_time"), Some("all-time"));
+}
+
+#[test]
+fn period_parsing_rejects_unknown() {
+    assert_eq!(canonical_period(""), None);
+    assert_eq!(canonical_period("daily"), None);
+    assert_eq!(canonical_period("yearly"), None);
+}

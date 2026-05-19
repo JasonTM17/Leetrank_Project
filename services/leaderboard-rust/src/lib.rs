@@ -23,6 +23,17 @@ pub fn decode_contest_points(composite: f64) -> i64 {
     (composite / CONTEST_SCORE_SCALE).ceil() as i64
 }
 
+/// Parse a period string the same way the handler does. Returns the
+/// canonical key the service uses (`weekly`, `monthly`, `all-time`).
+pub fn canonical_period(s: &str) -> Option<&'static str> {
+    match s {
+        "weekly" => Some("weekly"),
+        "monthly" => Some("monthly"),
+        "all-time" | "alltime" | "all_time" => Some("all-time"),
+        _ => None,
+    }
+}
+
 /// Stateless router that mirrors the `/healthz` shape served by the
 /// production binary. Tests can drive it via `tower::ServiceExt::oneshot`.
 pub fn health_router() -> Router {

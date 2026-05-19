@@ -5,6 +5,8 @@ use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 
 pub const ZSET_KEY: &str = "leaderboard:global";
+pub const ZSET_KEY_WEEKLY: &str = "leaderboard:weekly";
+pub const ZSET_KEY_MONTHLY: &str = "leaderboard:monthly";
 
 /// Composite-score scale used by contest ZSETs.
 ///
@@ -144,4 +146,103 @@ pub async fn list_contest_top(
 }
 
 // ---- period leaderboards (weekly + monthly + all-time) ------------------
-// Implemented in feat(leaderboard): weekly + monthly periods.
+
+#[derive(Debug, Clone, Copy)]
+pub enum Period {
+    Weekly,
+    Monthly,
+    AllTime,
+}
+
+impl Period {
+    pub fn parse(s: &str) -> Option<Self> {
+        match s {
+            "weekly" => Some(Self::Weekly),
+            "monthly" => Some(Self::Monthly),
+            "all-time" | "alltime" | "all_time" => Some(Self::AllTime),
+            _ => None,
+        }
+    }
+
+    pub fn key(self) -> &'static str {
+        match self {
+            Self::Weekly => ZSET_KEY_WEEKLY,
+            Self::Monthly => ZSET_KEY_MONTHLY,
+            Self::AllTime => ZSET_KEY,
+        }
+    }
+
+    pub fn since_sql(self) -> Option<&'static str> {
+        match self {
+            Self::Weekly => Some("NOW() - INTERVAL '7 days'"),
+            Self::Monthly => Some("NOW() - INTERVAL '30 days'"),
+            Self::AllTime => None,
+        }
+    }
+}
+
+pub async fn list_period_top(
+    redis: &mut ConnectionManager,
+    period: Period,
+    limit: usize,
+    offset: usize,
+) -> AppResult<Vec<LeaderboardEntry>> {
+    let start = offset as isize;
+    let stop = (offset + limit).saturating_sub(1) as isize;
+    let raw: Vec<(String, f64)> = redis
+        .zrevrange_withscores(period.key(), start, stop)
+        .await?;
+    let entries = raw
+        .into_iter()
+        .enumerate()
+        .map(|(i, (username, score))| LeaderboardEntry {
+            rank: (offset + i + 1) as u64,
+            username,
+            score,
+        })
+        .collect();
+    Ok(entries)
+}
+
+pub async fn period_total(redis: &mut ConnectionManager, period: Period) -> AppResult<u64> {
+    let count: u64 = redis.zcard(period.key()).await?;
+    Ok(count)
+}
+
+/// Recompute one period ZSET from postgres. Counts distinct accepted
+/// problem ids per user inside the configured window.
+pub async fn recompute_period(
+    pg: &PgPool,
+    redis: &mut ConnectionManager,
+    period: Period,
+) -> AppResult<u64> {
+    let sql = match period.since_sql() {
+        Some(window) => format!(
+            r#"SELECT u."username", COUNT(DISTINCT s."problemId")::bigint AS solved
+               FROM "Submission" s
+               JOIN "User" u ON u.id = s."userId"
+               WHERE s.status = 'accepted' AND s."createdAt" >= {window}
+               GROUP BY u."username""#
+        ),
+        None => r#"SELECT u."username", COUNT(DISTINCT s."problemId")::bigint AS solved
+                   FROM "Submission" s
+                   JOIN "User" u ON u.id = s."userId"
+                   WHERE s.status = 'accepted'
+                   GROUP BY u."username""#
+            .to_string(),
+    };
+
+    let rows = sqlx::query_as::<_, (String, i64)>(&sql).fetch_all(pg).await?;
+
+    let _: () = redis.del(period.key()).await?;
+    let mut count: u64 = 0;
+    for chunk in rows.chunks(500) {
+        let mut pipe = redis::pipe();
+        for (username, score) in chunk {
+            pipe.zadd(period.key(), username, *score as f64);
+            count += 1;
+        }
+        let _: () = pipe.query_async(redis).await?;
+    }
+    Ok(count)
+}

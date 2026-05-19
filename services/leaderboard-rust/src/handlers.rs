@@ -133,7 +133,57 @@ pub async fn contest_leaderboard(
 }
 
 // ---- period leaderboards (weekly|monthly|all-time) -------------------
-// Implemented in feat(leaderboard): weekly + monthly periods.
+
+#[derive(Debug, Deserialize)]
+pub struct PeriodQuery {
+    #[serde(default)]
+    pub period: Option<String>,
+    #[serde(default = "default_limit")]
+    pub limit: usize,
+    #[serde(default)]
+    pub offset: usize,
+}
+
+#[derive(Debug, Serialize)]
+pub struct PeriodResponse {
+    pub period: String,
+    pub total: u64,
+    pub limit: usize,
+    pub offset: usize,
+    pub entries: Vec<cache::LeaderboardEntry>,
+}
+
+pub async fn period_leaderboard(
+    State(state): State<AppState>,
+    Path(period): Path<String>,
+    Query(q): Query<PeriodQuery>,
+) -> AppResult<Json<PeriodResponse>> {
+    // Path takes precedence over the optional ?period= override; both
+    // exist so the FE can hit either /v1/leaderboard/weekly or
+    // /v1/leaderboard/all-time?period=monthly without re-routing.
+    let chosen = q.period.as_deref().unwrap_or(&period);
+    let parsed = cache::Period::parse(chosen)
+        .ok_or_else(|| AppError::BadRequest(format!("unknown period: {chosen}")))?;
+
+    let limit = q.limit.clamp(1, 100);
+    let offset = q.offset.min(100_000);
+
+    let mut redis = state.redis.clone();
+    let total = cache::period_total(&mut redis, parsed).await?;
+    let entries = cache::list_period_top(&mut redis, parsed, limit, offset).await?;
+
+    metrics::req_counter()
+        .with_label_values(&["GET /v1/leaderboard/period", "200"])
+        .inc();
+
+    Ok(Json(PeriodResponse {
+        period: chosen.to_string(),
+        total,
+        limit,
+        offset,
+        entries,
+    }))
+}
 
 pub async fn recompute(
     State(state): State<AppState>,
