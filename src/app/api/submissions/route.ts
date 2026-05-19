@@ -29,7 +29,18 @@ export async function GET(request: NextRequest) {
         orderBy: { createdAt: "desc" },
         skip: (page - 1) * limit,
         take: limit,
-        include: {
+        // Listing view: exclude heavy code/output/error TEXT columns to keep
+        // the response small. Detail page (/api/submissions/[id]) hydrates
+        // them on demand for the author. See ADR 0028.
+        select: {
+          id: true,
+          userId: true,
+          problemId: true,
+          language: true,
+          status: true,
+          runtime: true,
+          memory: true,
+          createdAt: true,
           problem: { select: { id: true, title: true, slug: true, difficulty: true } },
         },
       }),
