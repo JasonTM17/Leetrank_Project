@@ -50,8 +50,7 @@ export async function GET(
       totalPoints,
     });
   } catch (err) {
-    logger.error({
-      msg: "user_achievements_list_failed",
+    logger.error("user_achievements_list_failed", {
       err: err instanceof Error ? err.message : String(err),
     });
     return Response.json(

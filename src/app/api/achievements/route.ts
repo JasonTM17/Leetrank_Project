@@ -71,8 +71,7 @@ export async function GET(_request: NextRequest) {
       total: items.length,
     });
   } catch (err) {
-    logger.error({
-      msg: "achievements_list_failed",
+    logger.error("achievements_list_failed", {
       err: err instanceof Error ? err.message : String(err),
     });
     return Response.json(

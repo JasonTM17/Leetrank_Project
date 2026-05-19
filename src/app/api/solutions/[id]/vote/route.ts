@@ -83,7 +83,7 @@ export async function POST(
     )) as Array<{ value: number }>;
     const existing = existingRows[0];
 
-    let userVote = parsed.data.value;
+    let userVote: 1 | -1 | 0 = parsed.data.value;
 
     if (!existing) {
       await raw.$executeRawUnsafe(

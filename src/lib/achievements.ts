@@ -243,7 +243,7 @@ export async function evaluateAchievements(
     return newlyAwarded;
   } catch (err) {
     // Non-fatal — never break a submission accept path because of badges.
-    logger.error({ msg: "evaluateAchievements_failed", userId, err: String(err) });
+    logger.error("evaluateAchievements_failed", { userId, err: String(err) });
     return [];
   }
 }
