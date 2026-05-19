@@ -7,6 +7,9 @@ import { Footer } from "@/components/layout/footer";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
+import { Tooltip } from "@/components/ui/tooltip";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Calendar, Clock, Users, Loader2 } from "lucide-react";
 
 interface Contest {
@@ -33,13 +36,30 @@ export default function ContestsPage() {
   }, []);
 
   function getStatusBadge(status: string) {
+    // Coloured dot prefix doubles as the colour-blind a11y signal
+    // (matches the pattern in components/problem/problem-description.tsx).
+    const dot = (cls: string) => (
+      <span aria-hidden="true" className={`mr-1.5 inline-block h-2 w-2 rounded-full ${cls}`} />
+    );
     switch (status) {
       case "active":
-        return <Badge variant="success">Live</Badge>;
+        return (
+          <Badge variant="success" className="inline-flex items-center">
+            {dot("bg-green-500")}Live
+          </Badge>
+        );
       case "upcoming":
-        return <Badge variant="warning">Upcoming</Badge>;
+        return (
+          <Badge variant="warning" className="inline-flex items-center">
+            {dot("bg-amber-500")}Upcoming
+          </Badge>
+        );
       default:
-        return <Badge variant="secondary">Ended</Badge>;
+        return (
+          <Badge variant="secondary" className="inline-flex items-center">
+            {dot("bg-muted-foreground/60")}Ended
+          </Badge>
+        );
     }
   }
 
@@ -53,11 +73,22 @@ export default function ContestsPage() {
     });
   }
 
+  function ctaTooltip(status: string, startTime: string) {
+    if (status === "active") return "Limited to 10 join requests per minute";
+    if (status === "upcoming") return "Opens at " + formatDateTime(startTime);
+    return "Final standings + your placement";
+  }
+
   return (
     <>
       <Navbar />
       <main className="flex-1">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-8">
+          <Breadcrumb
+            className="mb-4"
+            items={[{ label: "Home", href: "/" }, { label: "Contests" }]}
+          />
+
           <div className="mb-8">
             <h1 className="text-3xl font-bold">Contests</h1>
             <p className="text-muted-foreground mt-1">Compete with others and test your skills under pressure</p>
@@ -68,10 +99,11 @@ export default function ContestsPage() {
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : contests.length === 0 ? (
-            <div className="text-center py-20">
-              <Calendar className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
-              <p className="text-muted-foreground">No contests available yet. Check back soon!</p>
-            </div>
+            <EmptyState
+              icon={Calendar}
+              title="No contests available yet"
+              description="New contests are posted weekly. Bookmark this page or check back soon."
+            />
           ) : (
             <div className="space-y-4">
               {contests.map((contest) => (
@@ -97,11 +129,13 @@ export default function ContestsPage() {
                           </div>
                         </div>
                       </div>
-                      <Link href={`/contests/${contest.slug}`}>
-                        <Button variant={contest.status === "active" ? "default" : "outline"} size="sm">
-                          {contest.status === "active" ? "Join Now" : contest.status === "upcoming" ? "View Details" : "View Results"}
-                        </Button>
-                      </Link>
+                      <Tooltip content={ctaTooltip(contest.status, contest.startTime)} side="left">
+                        <Link href={`/contests/${contest.slug}`}>
+                          <Button variant={contest.status === "active" ? "default" : "outline"} size="sm">
+                            {contest.status === "active" ? "Join Now" : contest.status === "upcoming" ? "View Details" : "View Results"}
+                          </Button>
+                        </Link>
+                      </Tooltip>
                     </div>
                   </CardContent>
                 </Card>
