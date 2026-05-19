@@ -114,6 +114,7 @@ func Router(pool *pgxpool.Pool, ks *jwks.KeyStore) http.Handler {
 	r.Post("/reset-password", h.resetPassword)
 	r.Post("/verify-email", h.verifyEmail)
 	r.Post("/resend-verification", h.resendVerification)
+	r.Get("/audit-log", h.auditLog)
 	r.Get("/sessions", notImplemented) // Session model not yet in schema
 	return r
 }
@@ -267,6 +268,12 @@ func (h *handler) register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Issue an email-verification token alongside the user. In dev we
+	// echo the plaintext back; in prod the link is delivered via email.
+	verifyPlain, _, _ := issueEmailVerification(ctx, h.pool, id)
+	h.audit(ctx, id, auditActionRegister, httpx.ClientIP(r), r.UserAgent(),
+		map[string]any{"email": req.Email, "username": req.Username})
+
 	token, err := h.ks.Sign(id, "user", jwtAudience, jwks.AccessTTL)
 	if err != nil {
 		httpx.JSON(w, http.StatusInternalServerError, map[string]string{"error": "internal server error"})
@@ -281,7 +288,7 @@ func (h *handler) register(w http.ResponseWriter, r *http.Request) {
 
 	setSessionCookie(w, token)
 	setRefreshCookie(w, refresh)
-	httpx.JSON(w, http.StatusCreated, map[string]any{
+	resp := map[string]any{
 		"user": userResponse{
 			ID:        id,
 			Email:     req.Email,
@@ -292,7 +299,11 @@ func (h *handler) register(w http.ResponseWriter, r *http.Request) {
 		"token":        token,
 		"refreshToken": refresh,
 		"expiresIn":    int(jwks.AccessTTL.Seconds()),
-	})
+	}
+	if verifyPlain != "" && isDevReturnTokens() {
+		resp["verifyToken"] = verifyPlain
+	}
+	httpx.JSON(w, http.StatusCreated, resp)
 }
 
 // ── login ─────────────────────────────────────────────────────────────────────
@@ -379,6 +390,7 @@ func (h *handler) login(w http.ResponseWriter, r *http.Request) {
 	// Successful login — record + clear any stale lockout row.
 	_ = recordLoginAttempt(ctx, h.pool, accountKey, id, ip, ua, true)
 	_ = clearLockout(ctx, h.pool, accountKey)
+	h.audit(ctx, id, auditActionLogin, ip, ua, nil)
 
 	token, err := h.ks.Sign(id, role, jwtAudience, jwks.AccessTTL)
 	if err != nil {
@@ -423,6 +435,11 @@ func (h *handler) maybeLockAccount(ctx context.Context, identifier string, w htt
 	if err != nil {
 		return
 	}
+	h.audit(ctx, "", auditActionAccountLocked, "", "", map[string]any{
+		"identifier":  identifier,
+		"failures":    count,
+		"lockedUntil": until.Format(time.RFC3339),
+	})
 	w.Header().Set("Retry-After", strconv.Itoa(int(time.Until(until).Seconds())+1))
 }
 
@@ -469,6 +486,14 @@ func (h *handler) logout(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 		_ = h.ks.RevokeRefresh(ctx, c.Value)
+	}
+	// Best-effort audit — pull subject off the session cookie when present.
+	if c, err := r.Cookie(cookieName); err == nil && c.Value != "" {
+		if claims, err := h.ks.Verify(c.Value, jwtAudience); err == nil {
+			ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+			defer cancel()
+			h.audit(ctx, claims.Subject, auditActionLogout, httpx.ClientIP(r), r.UserAgent(), nil)
+		}
 	}
 	clearSessionCookie(w)
 	clearRefreshCookie(w)
@@ -582,6 +607,8 @@ func (h *handler) changePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	h.audit(ctx, claims.Subject, auditActionPasswordChange, httpx.ClientIP(r), r.UserAgent(),
+		map[string]any{"via": "self_service"})
 	httpx.JSON(w, http.StatusOK, map[string]bool{"ok": true})
 }
 

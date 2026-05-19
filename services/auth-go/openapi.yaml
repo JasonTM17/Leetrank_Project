@@ -324,6 +324,48 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
 
+  /v1/auth/audit-log:
+    get:
+      tags: [Auth]
+      summary: Inspect the caller's audit log
+      description: |
+        Returns the authenticated user's last 50 audit entries
+        (login, logout, password_change, account_locked,
+        profile_update, register, password_reset_requested,
+        email_verified). Use ?limit=N (1..200) to override the
+        default page size.
+      operationId: getAuditLog
+      security:
+        - sessionCookie: []
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+      responses:
+        "200":
+          description: Audit log entries (most recent first).
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [entries, limit]
+                properties:
+                  limit: { type: integer, example: 50 }
+                  entries:
+                    type: array
+                    items:
+                      type: object
+                      required: [id, action, createdAt]
+                      properties:
+                        id: { type: integer, format: int64, example: 17 }
+                        action: { type: string, example: login }
+                        ipAddress: { type: string, example: "203.0.113.7" }
+                        userAgent: { type: string, example: "Mozilla/5.0 ..." }
+                        metadata: { type: object, additionalProperties: true }
+                        createdAt: { type: string, format: date-time }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
   /v1/auth/sessions:
     get:
       tags: [Auth]
