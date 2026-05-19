@@ -3,14 +3,13 @@ FROM golang:1.22-alpine AS builder
 
 WORKDIR /build
 
-# Copy module files; regenerate go.sum hashes via `go mod tidy` so the
-# build is robust against checksum drift between local and CI Go versions.
+# Copy module files + source together so `go build -mod=mod` can repair
+# the module graph in one pass. Splitting them caused tidy to prune
+# gorilla/mux before the source was visible.
 COPY go.mod go.sum ./
-RUN go mod tidy && go mod download
-
-# Source files for the multi-file judge package.
 COPY main.go languages.go exec.go scheduler.go ./
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o judge-service .
+
+RUN CGO_ENABLED=0 GOOS=linux go build -mod=mod -ldflags="-s -w" -o judge-service .
 
 # ── Stage 2: Runtime image ────────────────────────────────────────────────────
 FROM ubuntu:22.04
