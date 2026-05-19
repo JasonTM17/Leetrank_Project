@@ -88,6 +88,7 @@ export default function ProblemsPage() {
     if (selectedTag) params.set("tag", selectedTag);
     if (search) params.set("search", search);
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     fetch(`/api/problems?${params}`)
       .then((r) => r.json())
