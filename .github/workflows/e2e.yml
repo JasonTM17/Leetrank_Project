@@ -45,44 +45,48 @@ jobs:
       NEXT_PUBLIC_APP_URL: "http://localhost:3000"
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - uses: actions/setup-node@v6
+      - uses: pnpm/action-setup@0c17529a66aca453f9227af23103ed11469b1e47 # v4.0.0
+        with:
+          version: 9
+
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: 20
-          cache: npm
+          cache: pnpm
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Apply Prisma schema
-        run: npx prisma db push --skip-generate
+        run: pnpm exec prisma db push --skip-generate
 
       - name: Seed minimal data
-        run: npm run db:seed
+        run: pnpm run db:seed
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium ${{ github.event.inputs.project == 'all' && 'firefox webkit' || '' }}
+        run: pnpm exec playwright install --with-deps chromium ${{ github.event.inputs.project == 'all' && 'firefox webkit' || '' }}
 
       - name: Build Next.js
-        run: npm run build
+        run: pnpm run build
 
       - name: Start Next.js
-        run: npm start &
+        run: pnpm start &
         env:
           PORT: 3000
 
       - name: Wait for app
-        run: npx wait-on http://localhost:3000 --timeout 120000
+        run: pnpm exec wait-on http://localhost:3000 --timeout 120000
 
       - name: Run Playwright tests
-        run: npx playwright test ${{ github.event.inputs.project != 'all' && format('--project={0}', github.event.inputs.project) || '' }}
+        run: pnpm exec playwright test ${{ github.event.inputs.project != 'all' && format('--project={0}', github.event.inputs.project) || '' }}
         env:
           E2E_BASE_URL: "http://localhost:3000"
 
       - name: Upload Playwright HTML report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: playwright-report-${{ github.run_id }}
           path: playwright-report/
@@ -90,7 +94,7 @@ jobs:
 
       - name: Upload trace + screenshots
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: playwright-traces-${{ github.run_id }}
           path: test-results/
