@@ -7,7 +7,7 @@ WORKDIR /build
 # generated against an older proxy state and trips "SECURITY ERROR" in CI.
 # `go build -mod=mod` regenerates the hashes from the proxy on the fly.
 COPY go.mod ./
-COPY main.go languages.go exec.go scheduler.go ./
+COPY main.go languages.go exec.go scheduler.go sandbox.go ./
 
 RUN CGO_ENABLED=0 GOOS=linux go build -mod=mod -ldflags="-s -w" -o judge-service .
 
@@ -31,6 +31,10 @@ ENV DEBIAN_FRONTEND=noninteractive
 #   .NET 8  — needs packages.microsoft.com; ~700 MB. csharp/fsharp use Mono today.
 #   nim     — not in Ubuntu 22.04 universe (was in 22.10+); needs choosenim
 #   julia   — no install candidate on jammy; needs julialang.org tarball
+#
+# nsjail (Google's process jail) is built from source — Ubuntu 22.04 doesn't
+# package it. We pin to a tagged release so reproducible builds don't drift
+# with upstream. Build deps are dropped after compilation.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     curl \
@@ -72,6 +76,25 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
  && npm install -g tsx@^4 \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
+
+# ── nsjail build ──────────────────────────────────────────────────────────────
+# nsjail is the per-submission process jail. It must be present at runtime so
+# sandbox.go can find it on PATH. Build deps are installed, used, and purged
+# in a single layer to keep the runtime image lean.
+ARG NSJAIL_VERSION=3.4
+RUN set -eux; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+      git build-essential bison flex pkg-config \
+      libprotobuf-dev protobuf-compiler libnl-route-3-dev libcap-dev; \
+    git clone --depth 1 --branch ${NSJAIL_VERSION} https://github.com/google/nsjail.git /tmp/nsjail; \
+    make -C /tmp/nsjail -j"$(nproc)"; \
+    install -m 0755 /tmp/nsjail/nsjail /usr/local/bin/nsjail; \
+    rm -rf /tmp/nsjail; \
+    apt-get purge -y --auto-remove git build-essential bison flex pkg-config protobuf-compiler; \
+    apt-get install -y --no-install-recommends libprotobuf23 libnl-route-3-200 libcap2; \
+    apt-get clean; rm -rf /var/lib/apt/lists/*; \
+    nsjail --help 2>&1 | head -1
 
 WORKDIR /app
 

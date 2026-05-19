@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"os/exec"
 	"os/signal"
 	"path/filepath"
 	"strconv"
@@ -616,29 +615,44 @@ func (s *server) executeTestCase(code, language string, tc TestCase, timeLimitMs
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeLimitMs)*time.Millisecond)
 	defer cancel()
 
-	var cmd *exec.Cmd
+	var argv []string
 
 	switch language {
 	case "python":
 		runner := filepath.Join(s.runnersDir, "python_runner.py")
-		cmd = exec.CommandContext(ctx, "python3", runner, tmpPath)
+		argv = []string{"python3", runner, tmpPath}
 	case "javascript":
 		runner := filepath.Join(s.runnersDir, "js_runner.js")
-		cmd = exec.CommandContext(ctx, "node", runner, tmpPath)
+		argv = []string{"node", runner, tmpPath}
 	case "ruby":
 		runner := filepath.Join(s.runnersDir, "ruby_runner.rb")
-		cmd = exec.CommandContext(ctx, "ruby", runner, tmpPath)
+		argv = []string{"ruby", runner, tmpPath}
 	default:
 		// Unreachable: the early-return above sends every non-wrapper
 		// language through executeFromConfig.
 		return errorResult(tc, "Internal: unreachable wrapper switch for "+language, start)
 	}
 
-	cmd.Stdin = strings.NewReader(tc.Input)
-	rawOut, execErr := cmd.CombinedOutput()
+	// Even though the wrapper scripts apply per-process setrlimit, we still
+	// run them under nsjail. The wrapper's setrlimit only protects the user
+	// child it spawns; nsjail protects against the wrapper itself escaping
+	// (e.g. a malicious payload that pivots through the wrapper before
+	// hitting setrlimit). Wrapper output is JSON on stdout — the bytes we
+	// receive are identical to what cmd.CombinedOutput would have returned.
+	rawOut, _, timedOut, execErr := SandboxedCombinedOutput(
+		ctx,
+		filepath.Dir(tmpPath),
+		argv,
+		[]byte(tc.Input),
+		SandboxLimits{
+			MemMB:       DefaultSandboxLimits.MemMB,
+			CPUSeconds:  cpuSecondsFor(timeLimitMs),
+			WallSeconds: wallSecondsFor(timeLimitMs),
+		},
+	)
 	runtime := int(time.Since(start).Milliseconds())
 
-	if ctx.Err() == context.DeadlineExceeded {
+	if timedOut || ctx.Err() == context.DeadlineExceeded {
 		return TestResult{
 			Passed:   false,
 			Input:    tc.Input,
@@ -745,6 +759,10 @@ func main() {
 	}
 
 	logger := observability.NewLogger("leetrank-judge", os.Getenv("LOG_LEVEL"), os.Getenv("LOG_PRETTY") == "1")
+
+	// Surface the sandbox enforcement mode in logs at boot — operators
+	// must be able to confirm at a glance that nsjail is active.
+	LogSandboxStartup()
 
 	shutdownTracer, err := observability.InitTracer(context.Background(), "leetrank-judge", os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT"), os.Getenv("JUDGE_VERSION"))
 	if err != nil {

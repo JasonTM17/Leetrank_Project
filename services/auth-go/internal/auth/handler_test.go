@@ -24,7 +24,7 @@ import (
 // change-password can decode cookies in tests.
 func newTestHandler(t *testing.T) *handler {
 	t.Helper()
-	ks, err := jwks.New("test-secret-32-chars-minimum-aaaa")
+	ks, err := jwks.New("", nil)
 	if err != nil {
 		t.Fatalf("jwks.New: %v", err)
 	}
@@ -243,7 +243,7 @@ func TestChangePassword_ShortNewPassword(t *testing.T) {
 	router := newRouter(h)
 
 	// Sign a real cookie that will pass requireAuth.
-	token, err := h.ks.Sign("user-1", "user", jwtAudience, cookieTTL)
+	token, err := h.ks.Sign("user-1", "user", jwtAudience, jwks.AccessTTL)
 	if err != nil {
 		t.Fatalf("sign: %v", err)
 	}
@@ -262,7 +262,7 @@ func TestChangePassword_ShortNewPassword(t *testing.T) {
 func TestChangePassword_InvalidJSON(t *testing.T) {
 	h := newTestHandler(t)
 	router := newRouter(h)
-	token, _ := h.ks.Sign("user-1", "user", jwtAudience, cookieTTL)
+	token, _ := h.ks.Sign("user-1", "user", jwtAudience, jwks.AccessTTL)
 	w := doRaw(t, router, http.MethodPost, "/auth/change-password", "{garbage",
 		&http.Cookie{Name: cookieName, Value: token})
 	if w.Code != http.StatusBadRequest {
@@ -330,8 +330,8 @@ func TestSetSessionCookie_Properties(t *testing.T) {
 	if c.SameSite != http.SameSiteLaxMode {
 		t.Errorf("expected SameSite=Lax, got %v", c.SameSite)
 	}
-	if c.MaxAge != int(cookieTTL.Seconds()) {
-		t.Errorf("expected MaxAge=%d, got %d", int(cookieTTL.Seconds()), c.MaxAge)
+	if c.MaxAge != int(jwks.AccessTTL.Seconds()) {
+		t.Errorf("expected MaxAge=%d, got %d", int(jwks.AccessTTL.Seconds()), c.MaxAge)
 	}
 	if w.Header().Get("Authorization") != "Bearer tok" {
 		t.Errorf("expected Authorization=Bearer tok, got %q", w.Header().Get("Authorization"))
@@ -353,8 +353,8 @@ func TestClearSessionCookie_Properties(t *testing.T) {
 
 // ── boundary check: cookie TTL is sane ───────────────────────────────────────
 
-func TestCookieTTL_Is7Days(t *testing.T) {
-	if cookieTTL != 7*24*time.Hour {
-		t.Fatalf("cookieTTL changed unexpectedly: %v", cookieTTL)
+func TestCookieTTL_MatchesAccessTTL(t *testing.T) {
+	if jwks.AccessTTL != 15*time.Minute {
+		t.Fatalf("AccessTTL changed unexpectedly: %v", jwks.AccessTTL)
 	}
 }
