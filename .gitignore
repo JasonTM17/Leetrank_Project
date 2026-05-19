@@ -75,6 +75,7 @@ Thumbs.db
 DOCUMENTATION_MASTER.md
 .playwright-mcp/
 .tmp-go/
+.kilo/
 load-test-results/
 tests/ux/screenshots/
 /scripts/*
