@@ -23,4 +23,12 @@ var (
 		Name: "realtime_http_requests_total",
 		Help: "HTTP requests",
 	}, []string{"route", "status"})
+	WSRejected = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "realtime_ws_rejected_total",
+		Help: "Websocket connections rejected by the connection limiter",
+	}, []string{"reason"})
+	WSShutdownDrained = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "realtime_ws_shutdown_drained",
+		Help: "1 once the shutdown drain has finished, 0 before",
+	})
 )

@@ -4,14 +4,18 @@ package config
 import (
 	"errors"
 	"os"
+	"strconv"
 	"strings"
 )
 
 type Config struct {
-	Port        string
-	RedisURL    string
-	JWTSecret   string
-	AllowOrigin []string
+	Port              string
+	RedisURL          string
+	JWTSecret         string
+	AllowOrigin       []string
+	MaxConnsPerUser   int
+	MaxConnsPerIP     int
+	ShutdownDrainSecs int
 }
 
 func Load() (*Config, error) {
@@ -39,9 +43,23 @@ func Load() (*Config, error) {
 		}
 	}
 	return &Config{
-		Port:        port,
-		RedisURL:    redisURL,
-		JWTSecret:   jwt,
-		AllowOrigin: origins,
+		Port:              port,
+		RedisURL:          redisURL,
+		JWTSecret:         jwt,
+		AllowOrigin:       origins,
+		MaxConnsPerUser:   atoiOrDefault(os.Getenv("REALTIME_MAX_CONNS_PER_USER"), 5),
+		MaxConnsPerIP:     atoiOrDefault(os.Getenv("REALTIME_MAX_CONNS_PER_IP"), 50),
+		ShutdownDrainSecs: atoiOrDefault(os.Getenv("REALTIME_SHUTDOWN_DRAIN_SECS"), 10),
 	}, nil
+}
+
+func atoiOrDefault(s string, def int) int {
+	if s == "" {
+		return def
+	}
+	v, err := strconv.Atoi(s)
+	if err != nil || v <= 0 {
+		return def
+	}
+	return v
 }

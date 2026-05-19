@@ -17,6 +17,7 @@ const (
 	ClientSendBuffer = 64
 	WriteWait        = 10 * time.Second
 	PingInterval     = 25 * time.Second
+	PongWait         = 10 * time.Second
 )
 
 // Client is one active websocket connection.
