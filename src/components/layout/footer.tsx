@@ -14,6 +14,7 @@ export function Footer() {
             <Link href="/problems" className="hover:text-foreground transition-colors">Problems</Link>
             <Link href="/contests" className="hover:text-foreground transition-colors">Contests</Link>
             <Link href="/leaderboard" className="hover:text-foreground transition-colors">Leaderboard</Link>
+            <Link href="/status" className="hover:text-foreground transition-colors">Status</Link>
           </div>
           <p className="text-sm text-muted-foreground">
             &copy; {new Date().getFullYear()} LeetRank. Built for learning.
