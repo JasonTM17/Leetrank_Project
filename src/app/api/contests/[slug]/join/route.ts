@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
 const RATE_LIMIT_MAX = 10;
 const RATE_LIMIT_WINDOW_MS = 60_000;
@@ -68,7 +69,8 @@ export async function POST(
     });
 
     return Response.json({ entry, alreadyJoined: false }, { status: 201 });
-  } catch {
+  } catch (err) {
+    logger.error("contests/join failed", { scope: "api/contests/[slug]/join", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

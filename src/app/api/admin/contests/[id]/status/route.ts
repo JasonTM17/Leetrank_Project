@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-guard";
 import { invalidateContestsCache } from "@/lib/cache-invalidate";
+import { logger } from "@/lib/logger";
 import { z } from "zod";
 
 const statusSchema = z.object({
@@ -50,7 +51,8 @@ export async function POST(
       }
       throw err;
     }
-  } catch {
+  } catch (err) {
+    logger.error("admin/contests[id]/status POST failed", { scope: "api/admin/contests/[id]/status", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

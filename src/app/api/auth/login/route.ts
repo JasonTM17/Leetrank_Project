@@ -7,6 +7,7 @@ import { loginSchema } from "@/lib/validations";
 import { rateLimit } from "@/lib/rate-limit";
 import { clientIp } from "@/lib/client-ip";
 import { loginAccountKey } from "@/lib/auth-buckets";
+import { logger } from "@/lib/logger";
 
 // RULES §4: rate-limit auth routes. Switched from the local Map-based
 // limiter to the shared lib/rate-limit helper so the GC + reset
@@ -100,7 +101,8 @@ export async function POST(request: NextRequest) {
         createdAt: user.createdAt,
       },
     });
-  } catch {
+  } catch (err) {
+    logger.error("login failed", { scope: "api/auth/login", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

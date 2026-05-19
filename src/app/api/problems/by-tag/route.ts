@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
+import { logger } from "@/lib/logger";
 
 // GET /api/problems/by-tag — alternate listing path that takes a tag slug
 // and returns matched problems. Different from /api/tags/[slug] in that
@@ -29,7 +30,8 @@ export async function GET(request: NextRequest) {
     });
 
     return Response.json({ problems });
-  } catch {
+  } catch (err) {
+    logger.error("problems/by-tag failed", { scope: "api/problems/by-tag", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

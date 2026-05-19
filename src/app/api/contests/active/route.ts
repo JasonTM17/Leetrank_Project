@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
+import { logger } from "@/lib/logger";
 
 // GET /api/contests/active — returns contests currently in their live window.
 // The status column is denormalised; a cron job moves contests through
@@ -14,7 +15,8 @@ export async function GET(_request: NextRequest) {
     });
 
     return Response.json({ contests });
-  } catch {
+  } catch (err) {
+    logger.error("contests/active failed", { scope: "api/contests/active", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

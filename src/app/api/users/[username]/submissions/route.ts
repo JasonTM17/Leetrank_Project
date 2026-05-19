@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
+import { logger } from "@/lib/logger";
 
 // GET /api/users/[username]/submissions — public-facing submission list for
 // a profile. Excludes the code field — that's still author-only via the
@@ -51,7 +52,8 @@ export async function GET(
     ]);
 
     return Response.json({ submissions, total, page, limit });
-  } catch {
+  } catch (err) {
+    logger.error("users/[username]/submissions failed", { scope: "api/users/[username]/submissions", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

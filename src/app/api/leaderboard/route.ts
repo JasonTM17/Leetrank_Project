@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { parseLimit, parsePage } from "@/lib/pagination";
+import { logger } from "@/lib/logger";
 
 export async function GET(request: NextRequest) {
   try {
@@ -54,7 +55,8 @@ export async function GET(request: NextRequest) {
       .filter((entry): entry is NonNullable<typeof entry> => entry !== null);
 
     return Response.json({ leaderboard, total, page, limit });
-  } catch {
+  } catch (err) {
+    logger.error("leaderboard GET failed", { scope: "api/leaderboard", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

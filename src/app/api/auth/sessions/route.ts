@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { getSession } from "@/lib/auth";
+import { logger } from "@/lib/logger";
 
 // Read-only sessions list. We don't persist sessions in a table yet — the
 // JWT is the source of truth — so for now we surface the current session as
@@ -13,17 +14,21 @@ export async function GET(_request: NextRequest) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    return Response.json({
-      sessions: [
-        {
-          userId: session.userId,
-          username: session.username,
-          role: session.role,
-          current: true,
-        },
-      ],
-    });
-  } catch {
+    return Response.json(
+      {
+        sessions: [
+          {
+            userId: session.userId,
+            username: session.username,
+            role: session.role,
+            current: true,
+          },
+        ],
+      },
+      { headers: { "Cache-Control": "private, no-store" } }
+    );
+  } catch (err) {
+    logger.error("auth/sessions failed", { scope: "api/auth/sessions", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

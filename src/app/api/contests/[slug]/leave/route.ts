@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { logger } from "@/lib/logger";
 
 // DELETE /api/contests/[slug]/leave — withdraw from a contest. Only allowed
 // before the contest enters its 'ended' status; once it's ended the entry
@@ -40,7 +41,8 @@ export async function DELETE(
 
     await prisma.contestEntry.delete({ where: { id: existing.id } });
     return Response.json({ success: true });
-  } catch {
+  } catch (err) {
+    logger.error("contests/leave failed", { scope: "api/contests/[slug]/leave", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

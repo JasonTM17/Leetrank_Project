@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { rateLimit } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 50;
@@ -45,28 +46,33 @@ export async function GET(request: NextRequest) {
       return Response.json({ query, problems: [], contests: [], tags: [] });
     }
 
+    // Bug-sweep 2026-05: Postgres LIKE is case-sensitive by default —
+    // without `mode: "insensitive"`, searching "two" misses "Two Sum".
+    // Prisma drops the mode flag silently on engines that ignore it
+    // (e.g. SQLite via test mock), so this is safe in test as well.
     const [problems, contests, tags] = await Promise.all([
       prisma.problem.findMany({
-        where: { title: { contains: query } },
+        where: { title: { contains: query, mode: "insensitive" } },
         select: { id: true, title: true, slug: true, difficulty: true },
         orderBy: { order: "asc" },
         take: lim,
       }),
       prisma.contest.findMany({
-        where: { title: { contains: query } },
+        where: { title: { contains: query, mode: "insensitive" } },
         select: { id: true, title: true, slug: true, status: true, startTime: true },
         orderBy: { startTime: "desc" },
         take: lim,
       }),
       prisma.tag.findMany({
-        where: { name: { contains: query } },
+        where: { name: { contains: query, mode: "insensitive" } },
         select: { id: true, name: true, slug: true },
         take: lim,
       }),
     ]);
 
     return Response.json({ query, problems, contests, tags });
-  } catch {
+  } catch (err) {
+    logger.error("search GET failed", { scope: "api/search", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
+import { logger } from "@/lib/logger";
 
 // GET /api/users/[username]/stats — JSON aggregate of a user's recent activity.
 // Uses the last 30 days as the rolling window. Returns the per-day count of
@@ -42,7 +43,8 @@ export async function GET(
       total: submissions.length,
       byDay: Object.fromEntries(byDay),
     });
-  } catch {
+  } catch (err) {
+    logger.error("users/[username]/stats failed", { scope: "api/users/[username]/stats", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

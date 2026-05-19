@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
+import { logger } from "@/lib/logger";
 
 // GET /api/users/[username]/bookmarks — public bookmark list. Privacy posture:
 // users curate bookmarks publicly so others can see what they're working on,
@@ -38,7 +39,8 @@ export async function GET(
     });
 
     return Response.json({ bookmarks: bookmarks.map((b) => b.problem) });
-  } catch {
+  } catch (err) {
+    logger.error("users/[username]/bookmarks failed", { scope: "api/users/[username]/bookmarks", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

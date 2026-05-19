@@ -3,6 +3,7 @@ import { executeCode, JudgeUnavailableError } from "@/services/judge";
 import { runCodeSchema } from "@/lib/validations";
 import { getSession } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
 // /run-code is the "try it before you submit" endpoint. The judge is
 // expensive — uncapped anonymous traffic here trivially DoS's the
@@ -64,6 +65,7 @@ export async function POST(request: NextRequest) {
     if (err instanceof JudgeUnavailableError) {
       return Response.json({ error: err.message }, { status: 503 });
     }
+    logger.error("run-code POST failed", { scope: "api/run-code", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

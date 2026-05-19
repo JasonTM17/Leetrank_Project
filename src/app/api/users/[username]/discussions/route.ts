@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
+import { logger } from "@/lib/logger";
 
 // GET /api/users/[username]/discussions — paginated list of a user's
 // discussions. Public — anyone can browse what someone has posted, but the
@@ -43,7 +44,8 @@ export async function GET(
     ]);
 
     return Response.json({ discussions, total, page, limit });
-  } catch {
+  } catch (err) {
+    logger.error("users/[username]/discussions failed", { scope: "api/users/[username]/discussions", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

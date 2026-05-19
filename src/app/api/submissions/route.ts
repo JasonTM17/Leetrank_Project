@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth";
 import { executeCode, JudgeUnavailableError } from "@/services/judge";
 import { submitCodeSchema } from "@/lib/validations";
 import { enqueueJudgeSubmission } from "@/lib/submission-jobs";
+import { logger } from "@/lib/logger";
 
 export async function GET(request: NextRequest) {
   try {
@@ -48,7 +49,8 @@ export async function GET(request: NextRequest) {
     ]);
 
     return Response.json({ submissions, total, page, limit });
-  } catch {
+  } catch (err) {
+    logger.error("submissions GET failed", { scope: "api/submissions", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }
@@ -191,6 +193,7 @@ export async function POST(request: NextRequest) {
     if (err instanceof JudgeUnavailableError) {
       return Response.json({ error: err.message }, { status: 503 });
     }
+    logger.error("submissions POST failed", { scope: "api/submissions", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

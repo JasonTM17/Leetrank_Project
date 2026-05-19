@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-guard";
+import { logger } from "@/lib/logger";
 
 // DELETE /api/admin/discussions/[id] — admin-only force delete that doesn't
 // require the discussion to be authored by the caller. Distinct from the
@@ -25,7 +26,8 @@ export async function DELETE(
     }
 
     return Response.json({ success: true });
-  } catch {
+  } catch (err) {
+    logger.error("admin/discussions[id] DELETE failed", { scope: "api/admin/discussions/[id]", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

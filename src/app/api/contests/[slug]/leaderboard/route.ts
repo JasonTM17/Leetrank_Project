@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { logger } from "@/lib/logger";
 
 // GET /api/contests/[slug]/leaderboard — current standings for a contest.
 // Reads ContestEntry rows ordered by score desc, joined to user. The score
@@ -44,7 +45,8 @@ export async function GET(
     }));
 
     return Response.json({ contestStatus: contest.status, leaderboard: ranked });
-  } catch {
+  } catch (err) {
+    logger.error("contests/leaderboard failed", { scope: "api/contests/[slug]/leaderboard", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
+import { logger } from "@/lib/logger";
 
 // GET /api/contests/[slug]/me — current user's status for a given contest:
 // joined? entry score and rank? Used by the contest detail page so the
@@ -31,7 +32,8 @@ export async function GET(
     });
 
     return Response.json({ joined: !!entry, entry });
-  } catch {
+  } catch (err) {
+    logger.error("contests/me failed", { scope: "api/contests/[slug]/me", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 import { z } from "zod";
 
 const updateProfileSchema = z.object({
@@ -39,7 +40,8 @@ export async function GET() {
     }
 
     return Response.json({ user });
-  } catch {
+  } catch (err) {
+    logger.error("auth/profile GET failed", { scope: "api/auth/profile", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }
@@ -98,7 +100,8 @@ export async function PATCH(request: NextRequest) {
     });
 
     return Response.json({ user });
-  } catch {
+  } catch (err) {
+    logger.error("auth/profile PATCH failed", { scope: "api/auth/profile", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

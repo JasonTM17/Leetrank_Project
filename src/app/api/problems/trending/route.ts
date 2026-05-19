@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { cache } from "@/lib/cache";
+import { logger } from "@/lib/logger";
 
 // GET /api/problems/trending — problems ranked by accepted submissions in the
 // last 7 days. Falls through to recently-created on a tie. Used by the
@@ -60,7 +61,8 @@ export async function GET(request: NextRequest) {
       { problems: ranked },
       { headers: { "Cache-Control": "public, max-age=300, stale-while-revalidate=600" } }
     );
-  } catch {
+  } catch (err) {
+    logger.error("problems/trending failed", { scope: "api/problems/trending", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

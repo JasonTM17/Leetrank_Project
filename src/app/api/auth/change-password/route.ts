@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { bumpLoginBucketFor } from "@/lib/auth-buckets";
+import { logger } from "@/lib/logger";
 import { z } from "zod";
 
 const changePasswordSchema = z.object({
@@ -68,7 +69,8 @@ export async function POST(request: NextRequest) {
     bumpLoginBucketFor(user.email);
 
     return Response.json({ success: true });
-  } catch {
+  } catch (err) {
+    logger.error("change-password failed", { scope: "api/auth/change-password", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

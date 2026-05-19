@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { cache } from "@/lib/cache";
+import { logger } from "@/lib/logger";
 
 // GET /api/leaderboard/top — small fixed-size leaderboard slice for the
 // homepage hero. Different from /api/leaderboard which is paginated; this
@@ -55,7 +56,8 @@ export async function GET(_request: NextRequest) {
       { leaderboard: top },
       { headers: { "Cache-Control": "public, max-age=60, stale-while-revalidate=300" } }
     );
-  } catch {
+  } catch (err) {
+    logger.error("leaderboard/top failed", { scope: "api/leaderboard/top", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
+import { logger } from "@/lib/logger";
 
 // GET /api/problems/[slug]/stats — public per-problem aggregate that the
 // problem detail page uses to show acceptance rate + per-language breakdown.
@@ -40,7 +41,8 @@ export async function GET(
       problem,
       stats: { total, accepted, acceptanceRate, byLanguage },
     });
-  } catch {
+  } catch (err) {
+    logger.error("problems/[slug]/stats failed", { scope: "api/problems/[slug]/stats", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

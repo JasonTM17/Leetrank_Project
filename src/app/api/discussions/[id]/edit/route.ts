@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 import { z } from "zod";
 
 const editSchema = z.object({
@@ -64,7 +65,8 @@ export async function PATCH(
     });
 
     return Response.json({ discussion: updated });
-  } catch {
+  } catch (err) {
+    logger.error("discussions/[id]/edit failed", { scope: "api/discussions/[id]/edit", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
+import { logger } from "@/lib/logger";
 
 export async function GET(
   _request: NextRequest,
@@ -65,7 +66,8 @@ export async function GET(
       },
       recentSubmissions,
     });
-  } catch {
+  } catch (err) {
+    logger.error("users/[username] GET failed", { scope: "api/users/[username]", err: err instanceof Error ? err.message : String(err) });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }
