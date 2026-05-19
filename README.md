@@ -94,6 +94,21 @@ Live CI signal. Click any badge for the underlying workflow run.
 
 Live service health for the deployed instance is at `/status` ([screenshot](docs/screenshots/status.png)).
 
+## What's new in v0.2.0
+
+Roughly 500+ commits since `v0.1.0`. The full breakdown is in [CHANGELOG.md](CHANGELOG.md).
+
+- **Study plans + daily challenge.** Curated multi-week paths (`/plans`) and a one-problem-per-day pinned challenge with streak counter and 365-day activity heatmap.
+- **Achievements + badges.** Pure `evaluateAchievements` engine fired post-AC, badge grid at `/achievements`.
+- **Editorial + progressive hints.** First-party walkthrough tab on every problem with click-to-reveal hints, gated until first AC or contest end.
+- **Solution sharing + community votes.** Share your AC, upvote others, sort by votes / recent.
+- **Glicko-2 rating + divisions.** Per-user skill rating with Codeforces-style colour bands, idempotent admin `finalize-rating`, division badges.
+- **Recommendations engine.** Pure scorer over tag overlap + difficulty progression + freshness, mounted on home.
+- **Admin analytics + DevOps console.** Aggregation endpoints, SVG chart primitives, CI-runs / queue-depth tiles.
+- **Code playback (feature-flagged).** Recorder + viewer for keystroke-level replay of submission sessions.
+- **Editor preferences.** Vim mode, theme picker, font size, tab width — live preview popover.
+- **PWA + offline support, full EN + VI i18n on every surface.**
+
 ## Highlights
 
 - **30+ languages judged in isolation.** Python, Go, Rust, C/C++, Java, Kotlin, Scala, JS/TS, Ruby, PHP, C#, Lua, R, SQL — every submission runs in a per-process [nsjail](https://github.com/google/nsjail) (Linux namespaces + cgroups + seccomp + capability drop) with strict CPU/memory/process/file-descriptor caps. Pattern blocklists are pre-flight defence-in-depth, not the boundary. See [ADR 0020](docs/adr/0020-judge-sandbox-model.md).
