@@ -341,6 +341,23 @@ func newServer(logger zerolog.Logger) *server {
 	}
 	logger.Info().Int("count", len(registry.IDs())).Strs("languages", registry.IDs()).Msg("languages loaded")
 
+	// profiles.json sits alongside languages.json. Failure to load is
+	// non-fatal: the registry falls back to DefaultSandboxLimits so the
+	// service still runs, but the operator sees a warning so it can be
+	// fixed.
+	profilesPath := filepath.Join(baseDir, "profiles.json")
+	if _, statErr := os.Stat(profilesPath); statErr != nil {
+		profilesPath = "profiles.json"
+	}
+	profiles, profErr := initGlobalProfiles(profilesPath)
+	if profErr != nil {
+		logger.Warn().Err(profErr).Str("path", profilesPath).Msg("profiles: load failed, using defaults")
+	} else if profiles.Loaded() {
+		logger.Info().Str("path", profilesPath).Msg("profiles: loaded")
+	} else {
+		logger.Warn().Str("path", profilesPath).Msg("profiles: file not found, using defaults")
+	}
+
 	return &server{
 		rl:         newRateLimiter(),
 		sched:      newScheduler(cfg),
@@ -656,11 +673,7 @@ func (s *server) executeTestCase(code, language string, tc TestCase, timeLimitMs
 		filepath.Dir(tmpPath),
 		argv,
 		[]byte(tc.Input),
-		SandboxLimits{
-			MemMB:       DefaultSandboxLimits.MemMB,
-			CPUSeconds:  cpuSecondsFor(timeLimitMs),
-			WallSeconds: wallSecondsFor(timeLimitMs),
-		},
+		limitsForLang(language, timeLimitMs),
 	)
 	runtime := int(time.Since(start).Milliseconds())
 

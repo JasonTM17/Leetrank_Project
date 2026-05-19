@@ -92,11 +92,7 @@ func (s *server) executeFromConfig(ctx context.Context, lc LanguageConfig, code 
 	if len(runArgv) == 0 {
 		return errorResult(tc, fmt.Sprintf("Empty runCmd for %s", lc.ID), start)
 	}
-	output, exitCode, timedOut, runErr := SandboxedCombinedOutput(ctx, workdir, runArgv, []byte(tc.Input), SandboxLimits{
-		MemMB:       limitMBFor(lc, timeLimitMs),
-		CPUSeconds:  cpuSecondsFor(timeLimitMs),
-		WallSeconds: wallSecondsFor(timeLimitMs),
-	})
+	output, exitCode, timedOut, runErr := SandboxedCombinedOutput(ctx, workdir, runArgv, []byte(tc.Input), limitsForLang(lc.ID, timeLimitMs))
 	runtime := int(time.Since(start).Milliseconds())
 
 	if timedOut || ctx.Err() == context.DeadlineExceeded {
@@ -155,13 +151,48 @@ func fileExists(p string) bool {
 
 // limitMBFor returns the per-language memory cap. Compiled JVM languages
 // (java, kotlin, scala, groovy, clojure) need extra headroom for the JIT;
-// everything else uses the default.
+// everything else uses the default. Retained for callers that haven't yet
+// been migrated to limitsForLang.
 func limitMBFor(lc LanguageConfig, _ int) int {
 	switch lc.ID {
 	case "java", "kotlin", "scala", "groovy", "clojure":
 		return 512
 	}
 	return DefaultSandboxLimits.MemMB
+}
+
+// limitsForLang returns the SandboxLimits for a language id, sourcing
+// MemMB/CPUSeconds/WallSeconds from profiles.json (with the registry's
+// default applied for unlisted languages) and bounding CPU/Wall against
+// the request-level timeLimitMs so a small per-request budget can never
+// exceed what profiles.json grants.
+func limitsForLang(langID string, timeLimitMs int) SandboxLimits {
+	p := CurrentProfiles().Lookup(langID)
+	cpu := p.CPUSeconds
+	wall := p.WallSeconds
+	// Honour an explicit per-request budget when it's smaller than the
+	// profile cap. timeLimitMs of 0 means "use profile defaults".
+	if timeLimitMs > 0 {
+		reqCPU := timeLimitMs/1000 + 1
+		if reqCPU > 0 && reqCPU < cpu {
+			cpu = reqCPU
+		}
+		reqWall := (timeLimitMs + 999) / 1000
+		if reqWall > 0 && reqWall < wall {
+			wall = reqWall
+		}
+	}
+	if cpu < 1 {
+		cpu = 1
+	}
+	if wall < cpu {
+		wall = cpu + 1
+	}
+	return SandboxLimits{
+		MemMB:       p.MemMB,
+		CPUSeconds:  cpu,
+		WallSeconds: wall,
+	}
 }
 
 // cpuSecondsFor maps the request-level timeLimit (ms) to a CPU-seconds cap.

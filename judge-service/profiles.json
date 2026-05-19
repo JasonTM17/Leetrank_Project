@@ -1,0 +1,20 @@
+{
+  "$comment": "Per-language sandbox resource profiles. Each profile tunes the rlimit triple (memMB, cpuSeconds, wallSeconds) to the realistic working-set of that toolchain. Compiled native (c/cpp/go/rust) gets aggressive 2s CPU because their solutions JIT to native; JVM languages (java) get 8s CPU + 15s wall because the JVM spends 1-3s warming up before the user code even runs. Anything not listed falls back to default. Memory is the virtual-address ceiling enforced via --rlimit_as.",
+  "default": {
+    "memMB": 256,
+    "cpuSeconds": 5,
+    "wallSeconds": 10
+  },
+  "languages": {
+    "python":     { "memMB": 256, "cpuSeconds": 5, "wallSeconds": 10 },
+    "java":       { "memMB": 384, "cpuSeconds": 8, "wallSeconds": 15 },
+    "kotlin":     { "memMB": 384, "cpuSeconds": 8, "wallSeconds": 15 },
+    "scala":      { "memMB": 384, "cpuSeconds": 8, "wallSeconds": 15 },
+    "groovy":     { "memMB": 384, "cpuSeconds": 8, "wallSeconds": 15 },
+    "clojure":    { "memMB": 384, "cpuSeconds": 8, "wallSeconds": 15 },
+    "c":          { "memMB": 256, "cpuSeconds": 2, "wallSeconds": 5 },
+    "cpp":        { "memMB": 256, "cpuSeconds": 2, "wallSeconds": 5 },
+    "go":         { "memMB": 256, "cpuSeconds": 2, "wallSeconds": 5 },
+    "rust":       { "memMB": 256, "cpuSeconds": 2, "wallSeconds": 5 }
+  }
+}
