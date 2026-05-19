@@ -51,6 +51,13 @@ async function verifyAny(token: string) {
 const protectedRoutes = ["/dashboard", "/admin"];
 const adminRoutes = ["/admin"];
 
+// CORS policy (Bug #26): /api is intentionally first-party-only. We DO NOT
+// emit Access-Control-Allow-* headers, so cross-origin browsers preflighting
+// OPTIONS get an opaque 204 and the browser refuses to send the real request.
+// That's the desired behaviour — the API has cookie auth and no public
+// integration story yet. If we later need third-party clients (e.g. a public
+// SDK), gate Allow-Origin on an explicit allowlist here, never `*` (would
+// break credentialed cookies anyway).
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 

@@ -62,12 +62,33 @@ describe("POST /api/run-code", () => {
     expect(res.status).toBe(400);
   });
 
-  it("returns 400 on missing testCases", async () => {
+  it("accepts a missing testCases array (defaults to stdin-only run)", async () => {
     await loginAs({ userId: "u1" });
-    const res = await POST(asNextRequest(jsonRequest("http://x/api/run-code", {
-      code: "x", language: "python", testCases: [],
-    })));
+    (executeCode as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { passed: false, input: "", expected: "", actual: "hello", runtime: 3 },
+    ]);
+    const res = await POST(
+      asNextRequest(
+        jsonRequest("http://x/api/run-code", { code: "x", language: "python" })
+      )
+    );
+    expect(res.status).toBe(200);
+    // Confirm the runner was invoked with a single empty test case as a fallback.
+    const args = (executeCode as ReturnType<typeof vi.fn>).mock.calls.at(-1)?.[0];
+    expect(args?.testCases).toEqual([{ input: "", expected: "" }]);
+  });
+
+  it("includes the missing field name in the 400 message", async () => {
+    await loginAs({ userId: "u1" });
+    const res = await POST(
+      asNextRequest(
+        jsonRequest("http://x/api/run-code", { language: "python" })
+      )
+    );
     expect(res.status).toBe(400);
+    const data = await res.json();
+    // "code" is the offending field — its name MUST appear in the error.
+    expect(data.error).toMatch(/code/);
   });
 
   it("returns 503 when the judge is unreachable", async () => {
