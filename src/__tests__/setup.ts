@@ -75,6 +75,7 @@ export const prismaMock = {
   // "Cannot read properties of undefined (reading 'groupBy')" in tests.
   discussionVote: makeModel(),
   bookmark: makeModel(),
+  ratingChange: makeModel(),
   dailyChallenge: makeModel(),
   dailyChallengeStreak: makeModel(),
   $queryRaw: vi.fn(),
