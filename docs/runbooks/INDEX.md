@@ -15,6 +15,8 @@ All operational runbooks for the LeetRank stack.
 | [`redis.md`](redis.md) | `redis` | 6379 | Redis 7 — memory cap, AOF persistence, keyspace conventions, eviction |
 | [`caddy.md`](caddy.md) | `caddy` | 80/443 | Caddy reverse proxy — TLS renewal, routing table, rate limits, 502/503 |
 | [`docker.md`](docker.md) | all | — | Docker Compose operations — start, stop, rebuild, logs, observability overlay |
+| [`n8n.md`](n8n.md) | `n8n` | 5678 | n8n chatbot webhook — HMAC verification, queue depth, workflow rollback |
+| [`observability.md`](observability.md) | Prometheus/Grafana/Loki | 9091/3001 | Observability overlay — dashboards, alert silencing, log queries, escalation |
 
 ---
 
