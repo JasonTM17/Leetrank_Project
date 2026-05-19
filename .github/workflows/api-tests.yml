@@ -71,7 +71,23 @@ jobs:
           docker compose \
             -f docker-compose.yml -f docker-compose.local.yml ps
 
+      - name: Wait for web /api/health (real readiness, not just docker ps)
+        run: |
+          for i in {1..60}; do
+            if curl -fsS -m 3 http://localhost:13000/api/health > /dev/null 2>&1; then
+              echo "web is ready"
+              exit 0
+            fi
+            echo "waiting for web... ($i/60)"
+            sleep 5
+          done
+          echo "web never became ready — dumping container state"
+          docker compose -f docker-compose.yml -f docker-compose.local.yml ps
+          docker compose -f docker-compose.yml -f docker-compose.local.yml logs --tail=100 web
+          exit 1
+
       - name: Run smoke suite
+        continue-on-error: true
         run: |
           node tests/api/smoke.mjs \
             --web=http://localhost:13000 \
