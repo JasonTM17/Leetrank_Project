@@ -6,6 +6,7 @@ import { submitCodeSchema } from "@/lib/validations";
 import { enqueueJudgeSubmission } from "@/lib/submission-jobs";
 import { logger } from "@/lib/logger";
 import { recordDailySolveIfApplicable } from "@/lib/daily-challenge";
+import { evaluateAchievements } from "@/lib/achievements";
 
 export async function GET(request: NextRequest) {
   try {
@@ -178,6 +179,24 @@ export async function POST(request: NextRequest) {
           await recordDailySolveIfApplicable(prisma, session.userId, problemId);
         } catch (err) {
           logger.warn("daily-challenge streak update failed", {
+            scope: "api/submissions",
+            err: err instanceof Error ? err.message : String(err),
+          });
+        }
+
+        // Achievement evaluation — non-fatal. Awards land async in the next
+        // GET /api/achievements call; the response carries any badges that
+        // unlocked on this submission so the UI can fire a toast.
+        try {
+          const awarded = await evaluateAchievements(session.userId);
+          if (awarded.length > 0) {
+            return Response.json(
+              { submission, results, awardedAchievements: awarded },
+              { status: 201 }
+            );
+          }
+        } catch (err) {
+          logger.warn("achievement evaluation failed", {
             scope: "api/submissions",
             err: err instanceof Error ? err.message : String(err),
           });
