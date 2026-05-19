@@ -7,6 +7,10 @@ license = "MIT"
 description = "LeetRank high-performance leaderboard service (Rust + axum + redis)"
 publish = false
 
+[lib]
+name = "leaderboard_rust"
+path = "src/lib.rs"
+
 [[bin]]
 name = "leaderboard-rust"
 path = "src/main.rs"
@@ -27,6 +31,10 @@ tower-http = { version = "0.6.2", features = ["cors", "compression-gzip", "trace
 tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.19", features = ["env-filter", "json"] }
 uuid = { version = "1.11.0", features = ["v4", "serde"] }
+
+[dev-dependencies]
+tower = { version = "0.5.1", features = ["util"] }
+http-body-util = "0.1.2"
 
 [profile.release]
 opt-level = 3
