@@ -78,6 +78,11 @@ export const prismaMock = {
   ratingChange: makeModel(),
   dailyChallenge: makeModel(),
   dailyChallengeStreak: makeModel(),
+  // Code-playback feature: SubmissionEvent rows are queried via
+  // findMany / createMany from the playback routes. Stub the surface
+  // so tests for those routes can drive prisma without binding to a
+  // real DB.
+  submissionEvent: { ...makeModel(), createMany: vi.fn() },
   $queryRaw: vi.fn(),
   $transaction: vi.fn(),
 };
