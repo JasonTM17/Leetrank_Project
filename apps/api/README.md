@@ -1,14 +1,24 @@
 # leetrank-api
 
-Read-only API service for LeetRank. Standalone Hono HTTP server that owns the ported public endpoints (Phase 2 of [ADR 0011](../../docs/adr/0011-split-backend-frontend.md)).
+Read-only HTTP API for LeetRank. Standalone Hono service that owns the ported public endpoints — Phase 2 of [ADR 0011](../../docs/adr/0011-split-backend-frontend.md).
+
+## Purpose and responsibilities
+
+`apps/api` is the canonical read surface for the platform. It does **not** own auth issuance, code submission, or any write path that mutates user state — those live in `apps/auth` / `services/auth-go` and `services/submissions-go` respectively.
+
+| Responsibility | Owned here? |
+|----------------|-------------|
+| Catalogue reads (problems, tags, contests) | Yes |
+| Aggregate stats (`/stats`) | Yes |
+| Top-N leaderboard (`/leaderboard/top`) | Yes |
+| Liveness / readiness / metrics | Yes |
+| Authentication (login, register, JWT issuance) | No → `apps/auth` |
+| Submission creation, judge dispatch | No → `services/submissions-go` |
+| Admin mutations | No → still in `apps/web` until Phase 3 |
 
 ## Status
 
-**Phase 2 — active.** All 17 routes below are live. Auth-gated write endpoints (submissions, admin) remain in `apps/web` until Phase 3.
-
-## Port
-
-`4000` (default). Override with `API_PORT`.
+**Phase 2 — active.** All 17 routes below are live and covered by 46 Vitest tests.
 
 ## Endpoints
 
@@ -32,87 +42,120 @@ Read-only API service for LeetRank. Standalone Hono HTTP server that owns the po
 | GET | `/problems/random` | One random problem summary |
 | GET | `/problems/:slug` | Full problem detail + test cases |
 
+Full machine-readable contract: [`apps/api/openapi.yaml`](./openapi.yaml).
+
 ## Environment variables
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `DATABASE_URL` | Yes | — | PostgreSQL connection URL |
-| `JWT_SECRET` | Production only | dev fallback | HS256 signing secret (16+ chars). Process exits on startup if missing in production. |
-| `API_PORT` | No | `4000` | HTTP listen port |
-| `CORS_ALLOWED_ORIGINS` | No | `""` | Comma-separated allowed origins. Empty in production rejects all cross-origin requests. |
-| `NODE_ENV` | No | `development` | `development` / `production` / `test` |
-| `LOG_LEVEL` | No | `info` | Logger threshold (`debug` / `info` / `warn` / `error`) |
+| `DATABASE_URL` | yes | — | PostgreSQL connection URL |
+| `JWT_SECRET` | production only | dev fallback | HS256 signing secret (16+ chars). Process exits at startup if missing in `production`. |
+| `API_PORT` | no | `4000` | HTTP listen port |
+| `CORS_ALLOWED_ORIGINS` | no | `""` | Comma-separated allowed origins. Empty in production rejects cross-origin requests. |
+| `NODE_ENV` | no | `development` | `development` / `production` / `test` |
+| `LOG_LEVEL` | no | `info` | Logger threshold (`debug` / `info` / `warn` / `error`) |
 
-`JWT_SECRET` is validated by `src/env.ts` at startup. In development, a deterministic insecure fallback is used when the variable is absent — never deploy that fallback to production.
+`JWT_SECRET` is validated by `src/env.ts` at startup. The dev fallback is deterministic and insecure; never deploy it.
 
-## Scripts
-
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start with `tsx watch` (hot-reload) |
-| `npm run build` | Compile TypeScript to `dist/` |
-| `npm run start` | Run compiled output (`node dist/server.js`) |
-| `npm run typecheck` | Type-check without emitting |
-| `npm run test` | Run Vitest test suite |
-
-## Dev quickstart
+## Local dev
 
 ```bash
-# 1. Install workspace dependencies (from repo root)
-npm install
-
-# 2. Copy and fill in environment variables
-cp .env.example .env
-
-# 3. Start the API service
-cd apps/api && npm run dev
+pnpm install
+cp apps/api/.env.example apps/api/.env
+cd apps/api && pnpm dev
 # Listening on http://localhost:4000
 ```
 
-## Docker
-
-Multi-stage build — compile stage on `node:20-alpine`, runtime stage on `node:20-alpine` with a non-root user and a `HEALTHCHECK` against `/healthz`.
+Smoke-test:
 
 ```bash
-# Build locally
-docker build -t leetrank-api ./apps/api
-
-# Run
-docker run \
-  -e DATABASE_URL=postgresql://user:pass@host:5432/leetrank \
-  -e JWT_SECRET=your-secret \
-  -p 4000:4000 \
-  leetrank-api
+curl -s http://localhost:4000/healthz
+curl -s http://localhost:4000/stats | jq
+curl -s "http://localhost:4000/problems?limit=5" | jq
 ```
 
-The published image is `jasontm17/leetrank-api`. CI pushes `latest` and a short-SHA tag on every push to `main`. See [docs/runbooks/docker.md](../../docs/runbooks/docker.md) for compose commands.
+Run tests:
 
-## Health endpoints
+```bash
+pnpm --filter apps/api test
+```
+
+## Production runbook
+
+### Image build
+
+```bash
+docker build -t nguyenson1710/leetrank-api:latest \
+             -t nguyenson1710/leetrank-api:$(git rev-parse --short HEAD) \
+             -f apps/api/Dockerfile .
+docker push nguyenson1710/leetrank-api:latest
+docker push nguyenson1710/leetrank-api:$(git rev-parse --short HEAD)
+```
+
+CI does this automatically on every push to `main`.
+
+### Deploy directly
+
+```bash
+docker run -d --name leetrank-api \
+  -e DATABASE_URL=postgresql://USER:PASS@HOST:5432/leetrank \
+  -e JWT_SECRET="$(openssl rand -hex 32)" \
+  -e NODE_ENV=production \
+  -e CORS_ALLOWED_ORIGINS=https://leetrank.example.com \
+  -p 4000:4000 \
+  --restart unless-stopped \
+  nguyenson1710/leetrank-api:latest
+```
+
+### Scale-out
+
+The service is stateless. Scale by adding replicas behind any L7 load balancer; Caddy in this repo handles fan-out by name resolution.
+
+### Health probes
 
 | Endpoint | Purpose | Typical use |
 |----------|---------|-------------|
-| `GET /healthz` | Liveness — returns 200 immediately | Kubernetes `livenessProbe` |
-| `GET /readyz` | Readiness — probes Postgres | Kubernetes `readinessProbe`, compose `healthcheck` |
+| `GET /healthz` | Liveness — returns 200 immediately | k8s `livenessProbe`, compose `healthcheck` |
+| `GET /readyz` | Readiness — pings Postgres | k8s `readinessProbe`, gateway warm-check |
 | `GET /metrics` | Prometheus text format | Prometheus scrape target |
 
-## Testing
+Compose healthcheck is `wget --spider http://localhost:4000/healthz` (5 s interval, 30 s start period).
 
-The package ships 46 Vitest tests covering route handlers, schema validation, and middleware.
+## On-call playbook
 
-```bash
-# From repo root
-npm test --workspace=apps/api
+### `503 Service Unavailable` from `/readyz`
 
-# From the package directory
-cd apps/api && npm test
-```
+`/readyz` issues `SELECT 1` against Postgres. A 503 means Postgres is unreachable from this container.
+
+1. Check container logs: `docker compose logs api | tail -200`. Look for `db: connect failed`.
+2. Confirm the `postgres` container is healthy: `docker compose ps postgres`.
+3. From inside the api container, `nc -zv postgres 5432`.
+4. If postgres is healthy and reachable, look at `pg_stat_activity` for connection saturation. The default pool cap is 10; bump `DATABASE_URL` `connection_limit=...` if sustained.
+
+### High latency on `/leaderboard/top`
+
+The endpoint hits Postgres directly today. If P95 climbs past 500 ms:
+
+1. Open `/metrics`; check `http_request_duration_seconds_bucket` for the route.
+2. `EXPLAIN ANALYZE` the underlying query.
+3. The Phase 4 fix is the Redis sorted set in [ADR 0022](../../docs/adr/0022-leaderboard-caching-strategy.md) — coordinate with the on-call before flipping it on.
+
+### `JWT_SECRET must be set` at boot
+
+Container exits at startup with this message in `production`. Set the env var via your secrets store; never bake it into the image or commit `.env`. See [ADR 0025](../../docs/adr/0025-secret-management.md).
+
+### Logs
+
+| Source | Where |
+|--------|-------|
+| Application JSON logs | stdout — collected by docker logging driver |
+| Caddy access logs | the Caddy container, `/var/log/caddy/access.log` |
+| Prometheus metrics | scraped at `/metrics` |
+
+Filter by request id: every log line includes `request_id` set by the Hono request-id middleware.
 
 ## Architecture
 
-This service is the Phase 2 output of [ADR 0011](../../docs/adr/0011-split-backend-frontend.md) (FE/BE split). It sits behind Caddy at `/api/v1/*` and is consumed by `apps/web` over the internal Docker network. JWT verification uses `@leetrank/auth-verify` (HS256 today, JWKS in Phase 3.1). The wire format is defined in `@leetrank/api-contracts`.
+This service sits behind Caddy at `/api/v1/*` and is consumed by `apps/web` over the internal docker network. JWT verification (when added in Phase 3.1.5) uses `@leetrank/auth-verify`. The wire format is defined in `@leetrank/api-contracts`.
 
-See also: [ADR 0013 — service-to-service auth](../../docs/adr/0013-service-to-service-auth.md).
-
----
-
-**Author:** Nguyễn Sơn — jasonbmt06@gmail.com — [@JasonTM17](https://github.com/JasonTM17)
+See also: [ADR 0011](../../docs/adr/0011-split-backend-frontend.md), [ADR 0013](../../docs/adr/0013-service-to-service-auth.md), [ADR 0024](../../docs/adr/0024-observability-stack.md).
