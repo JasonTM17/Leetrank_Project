@@ -1,6 +1,9 @@
 # ── Stage 1: Build the Go binary ─────────────────────────────────────────────
 FROM golang:1.22-alpine AS builder
 
+# git is required by `go build -mod=mod` to fetch module sources from VCS
+RUN apk add --no-cache git
+
 WORKDIR /build
 
 # Copy module declaration + source. Don't copy the existing go.sum: it was

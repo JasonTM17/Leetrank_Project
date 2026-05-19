@@ -123,10 +123,12 @@ export function CommandPalette() {
     if (!open) return;
     const q = query.trim();
     if (q.length < 2) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setHits([]);
       return;
     }
     let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSearching(true);
     const t = setTimeout(() => {
       fetch(`/api/problems?search=${encodeURIComponent(q)}&limit=8`)
@@ -205,6 +207,7 @@ export function CommandPalette() {
 
   // Reset active index when results change
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setActive(0);
   }, [query, hits.length]);
 
