@@ -7,6 +7,7 @@
 // in a sidecar exporter.
 
 import { prisma } from "@/lib/db";
+import { withTiming } from "@/lib/server-timing";
 
 const startedAt = Date.now();
 
@@ -16,12 +17,18 @@ const startedAt = Date.now();
 async function loadHttpCounters(): Promise<{
   total: number;
   byStatus: Record<string, number>;
+  slowQueries: number;
+  missingRequestId: number;
 }> {
   try {
     const mod = await import("@/lib/metrics");
-    return mod.snapshotHttp();
+    return {
+      ...mod.snapshotHttp(),
+      slowQueries: mod.snapshotSlowQueries().total,
+      missingRequestId: mod.snapshotMissingRequestId().total,
+    };
   } catch {
-    return { total: 0, byStatus: {} };
+    return { total: 0, byStatus: {}, slowQueries: 0, missingRequestId: 0 };
   }
 }
 
@@ -29,7 +36,7 @@ function fmt(name: string, help: string, type: string, samples: string[]): strin
   return `# HELP ${name} ${help}\n# TYPE ${name} ${type}\n${samples.join("\n")}\n`;
 }
 
-export async function GET() {
+export const GET = withTiming("metrics", async () => {
   const uptimeSeconds = Math.floor((Date.now() - startedAt) / 1000);
   const http = await loadHttpCounters();
 
@@ -104,7 +111,25 @@ export async function GET() {
     )
   );
 
+  lines.push(
+    fmt(
+      "leetrank_db_slow_queries_total",
+      "Prisma queries exceeding SLOW_QUERY_MS",
+      "counter",
+      [`leetrank_db_slow_queries_total ${http.slowQueries}`]
+    )
+  );
+
+  lines.push(
+    fmt(
+      "leetrank_http_requests_missing_request_id_total",
+      "Requests served without an X-Request-Id header (middleware not run)",
+      "counter",
+      [`leetrank_http_requests_missing_request_id_total ${http.missingRequestId}`]
+    )
+  );
+
   return new Response(lines.join("\n"), {
     headers: { "Content-Type": "text/plain; version=0.0.4; charset=utf-8" },
   });
-}
+});
