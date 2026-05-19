@@ -28,6 +28,7 @@ func (h *Handler) Router() http.Handler {
 	r.Get("/", h.list)
 	r.Get("/trending", h.trending)
 	r.Get("/random", h.random)
+	r.Get("/search", h.search)
 	r.Get("/{slug}", h.detail)
 	return r
 }
@@ -443,6 +444,77 @@ func (h *Handler) Stats(w http.ResponseWriter, r *http.Request) {
 		"accepted":  acceptedCount,
 	})
 }
+
+// ---- search (full-text) -------------------------------------------------
+
+type searchItem struct {
+	ID         string  `json:"id"`
+	Title      string  `json:"title"`
+	Slug       string  `json:"slug"`
+	Difficulty string  `json:"difficulty"`
+	Rank       float64 `json:"rank"`
+}
+
+// GET /v1/problems/search?q=... — Postgres full-text search ranked by ts_rank.
+// Backed by the GIN index on to_tsvector('english', title || ' ' || description).
+func (h *Handler) search(w http.ResponseWriter, r *http.Request) {
+	q := strings.TrimSpace(r.URL.Query().Get("q"))
+	if q == "" {
+		httpx.JSON(w, http.StatusBadRequest, map[string]string{"error": "q required"})
+		return
+	}
+	limit := clamp(parseIntOr(r.URL.Query().Get("limit"), 10), 1, 50)
+	// Offset accepts 0 (the default) so we parse it directly instead of
+	// going through parseIntOr (which rejects 0 as "missing").
+	offset := 0
+	if v, err := strconv.Atoi(r.URL.Query().Get("offset")); err == nil && v >= 0 {
+		offset = clamp(v, 0, 10000)
+	}
+
+	const sql = `
+		SELECT id, title, slug, difficulty,
+		       ts_rank(
+		         to_tsvector('english', coalesce(title,'') || ' ' || coalesce(description,'')),
+		         plainto_tsquery('english', $1)
+		       ) AS rank
+		FROM "Problem"
+		WHERE to_tsvector('english', coalesce(title,'') || ' ' || coalesce(description,''))
+		      @@ plainto_tsquery('english', $1)
+		ORDER BY rank DESC, "order" ASC
+		LIMIT $2 OFFSET $3`
+
+	rows, err := h.pool.Query(r.Context(), sql, q, limit, offset)
+	if err != nil {
+		httpx.JSON(w, http.StatusInternalServerError, map[string]string{"error": "Internal server error"})
+		return
+	}
+	defer rows.Close()
+
+	items := make([]searchItem, 0, limit)
+	for rows.Next() {
+		var it searchItem
+		if err := rows.Scan(&it.ID, &it.Title, &it.Slug, &it.Difficulty, &it.Rank); err != nil {
+			httpx.JSON(w, http.StatusInternalServerError, map[string]string{"error": "Internal server error"})
+			return
+		}
+		items = append(items, it)
+	}
+	if err := rows.Err(); err != nil {
+		httpx.JSON(w, http.StatusInternalServerError, map[string]string{"error": "Internal server error"})
+		return
+	}
+
+	w.Header().Set("Cache-Control", "public, max-age=30, stale-while-revalidate=120")
+	httpx.JSON(w, http.StatusOK, map[string]any{
+		"problems": items,
+		"q":        q,
+		"limit":    limit,
+		"offset":   offset,
+	})
+}
+
+// ---- similar (by tag overlap) -------------------------------------------
+// Implemented in feat(problems): similar-problems by tag overlap.
 
 // ---- helpers ------------------------------------------------------------
 
