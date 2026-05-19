@@ -25,6 +25,7 @@ model User {
   contestEntries    ContestEntry[]
   discussions       Discussion[]
   discussionComments DiscussionComment[]
+  discussionVotes   DiscussionVote[]
   bookmarks         Bookmark[]
   chatMessages      ChatMessage[]
 
@@ -166,6 +167,7 @@ model Discussion {
   problem  Problem          @relation(fields: [problemId], references: [id], onDelete: Cascade)
   user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   comments DiscussionComment[]
+  votes    DiscussionVote[]
 
   @@index([problemId, createdAt(sort: Desc)])
   @@index([userId, createdAt])
@@ -176,13 +178,31 @@ model DiscussionComment {
   id           String   @id @default(cuid())
   discussionId String
   userId       String
+  parentId     String?
   body         String
   createdAt    DateTime @default(now())
 
   discussion Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
   user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent     DiscussionComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies    DiscussionComment[] @relation("CommentReplies")
 
   @@index([discussionId, createdAt])
+  @@index([parentId])
+}
+
+model DiscussionVote {
+  id           String   @id @default(cuid())
+  discussionId String
+  userId       String
+  value        Int      // -1 (downvote) or +1 (upvote)
+  createdAt    DateTime @default(now())
+
+  discussion Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([discussionId, userId])
+  @@index([discussionId])
 }
 
 model Bookmark {
