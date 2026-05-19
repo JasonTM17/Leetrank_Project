@@ -93,6 +93,12 @@ tests/ux/screenshots/
 !/scripts/load-test-fixtures.mjs
 !/scripts/backup-postgres.sh
 !/scripts/restore-postgres.sh
+!/scripts/k6/
+!/scripts/k6/**
+!/scripts/chaos/
+!/scripts/chaos/**
+!/scripts/perf/
+!/scripts/perf/**
 
 # private notes — never commit personal plans, drafts, or scratch docs
 PLAN*.md
