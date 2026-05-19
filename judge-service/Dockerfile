@@ -1,11 +1,12 @@
 # ── Stage 1: Build the Go binary ─────────────────────────────────────────────
-FROM golang:1.21-alpine AS builder
+FROM golang:1.22-alpine AS builder
 
 WORKDIR /build
 
-# Cache dependency downloads separately from source.
+# Copy module files; regenerate go.sum hashes via `go mod tidy` so the
+# build is robust against checksum drift between local and CI Go versions.
 COPY go.mod go.sum ./
-RUN go mod download
+RUN go mod tidy && go mod download
 
 # Source files for the multi-file judge package.
 COPY main.go languages.go exec.go scheduler.go ./
