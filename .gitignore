@@ -36,6 +36,11 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
+# python
+__pycache__/
+*.pyc
+.pytest_cache/
+
 # env files
 .env
 .env.*
