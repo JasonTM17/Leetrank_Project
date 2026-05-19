@@ -9,9 +9,9 @@ describe("envOr — production warn branch", () => {
 
   afterEach(() => {
     if (ORIGINAL_NODE_ENV === undefined) {
-      delete process.env.NODE_ENV;
+      delete (process.env as any).NODE_ENV;
     } else {
-      process.env.NODE_ENV = ORIGINAL_NODE_ENV;
+      (process.env as any).NODE_ENV = ORIGINAL_NODE_ENV;
     }
   });
 
@@ -19,7 +19,7 @@ describe("envOr — production warn branch", () => {
     vi.doMock("@/lib/logger", () => ({
       logger: { warn: vi.fn(), info: vi.fn(), error: vi.fn(), debug: vi.fn() },
     }));
-    process.env.NODE_ENV = "production";
+    (process.env as any).NODE_ENV = "production";
     delete process.env.PROD_TEST_MISSING;
 
     const { envOr } = await import("@/lib/env");
@@ -39,7 +39,7 @@ describe("envOr — production warn branch", () => {
     vi.doMock("@/lib/logger", () => ({
       logger: { warn: vi.fn(), info: vi.fn(), error: vi.fn(), debug: vi.fn() },
     }));
-    process.env.NODE_ENV = "production";
+    (process.env as any).NODE_ENV = "production";
     process.env.PROD_TEST_PRESENT = "https://prod.example";
 
     const { envOr } = await import("@/lib/env");
