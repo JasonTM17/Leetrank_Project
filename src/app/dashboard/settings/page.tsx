@@ -160,6 +160,21 @@ export default function SettingsPage() {
               </form>
             </CardContent>
           </Card>
+
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle className="text-lg">Code editor</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Vim mode, theme, font size, tab width, and word wrap live inside the
+                problem editor itself. Open any problem and click the
+                <SettingsIcon className="inline-block h-3.5 w-3.5 mx-1 align-text-bottom" aria-hidden="true" />
+                gear icon next to the language picker — preferences persist across
+                sessions and tabs.
+              </p>
+            </CardContent>
+          </Card>
         </div>
       </main>
       <Footer />
