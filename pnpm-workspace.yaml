@@ -2,6 +2,9 @@ packages:
   - "apps/*"
   - "packages/*"
   - "services/*"
+overrides:
+  dompurify: ^3.4.0
+  postcss: ^8.5.10
 allowBuilds:
   '@prisma/client': set this to true or false
   '@prisma/engines': set this to true or false
