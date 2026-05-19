@@ -21,6 +21,15 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Rating fields per ADR 0021 (Glicko-2 mapped to a 1500-centred scale).
+  // `rating` and `maxRating` are integers for friendly display. RD and
+  // volatility are stored alongside so the engine can update incrementally
+  // contest-by-contest and the inactivity cron can inflate RD over time.
+  rating          Int   @default(1500)
+  maxRating       Int   @default(1500)
+  ratingDeviation Int   @default(350)
+  ratingVolatility Float @default(0.06)
+
   submissions       Submission[]
   contestEntries    ContestEntry[]
   discussions       Discussion[]
@@ -28,9 +37,11 @@ model User {
   discussionVotes   DiscussionVote[]
   bookmarks         Bookmark[]
   chatMessages      ChatMessage[]
+  ratingChanges     RatingChange[]
   dailyChallengeStreak DailyChallengeStreak?
 
   @@index([role])
+  @@index([rating(sort: Desc)])
 }
 
 model Tag {
@@ -129,13 +140,19 @@ model Contest {
   startTime   DateTime
   endTime     DateTime
   status      String   @default("upcoming")
+  // Codeforces-style division per ADR 0021. Optional so legacy contests
+  // remain "open"; new contests SHOULD set "div1" | "div2" | "div3".
+  // Eligibility ranges are enforced at the API layer, not the DB.
+  division    String?
   createdAt   DateTime @default(now())
 
-  problems ContestProblem[]
-  entries  ContestEntry[]
+  problems       ContestProblem[]
+  entries        ContestEntry[]
+  ratingChanges  RatingChange[]
 
   @@index([status, startTime])
   @@index([startTime])
+  @@index([division, startTime])
 }
 
 model ContestProblem {
@@ -273,4 +290,26 @@ model DailyChallengeStreak {
   updatedAt      DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Per-contest rating delta snapshot per ADR 0021. One row per (user, contest)
+// recompute. Stores both pre and post values so the user-facing rating chart
+// renders without recomputing Glicko-2 history. `rank` mirrors the final
+// contest standing at the moment ratings were finalised.
+model RatingChange {
+  id            String   @id @default(cuid())
+  userId        String
+  contestId     String
+  beforeRating  Int
+  afterRating   Int
+  delta         Int
+  rank          Int
+  createdAt     DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contest Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
+
+  @@unique([contestId, userId])
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([contestId])
 }

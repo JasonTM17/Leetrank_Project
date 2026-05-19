@@ -1,14 +1,25 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { cache } from "@/lib/cache";
 
-const CACHE_KEY = "tags:all";
 const TTL_MS = 5 * 60_000;
+// Whitelist guards against arbitrary string queries hammering Prisma with
+// unindexed values. Keep in sync with Tag.category in schema.prisma.
+const ALLOWED_CATEGORIES = new Set(["topic", "company", "skill"]);
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const tags = await cache.remember(CACHE_KEY, TTL_MS, () =>
-      prisma.tag.findMany({ orderBy: { name: "asc" }, take: 200 })
+    const { searchParams } = request.nextUrl;
+    const rawCategory = searchParams.get("category");
+    const category = rawCategory && ALLOWED_CATEGORIES.has(rawCategory) ? rawCategory : null;
+    const cacheKey = `tags:all:${category ?? "*"}`;
+
+    const tags = await cache.remember(cacheKey, TTL_MS, () =>
+      prisma.tag.findMany({
+        where: category ? { category } : undefined,
+        orderBy: { name: "asc" },
+        take: 200,
+      })
     );
     return NextResponse.json(
       { tags },
