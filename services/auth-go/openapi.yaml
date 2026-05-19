@@ -341,6 +341,136 @@ paths:
                     error: not_implemented
                     message: "Session listing lands in a future phase."
 
+  /v1/auth/forgot-password:
+    post:
+      tags: [Auth]
+      summary: Request a password-reset link
+      description: |
+        Generates a single-use, time-limited (1h) password reset token
+        for the supplied email and stores its sha256 hash. Always
+        returns 202 to avoid leaking whether the email is registered.
+        In dev mode (LEETRANK_DEV_RETURN_TOKENS=1) the plaintext token
+        is echoed back in the response body for tests.
+      operationId: forgotPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email, example: alice@example.com }
+      responses:
+        "202":
+          description: Request accepted (whether or not the email exists).
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status: { type: string, enum: [accepted] }
+                  resetToken:
+                    type: string
+                    description: Plaintext token, dev-only.
+
+  /v1/auth/reset-password:
+    post:
+      tags: [Auth]
+      summary: Consume a password-reset token
+      description: |
+        Exchanges a valid, unused, unexpired reset token for a fresh
+        bcrypt hash on the matching User row. The token is marked used
+        atomically with the password update.
+      operationId: resetPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, newPassword]
+              properties:
+                token: { type: string, example: "1q2w3e4r..." }
+                newPassword: { type: string, minLength: 8, example: "NewEv3nMor3Secret!" }
+      responses:
+        "200":
+          description: Password updated.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok]
+                properties:
+                  ok: { type: boolean, example: true }
+        "400":
+          $ref: "#/components/responses/ValidationError"
+        "401":
+          description: Token invalid, expired, or already consumed.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /v1/auth/verify-email:
+    post:
+      tags: [Auth]
+      summary: Verify the caller's email address
+      description: |
+        Consumes an email-verification token (24h TTL, single-use) and
+        flips User.emailVerified to true.
+      operationId: verifyEmail
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token: { type: string, example: "1q2w3e4r..." }
+      responses:
+        "200":
+          description: Email marked verified.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok]
+                properties:
+                  ok: { type: boolean, example: true }
+        "401":
+          description: Token invalid, expired, or already consumed.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /v1/auth/resend-verification:
+    post:
+      tags: [Auth]
+      summary: Resend the email-verification link
+      description: |
+        Requires authentication. Issues a fresh verification token for
+        the caller's account. Always returns 202.
+      operationId: resendVerification
+      security:
+        - sessionCookie: []
+      responses:
+        "202":
+          description: Request accepted.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status: { type: string, enum: [accepted] }
+                  verifyToken:
+                    type: string
+                    description: Plaintext token, dev-only.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
 components:
   securitySchemes:
     sessionCookie:

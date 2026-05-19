@@ -41,6 +41,10 @@ func New(ctx context.Context, url string) (*pgxpool.Pool, error) {
 		pool.Close()
 		return nil, fmt.Errorf("ensure lockout tables: %w", err)
 	}
+	if err := EnsureCredentialFlowTables(connectCtx, pool); err != nil {
+		pool.Close()
+		return nil, fmt.Errorf("ensure credential flow tables: %w", err)
+	}
 	return pool, nil
 }
 

@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -109,6 +110,10 @@ func Router(pool *pgxpool.Pool, ks *jwks.KeyStore) http.Handler {
 	r.Post("/refresh", h.refresh)
 	r.Get("/me", h.me)
 	r.Post("/change-password", h.changePassword)
+	r.Post("/forgot-password", h.forgotPassword)
+	r.Post("/reset-password", h.resetPassword)
+	r.Post("/verify-email", h.verifyEmail)
+	r.Post("/resend-verification", h.resendVerification)
 	r.Get("/sessions", notImplemented) // Session model not yet in schema
 	return r
 }
@@ -166,6 +171,24 @@ func clearSessionCookie(w http.ResponseWriter) {
 
 func decodeBody(r *http.Request, dst any) error {
 	return json.NewDecoder(r.Body).Decode(dst)
+}
+
+// bcryptHash wraps bcrypt.GenerateFromPassword at the project's
+// agreed cost so production code only references one knob.
+func bcryptHash(pw []byte) (string, error) {
+	h, err := bcrypt.GenerateFromPassword(pw, 12)
+	if err != nil {
+		return "", err
+	}
+	return string(h), nil
+}
+
+// isDevReturnTokens returns true when the service is allowed to echo
+// password-reset / email-verification tokens back in the response body
+// (tests + local dev). Defaults off; opt in via env.
+func isDevReturnTokens() bool {
+	v := strings.ToLower(strings.TrimSpace(os.Getenv("LEETRANK_DEV_RETURN_TOKENS")))
+	return v == "1" || v == "true" || v == "yes"
 }
 
 // ── register ──────────────────────────────────────────────────────────────────
