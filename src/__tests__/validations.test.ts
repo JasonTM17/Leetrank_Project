@@ -113,13 +113,13 @@ describe("runCodeSchema", () => {
     expect(result.success).toBe(false);
   });
 
-  it("rejects empty testCases array", () => {
+  it("accepts empty testCases array (stdin-only run)", () => {
     const result = runCodeSchema.safeParse({
       code: "print('hello')",
       language: "python",
       testCases: [],
     });
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
   });
 });
 
