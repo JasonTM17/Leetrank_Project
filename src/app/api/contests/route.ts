@@ -7,7 +7,7 @@ const TTL_MS = 60_000;
 export async function GET() {
   try {
     const contests = await cache.remember(CACHE_KEY, TTL_MS, () =>
-      prisma.contest.findMany({ orderBy: { startTime: "desc" } })
+      prisma.contest.findMany({ orderBy: { startTime: "desc" }, take: 100 })
     );
 
     return Response.json(

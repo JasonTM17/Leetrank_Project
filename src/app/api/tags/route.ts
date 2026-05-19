@@ -8,7 +8,7 @@ const TTL_MS = 5 * 60_000;
 export async function GET() {
   try {
     const tags = await cache.remember(CACHE_KEY, TTL_MS, () =>
-      prisma.tag.findMany({ orderBy: { name: "asc" } })
+      prisma.tag.findMany({ orderBy: { name: "asc" }, take: 200 })
     );
     return NextResponse.json(
       { tags },
