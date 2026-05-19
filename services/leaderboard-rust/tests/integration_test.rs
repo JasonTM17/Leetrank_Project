@@ -7,7 +7,9 @@
 
 use axum::{body::Body, http::Request, http::StatusCode};
 use http_body_util::BodyExt;
-use leaderboard_rust::{empty_list_response, health_router};
+use leaderboard_rust::{
+    decode_contest_points, empty_list_response, encode_contest_score, health_router,
+};
 use tower::ServiceExt;
 
 #[tokio::test]
@@ -72,3 +74,32 @@ async fn empty_leaderboard_response_serialises_with_entries_array() {
     assert!(raw["entries"].is_array());
     assert_eq!(raw["entries"].as_array().unwrap().len(), 0);
 }
+
+// ---- contest leaderboard score encoding ---------------------------------
+
+#[test]
+fn contest_score_orders_higher_points_first() {
+    // Higher points always wins, regardless of timestamp.
+    let alice = encode_contest_score(300, 1_700_000_000);
+    let bob = encode_contest_score(200, 1_600_000_000);
+    assert!(alice > bob, "300 pts should outrank 200 pts");
+}
+
+#[test]
+fn contest_score_breaks_ties_by_earlier_submission() {
+    // Same points -> earlier (smaller) timestamp wins.
+    let early = encode_contest_score(300, 1_700_000_000);
+    let late = encode_contest_score(300, 1_700_000_500);
+    assert!(early > late, "earlier last-submission should outrank later");
+}
+
+#[test]
+fn contest_score_round_trips_points() {
+    for &p in &[0_i64, 1, 99, 250, 1_000, 9_999] {
+        let composite = encode_contest_score(p, 1_700_000_000);
+        assert_eq!(decode_contest_points(composite), p, "decode mismatch for {p}");
+    }
+}
+
+// ---- period parsing -----------------------------------------------------
+// Covered by feat(leaderboard): weekly + monthly periods.

@@ -6,6 +6,20 @@ use sqlx::PgPool;
 
 pub const ZSET_KEY: &str = "leaderboard:global";
 
+/// Composite-score scale used by contest ZSETs.
+///
+/// Maintainers store `points * SCALE - last_submission_unix` so the ZSET's
+/// natural DESC ordering gives `(points DESC, last_submission ASC)` —
+/// higher points first, earlier submission wins ties. We decode by
+/// `points = ((composite + ts_max) / SCALE).ceil()`; with SCALE = 1e10
+/// and any reasonable Unix timestamp (< 1e10), `ceil(composite / SCALE)`
+/// recovers the integer points exactly.
+pub const CONTEST_SCORE_SCALE: f64 = 1.0e10;
+
+pub fn contest_zset_key(slug: &str) -> String {
+    format!("leaderboard:contest:{slug}")
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LeaderboardEntry {
     pub rank: u64,
@@ -96,3 +110,38 @@ pub async fn ping(redis: &mut ConnectionManager) -> AppResult<()> {
     let _: String = redis::cmd("PING").query_async(redis).await?;
     Ok(())
 }
+
+// ---- contest leaderboard ------------------------------------------------
+
+/// Decode a composite contest score back into raw integer points. See
+/// `CONTEST_SCORE_SCALE` for the encoding scheme.
+pub fn decode_contest_points(composite: f64) -> i64 {
+    (composite / CONTEST_SCORE_SCALE).ceil() as i64
+}
+
+/// Read the top entries from `leaderboard:contest:{slug}`. Order is the
+/// ZSET's natural DESC: highest composite first which means
+/// `score DESC, last_submission ASC` per the encoding scheme.
+pub async fn list_contest_top(
+    redis: &mut ConnectionManager,
+    slug: &str,
+    limit: usize,
+) -> AppResult<Vec<LeaderboardEntry>> {
+    let key = contest_zset_key(slug);
+    let stop = limit.saturating_sub(1) as isize;
+    let raw: Vec<(String, f64)> = redis.zrevrange_withscores(&key, 0, stop).await?;
+
+    let entries = raw
+        .into_iter()
+        .enumerate()
+        .map(|(i, (username, composite))| LeaderboardEntry {
+            rank: (i + 1) as u64,
+            username,
+            score: decode_contest_points(composite) as f64,
+        })
+        .collect();
+    Ok(entries)
+}
+
+// ---- period leaderboards (weekly + monthly + all-time) ------------------
+// Implemented in feat(leaderboard): weekly + monthly periods.

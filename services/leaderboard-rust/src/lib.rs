@@ -9,6 +9,20 @@
 use axum::{routing::get, Json, Router};
 use serde_json::json;
 
+/// Composite-score scale used by contest ZSETs. Mirrors `cache::CONTEST_SCORE_SCALE`.
+pub const CONTEST_SCORE_SCALE: f64 = 1.0e10;
+
+/// Encode `(points, last_submission_unix)` into a single ZSET score so the
+/// natural DESC ordering yields `points DESC, last_submission ASC`.
+pub fn encode_contest_score(points: i64, last_submission_unix: i64) -> f64 {
+    (points as f64) * CONTEST_SCORE_SCALE - last_submission_unix as f64
+}
+
+/// Recover the integer points from a composite score.
+pub fn decode_contest_points(composite: f64) -> i64 {
+    (composite / CONTEST_SCORE_SCALE).ceil() as i64
+}
+
 /// Stateless router that mirrors the `/healthz` shape served by the
 /// production binary. Tests can drive it via `tower::ServiceExt::oneshot`.
 pub fn health_router() -> Router {

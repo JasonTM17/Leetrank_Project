@@ -92,6 +92,49 @@ pub async fn user_rank(
     Ok(Json(entry))
 }
 
+// ---- contest leaderboard ----------------------------------------------
+
+#[derive(Debug, Deserialize)]
+pub struct ContestQuery {
+    #[serde(default = "default_limit")]
+    pub limit: usize,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ContestResponse {
+    pub slug: String,
+    pub limit: usize,
+    pub entries: Vec<cache::LeaderboardEntry>,
+}
+
+pub async fn contest_leaderboard(
+    State(state): State<AppState>,
+    Path(slug): Path<String>,
+    Query(q): Query<ContestQuery>,
+) -> AppResult<Json<ContestResponse>> {
+    let timer = metrics::req_latency()
+        .with_label_values(&["GET /v1/leaderboard/contest"])
+        .start_timer();
+
+    if slug.is_empty() {
+        return Err(AppError::BadRequest("slug required".into()));
+    }
+    let limit = q.limit.clamp(1, 100);
+
+    let mut redis = state.redis.clone();
+    let entries = cache::list_contest_top(&mut redis, &slug, limit).await?;
+
+    timer.observe_duration();
+    metrics::req_counter()
+        .with_label_values(&["GET /v1/leaderboard/contest", "200"])
+        .inc();
+
+    Ok(Json(ContestResponse { slug, limit, entries }))
+}
+
+// ---- period leaderboards (weekly|monthly|all-time) -------------------
+// Implemented in feat(leaderboard): weekly + monthly periods.
+
 pub async fn recompute(
     State(state): State<AppState>,
     headers: HeaderMap,

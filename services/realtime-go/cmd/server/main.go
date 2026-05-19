@@ -105,7 +105,10 @@ func main() {
 		Logger:       logger,
 		JWTSecret:    cfg.JWTSecret,
 		AllowOrigins: cfg.AllowOrigin,
+		Limiter:      hub.NewLimiter(cfg.MaxConnsPerUser, cfg.MaxConnsPerIP),
 	}
+	drainCh := make(chan struct{})
+	wsh.Drain = drainCh
 	mux.HandleFunc("/v1/realtime", wsh.ServeWS)
 
 	srv := &http.Server{
@@ -128,7 +131,23 @@ func main() {
 	<-stop
 
 	logger.Info("shutdown: drain begin")
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	close(drainCh) // refuse new upgrades
+
+	// Tell connected clients we're going away so SDKs can reconnect
+	// to a healthy replica before we force-close.
+	notified := h.BroadcastShutdown("server_shutdown")
+	logger.Info("shutdown: notified", "clients", notified)
+
+	drainTimeout := time.Duration(cfg.ShutdownDrainSecs) * time.Second
+	drainCtx, drainCancel := context.WithTimeout(context.Background(), drainTimeout)
+	forced := h.Drain(drainCtx, drainTimeout)
+	drainCancel()
+	if forced > 0 {
+		logger.Warn("shutdown: forced close", "clients", forced)
+	}
+	metrics.WSShutdownDrained.Set(1)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(ctx); err != nil {
 		logger.Error("shutdown: forced", "err", err)

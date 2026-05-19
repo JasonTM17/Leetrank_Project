@@ -48,6 +48,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/metrics", get(handlers::metrics_handler))
         .route("/v1/leaderboard", get(handlers::list_leaderboard))
         .route("/v1/leaderboard/user/:username", get(handlers::user_rank))
+        .route("/v1/leaderboard/contest/:slug", get(handlers::contest_leaderboard))
         .route("/v1/leaderboard/recompute", post(handlers::recompute))
         .layer(CompressionLayer::new())
         .layer(CorsLayer::permissive())
@@ -63,6 +64,27 @@ async fn main() -> anyhow::Result<()> {
         .await?;
 
     Ok(())
+}
+
+// Background loop: refresh weekly + monthly ZSETs from postgres on a
+// 60-second cadence. Failures are logged and retried on the next tick —
+// stale data beats a panicked task.
+async fn run_period_recompute_loop(state: state::AppState) {
+    use std::time::Duration;
+    let mut ticker = tokio::time::interval(Duration::from_secs(60));
+    // Skip the immediate first tick — readyz already proves redis is up,
+    // we don't want to block startup with a heavy SQL aggregate.
+    ticker.tick().await;
+    loop {
+        ticker.tick().await;
+        let mut redis = state.redis.clone();
+        for period in [cache::Period::Weekly, cache::Period::Monthly] {
+            match cache::recompute_period(&state.pg, &mut redis, period).await {
+                Ok(n) => tracing::debug!(?period, indexed = n, "period recompute ok"),
+                Err(e) => tracing::warn!(?period, error = %e, "period recompute failed"),
+            }
+        }
+    }
 }
 
 async fn shutdown_signal() {
