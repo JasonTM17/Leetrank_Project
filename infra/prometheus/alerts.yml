@@ -243,3 +243,26 @@ groups:
         annotations:
           summary: "{{ $labels.job }} target down"
           description: "Prometheus scrape failed for {{ $labels.job }} ({{ $labels.instance }}) for 1 minute."
+
+  - name: leetrank-observability
+    interval: 30s
+    rules:
+      - alert: SlowQueryRate
+        expr: |
+          sum(rate(leetrank_db_slow_queries_total[1m])) * 60 > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Prisma slow-query rate > 5/min"
+          description: "More than 5 queries per minute have exceeded SLOW_QUERY_MS for 5 minutes. Inspect the warn logs (msg=slow_query) for offending statements."
+
+      - alert: HighRequestId404
+        expr: |
+          sum(rate(leetrank_http_requests_missing_request_id_total[5m])) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Requests reaching origin without X-Request-Id"
+          description: "Edge middleware is no longer stamping X-Request-Id. Either the matcher regressed or middleware crashed. Correlation IDs are gone — fix before debugging anything else."
