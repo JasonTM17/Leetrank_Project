@@ -52,7 +52,7 @@ describe("POST /api/auth/change-password", () => {
   it("200 happy path updates the password hash", async () => {
     await loginAs({ userId: "u1" });
     const hashed = await bcrypt.hash(valid.currentPassword, 10);
-    prismaMock.user.findUnique.mockResolvedValue({ id: "u1", password: hashed } as never);
+    prismaMock.user.findUnique.mockResolvedValue({ id: "u1", email: "u1@x.com", password: hashed } as never);
     prismaMock.user.update.mockResolvedValue({ id: "u1" } as never);
 
     const res = await POST(asNextRequest(jsonRequest("http://x/api/auth/change-password", valid)));
