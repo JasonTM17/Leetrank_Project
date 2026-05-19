@@ -86,9 +86,9 @@ Live CI signal. Click any badge for the underlying workflow run.
 | SBOM (SPDX) | [![SBOM](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/sbom.yml/badge.svg)](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/sbom.yml) |
 | Load test harness | [![Load test](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/load-test.yml/badge.svg)](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/load-test.yml) |
 | Postgres backup verification | [![Postgres backup](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/postgres-backup.yml/badge.svg)](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/postgres-backup.yml) |
-| Python service tests | [![Python tests](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/python-tests.yml/badge.svg)](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/python-tests.yml) |
-| Ruby service tests | [![Ruby tests](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/ruby-tests.yml/badge.svg)](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/ruby-tests.yml) |
-| Rust service tests | [![Rust tests](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/rust-tests.yml/badge.svg)](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/rust-tests.yml) |
+| Python service tests (analytics) | [![Python tests](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/python-tests.yml/badge.svg)](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/python-tests.yml) |
+| Ruby service tests (notifications) | [![Ruby tests](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/ruby-tests.yml/badge.svg)](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/ruby-tests.yml) |
+| Rust service tests (leaderboard) | [![Rust tests](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/rust-tests.yml/badge.svg)](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/rust-tests.yml) |
 | Tagged release publish | [![Release](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/release.yml/badge.svg)](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/release.yml) |
 | Stale issue + PR sweep | [![Stale](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/stale.yml/badge.svg)](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/stale.yml) |
 
@@ -97,11 +97,11 @@ Live service health for the deployed instance is at `/status` ([screenshot](docs
 ## Highlights
 
 - **30+ languages judged in isolation.** Python, Go, Rust, C/C++, Java, Kotlin, Scala, JS/TS, Ruby, PHP, C#, Lua, R, SQL — every submission runs in a per-process [nsjail](https://github.com/google/nsjail) (Linux namespaces + cgroups + seccomp + capability drop) with strict CPU/memory/process/file-descriptor caps. Pattern blocklists are pre-flight defence-in-depth, not the boundary. See [ADR 0020](docs/adr/0020-judge-sandbox-model.md).
-- **True microservices.** Frontend (Next.js 16) and backend are split into independently deployable services: `apps/api` (read API), `services/auth-go` (identity — sole canonical auth issuer), `services/problems-go` and `services/submissions-go` (Go rewrites), `judge-service` (Go sandbox runner). Each has its own Dockerfile, port, and lifecycle.
-- **Real-time leaderboards.** Redis sorted sets for `O(log N)` rank-by-score lookups; Postgres remains the source of truth. See [ADR 0022](docs/adr/0022-leaderboard-caching-strategy.md).
+- **Polyglot microservices.** Frontend (Next.js 16) and ten backend services in five languages: Hono/TypeScript (`apps/api`), Go (`auth-go`, `problems-go`, `submissions-go`, `realtime-go`, `judge-service`), Rust (`leaderboard-rust`), Ruby (`notifications-ruby`), and Python (`analytics-python`). Each ships its own Dockerfile, port, runbook, and CI lane.
+- **Real-time leaderboards.** Redis sorted sets for `O(log N)` rank-by-score lookups; Postgres remains the source of truth. Served by `leaderboard-rust`. See [ADR 0022](docs/adr/0022-leaderboard-caching-strategy.md).
 - **Glicko-2 rating.** Per-user skill rating with confidence intervals — picked over plain Elo because contests are sparse and bursty. See [ADR 0021](docs/adr/0021-rating-algorithm.md).
 - **Production-grade observability.** zerolog structured JSON logs, Prometheus metrics, OpenTelemetry tracing, Grafana dashboards. See [ADR 0024](docs/adr/0024-observability-stack.md).
-- **Container-first.** Multi-stage builds, distroless Go images, non-root users, healthchecks. Public images on [Docker Hub `nguyenson1710`](https://hub.docker.com/u/nguyenson1710).
+- **Container-first.** Multi-stage builds, distroless Go images, non-root users, healthchecks. Public images on [Docker Hub `nguyenson1710`](https://hub.docker.com/u/nguyenson1710) and [GHCR](https://github.com/JasonTM17?tab=packages) (see [ADR 0026](docs/adr/0026-dual-registry-publish.md)).
 
 ## Architecture
 
@@ -208,15 +208,19 @@ Demo accounts after seeding: `admin@leetrank.local` / `Admin123!` and `demo@leet
 | Editor | Monaco (dynamic import) | LSP-grade UX without bundle bloat. See [ADR 0010](docs/adr/0010-monaco-editor-dynamic-import.md). |
 | Backend (TS) | Hono on Node 20 | Fastest mainstream TS HTTP framework, edge-portable. |
 | Backend (Go) | chi + pgx v5 + slog | Sub-ms latency, distroless ~15 MB images. See [ADR 0017](docs/adr/0017-auth-go-rewrite.md). |
+| Backend (Rust) | axum + tokio + sqlx | Used by `leaderboard-rust` for hot-path ranking. |
+| Backend (Ruby) | Sinatra + Sidekiq | `notifications-ruby` outbound dispatch (SMTP / webhook). |
+| Backend (Python) | FastAPI + asyncpg + numpy | `analytics-python` for heavy compute paths. |
 | Database | PostgreSQL 16 | ACID, mature, Prisma-friendly. See [ADR 0002](docs/adr/0002-use-postgresql-over-sqlite.md). |
 | ORM | Prisma 5 | Type-safe, generated client. See [ADR 0005](docs/adr/0005-prisma-orm.md). |
 | Cache / Queue | Redis 7 | Sorted sets for ranking + queue for async judging. See [ADR 0007](docs/adr/0007-redis-for-cache-and-queue.md). |
 | Reverse proxy | Caddy 2 | Auto-TLS, simple config. See [ADR 0008](docs/adr/0008-caddy-as-reverse-proxy.md). |
-| Auth | jose (JWT HS256, Ed25519 in 3.1.5+) | Edge-compatible, RFC-correct. See [ADR 0004](docs/adr/0004-jwt-with-jose-not-jsonwebtoken.md). |
+| Auth | jose (JWT HS256, Ed25519 via JWKS in 3.1.5+) | Edge-compatible, RFC-correct. See [ADR 0004](docs/adr/0004-jwt-with-jose-not-jsonwebtoken.md), [ADR 0030](docs/adr/0030-web-tier-jwt-cutover.md). |
 | Validation | Zod (TS) / go-playground/validator (Go) | Schema-first server-side validation. See [ADR 0006](docs/adr/0006-zod-for-server-validation.md). |
 | Judge runtime | Go 1.22, exec.CommandContext + nsjail | Per-submission nsjail jail (Linux NS + cgroups + seccomp + cap drop). Goroutine fan-out per test case, hard SIGKILL on timeout. See [ADR 0003](docs/adr/0003-go-for-judge-service.md), [ADR 0020](docs/adr/0020-judge-sandbox-model.md). |
+| Realtime | Go + gorilla/websocket | `realtime-go` fans out judge verdicts and live contest events from Redis pubsub. |
 | Observability | zerolog + Prometheus + OpenTelemetry | One ADR-blessed stack across services. See [ADR 0024](docs/adr/0024-observability-stack.md). |
-| CI/CD | GitHub Actions, Docker Hub | Build + push on every `main` commit. |
+| CI/CD | GitHub Actions, Docker Hub + GHCR dual-publish | Build + push on every `main` commit. See [ADR 0026](docs/adr/0026-dual-registry-publish.md). |
 
 ## Service map
 
@@ -227,9 +231,13 @@ Demo accounts after seeding: `admin@leetrank.local` / `Admin123!` and `demo@leet
 | `services/auth-go` | `nguyenson1710/leetrank-identity` | 4011 | Active (canonical auth) | [README](services/auth-go/README.md) |
 | `services/problems-go` | `nguyenson1710/leetrank-problems-go` | 4013 | Active | [README](services/problems-go/README.md) |
 | `services/submissions-go` | `nguyenson1710/leetrank-submissions-go` | 4012 | Active | [README](services/submissions-go/README.md) |
+| `services/realtime-go` | `nguyenson1710/leetrank-realtime-go` | 4014 | Active | [README](services/realtime-go/README.md) |
+| `services/leaderboard-rust` | `nguyenson1710/leetrank-leaderboard-rust` | 4015 | Active | [README](services/leaderboard-rust/README.md) |
+| `services/notifications-ruby` | `nguyenson1710/leetrank-notifications-ruby` | 4016 | Active | [README](services/notifications-ruby/README.md) |
+| `services/analytics-python` | `nguyenson1710/leetrank-analytics-python` | 4017 | Active | [README](services/analytics-python/README.md) |
 | `judge-service` | `nguyenson1710/leetrank-judge` | 9090 | Active | [README](judge-service/README.md) |
 
-Each service has a runbook in its README covering local dev, production deploy, and the on-call playbook for the most common incident classes.
+Per-service runbooks ship in each service README (local dev, production deploy, on-call playbook). Cross-cutting operational runbooks live in [`docs/runbooks/`](docs/runbooks/) — see the [Runbooks INDEX](docs/runbooks/INDEX.md) for the alert-to-runbook map.
 
 ## Documentation index
 
@@ -264,6 +272,11 @@ Each service has a runbook in its README covering local dev, production deploy, 
 | [0025](docs/adr/0025-secret-management.md) | Secret management |
 | [0026](docs/adr/0026-dual-registry-publish.md) | Dual registry publish |
 | [0027](docs/adr/0027-retire-apps-auth.md) | Retire apps/auth in favor of identity service |
+| [0028](docs/adr/0028-performance-indexes-and-bundle.md) | Performance: hot-path indexes + per-service image trimming |
+| [0029](docs/adr/0029-operations-hardening.md) | Operations hardening |
+| [0030](docs/adr/0030-web-tier-jwt-cutover.md) | Web tier JWT cutover to JWKS verify-only |
+| [0031](docs/adr/0031-i18n-rollout.md) | Internationalisation rollout (cookie locale + Vietnamese) |
+| [0032](docs/adr/0032-multi-session-listing-deferred.md) | Multi-session listing deferred until Session model lands |
 
 ### Runbooks and reference
 
