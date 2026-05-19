@@ -6,8 +6,10 @@ overrides:
   dompurify: ^3.4.0
   postcss: ^8.5.10
 allowBuilds:
+  '@parcel/watcher': set this to true or false
   '@prisma/client': set this to true or false
   '@prisma/engines': set this to true or false
+  '@swc/core': set this to true or false
   esbuild: set this to true or false
   prisma: set this to true or false
   sharp: set this to true or false
