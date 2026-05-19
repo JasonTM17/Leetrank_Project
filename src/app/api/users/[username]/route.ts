@@ -71,7 +71,7 @@ export async function GET(
       }
     }
 
-    const ratingHistory = ratingHistoryRows.map((rc) => ({
+    const ratingHistory = (ratingHistoryRows ?? []).map((rc) => ({
       contestId: rc.contestId,
       contestSlug: rc.contest?.slug,
       contestTitle: rc.contest?.title,

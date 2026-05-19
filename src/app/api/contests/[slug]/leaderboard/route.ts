@@ -43,10 +43,10 @@ export async function GET(
     const userIds = entries.map((e) => e.user.id);
     const ratingChanges = userIds.length === 0
       ? []
-      : await prisma.ratingChange.findMany({
+      : (await prisma.ratingChange.findMany({
           where: { contestId: contest.id, userId: { in: userIds } },
           select: { userId: true, beforeRating: true, afterRating: true, delta: true },
-        });
+        })) ?? [];
     const deltaByUser = new Map(ratingChanges.map((rc) => [rc.userId, rc]));
 
     const ranked = entries.map((e, i) => {
