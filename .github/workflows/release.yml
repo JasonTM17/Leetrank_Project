@@ -1,0 +1,82 @@
+name: Release
+
+# Triggers on annotated/lightweight tags matching v*.
+# Generates release notes from git log between this tag and the previous tag,
+# then publishes a GitHub Release. Container publish + SBOM are owned by
+# their own workflows (docker-publish.yml, sbom.yml) which also trigger on
+# tags — this workflow is only the changelog/Release surface.
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to publish a release for (e.g. v1.2.3)"
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Publish GitHub Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          # Full history so `git log <prev>..<tag>` produces real notes.
+          fetch-depth: 0
+
+      - name: Resolve tag
+        id: tag
+        run: |
+          if [ -n "${{ inputs.tag }}" ]; then
+            TAG="${{ inputs.tag }}"
+          else
+            TAG="${GITHUB_REF#refs/tags/}"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          PREV=$(git describe --tags --abbrev=0 "$TAG^" 2>/dev/null || echo "")
+          echo "prev=$PREV" >> "$GITHUB_OUTPUT"
+
+      - name: Build changelog
+        id: changelog
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+          PREV: ${{ steps.tag.outputs.prev }}
+        run: |
+          set -euo pipefail
+          if [ -n "$PREV" ]; then
+            RANGE="$PREV..$TAG"
+            HEADER="## Changes since $PREV"
+          else
+            RANGE="$TAG"
+            HEADER="## Initial release"
+          fi
+          {
+            echo "$HEADER"
+            echo
+            git log --pretty=format:'- %s (%h)' --no-merges "$RANGE"
+            echo
+            echo
+            if [ -n "$PREV" ]; then
+              echo "**Full diff**: https://github.com/${GITHUB_REPOSITORY}/compare/${PREV}...${TAG}"
+            fi
+          } > release-notes.md
+          echo "Generated release-notes.md ($(wc -l < release-notes.md) lines)"
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@da05d552573ad5aba039eaac05058a918a7bf631 # v2.2.0
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: ${{ steps.tag.outputs.tag }}
+          body_path: release-notes.md
+          draft: false
+          prerelease: ${{ contains(steps.tag.outputs.tag, '-rc') || contains(steps.tag.outputs.tag, '-beta') || contains(steps.tag.outputs.tag, '-alpha') }}
