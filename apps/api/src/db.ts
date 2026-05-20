@@ -15,7 +15,7 @@ import { withPoolParams } from "./db-utils.js";
  */
 
 declare global {
-  // eslint-disable-next-line no-var
+   
   var __leetrankApiPrisma: PrismaClient | undefined;
 }
 

@@ -5,6 +5,7 @@ import { logger } from "@/lib/logger";
 // GET /api/stats — public counters used by the homepage hero numbers.
 // Cached for 60 seconds at the response layer; the actual reads run in
 // parallel.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function GET(_request: NextRequest) {
   try {
     const [problems, contests, users, accepted] = await Promise.all([

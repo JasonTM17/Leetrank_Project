@@ -29,7 +29,7 @@ export const options = {
   },
 };
 
-export default function () {
+export default function smokeTest() {
   group("public reads", () => {
     const endpoints = [
       "/api/health",

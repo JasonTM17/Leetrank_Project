@@ -10,7 +10,7 @@
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { prismaMock } from "../setup";
-import { jsonRequest, asNextRequest, loginAs, plainRequest } from "../helpers";
+import { jsonRequest, asNextRequest, loginAs } from "../helpers";
 
 // Hoisted DAL mock — every test references the same fns and resets per case.
 vi.mock("@/lib/solutions", () => ({

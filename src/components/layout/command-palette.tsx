@@ -128,7 +128,7 @@ export function CommandPalette() {
       return;
     }
     let cancelled = false;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+     
     setSearching(true);
     const t = setTimeout(() => {
       fetch(`/api/problems?search=${encodeURIComponent(q)}&limit=8`)

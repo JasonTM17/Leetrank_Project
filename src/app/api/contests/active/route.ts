@@ -6,6 +6,7 @@ import { logger } from "@/lib/logger";
 // The status column is denormalised; a cron job moves contests through
 // upcoming → active → ended on the right schedule. Filtering by status here
 // (rather than recomputing from start/end) keeps the index path hot.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function GET(_request: NextRequest) {
   try {
     const contests = await prisma.contest.findMany({

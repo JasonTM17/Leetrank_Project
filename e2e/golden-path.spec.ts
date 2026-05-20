@@ -1,4 +1,4 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 
 /**
  * Golden-path E2E — visit homepage, register, login, browse a problem,
@@ -40,7 +40,7 @@ test.describe("golden path — homepage to feature pages", () => {
     await expect(heading).toBeVisible();
   });
 
-  test("step 2-3 — registers and logs in a fresh user", async ({ page, request }) => {
+  test("step 2-3 — registers and logs in a fresh user", async ({ request }) => {
     const id = uniqueIdentity();
 
     // Try the API directly first — the real Next.js handler exists at

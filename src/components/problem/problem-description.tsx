@@ -4,7 +4,6 @@ import { Badge } from "@/components/ui/badge";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { Accordion, AccordionItem } from "@/components/ui/accordion";
 import { HintsProgressive } from "@/components/problem/hints-progressive";
-import { EditorialTab } from "@/components/problem/editorial-tab";
 
 interface TestCase {
   id: string;

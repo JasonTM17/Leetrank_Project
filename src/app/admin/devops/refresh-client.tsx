@@ -1,4 +1,4 @@
-/* eslint-disable react-hooks/set-state-in-effect, react-hooks/purity */
+/* eslint-disable react-hooks/purity */
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";

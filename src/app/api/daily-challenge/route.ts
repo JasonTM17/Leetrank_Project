@@ -17,6 +17,7 @@ import {
 // public Cache-Control. The streak segment is per-user; it's only included
 // when a session cookie is present, and we drop the cache header in that
 // case to avoid leaking one user's streak to another.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function GET(_request: NextRequest) {
   try {
     const today = toUtcDayStart(new Date());

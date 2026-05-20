@@ -55,13 +55,6 @@ const FEATURES = [
   },
 ] as const;
 
-const STATIC_STATS_FALLBACK = [
-  { value: "10K+", label: "Problems" },
-  { value: "1K+", label: "Contests" },
-  { value: "15", label: "Languages" },
-  { value: "<200ms", label: "P99 judge latency" },
-];
-
 interface ApiStats {
   problems: number;
   contests: number;

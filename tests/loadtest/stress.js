@@ -52,7 +52,7 @@ function pickWeighted() {
   return WEIGHTED[0].path;
 }
 
-export default function () {
+export default function stressTest() {
   group("weighted reads", () => {
     const path = pickWeighted();
     const res = http.get(`${BASE_URL}${path}`, { tags: { name: path } });

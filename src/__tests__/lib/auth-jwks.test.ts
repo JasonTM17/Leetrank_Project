@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { SignJWT } from "jose";
 import { signToken, verifyTokenJwks, verifyToken } from "@/lib/auth";
 

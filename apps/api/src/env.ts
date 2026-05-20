@@ -32,7 +32,7 @@ function parseEnv() {
     const formatted = result.error.issues
       .map((i) => `  ${i.path.join(".")}: ${i.message}`)
       .join("\n");
-    // eslint-disable-next-line no-console
+     
     console.error(`[env] Invalid environment variables:\n${formatted}`);
     process.exit(1);
   }
@@ -40,7 +40,7 @@ function parseEnv() {
   const data = result.data;
 
   if (data.NODE_ENV !== "production" && !data.JWT_SECRET) {
-    // eslint-disable-next-line no-console
+     
     console.warn(
       "[env] WARNING: JWT_SECRET not set — using insecure dev-only fallback. " +
         "Never run this in production without a real secret."

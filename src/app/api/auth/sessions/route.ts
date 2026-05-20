@@ -7,6 +7,7 @@ import { logger } from "@/lib/logger";
 // a single entry. When a Session model lands (in the identity service, per
 // ADR-0030), this returns the full list verbatim. See ADR-0031 for the
 // rationale on deferring multi-session listing.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function GET(_request: NextRequest) {
   try {
     const session = await getSession();

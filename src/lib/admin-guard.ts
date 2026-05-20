@@ -33,6 +33,7 @@ export interface AdminBlocked {
 }
 
 export async function requireAdmin(
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _request?: NextRequest
 ): Promise<AdminGate | AdminBlocked> {
   const session = await getSession();

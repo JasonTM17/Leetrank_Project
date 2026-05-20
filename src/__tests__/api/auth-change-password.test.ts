@@ -85,8 +85,6 @@ describe("POST /api/auth/change-password", () => {
     const oldHashed = await bcrypt.hash("oldpassword", 10);
     const newPassword = "shinypassword456";
     const newHashed = await bcrypt.hash(newPassword, 10);
-    const sticky = "10.0.99.42";
-
     // 1) Burn the per-account login bucket with wrong-password attempts.
     prismaMock.user.findUnique.mockResolvedValue({
       id: "u1",

@@ -51,7 +51,7 @@ export default function SubmissionDetailPage({ params }: { params: Promise<{ id:
       .then((data) => { if (data) setSubmission(data.submission); })
       .catch(() => {})
       .finally(() => setLoading(false));
-    /* eslint-enable react-hooks/set-state-in-effect */
+     
   }, [id]);
 
   if (loading) {

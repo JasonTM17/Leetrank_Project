@@ -32,7 +32,7 @@ export default function TagPage({ params }: { params: Promise<{ slug: string }> 
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    /* eslint-disable react-hooks/set-state-in-effect */
+     
     fetch(`/api/tags/${encodeURIComponent(slug)}`)
       .then((r) => {
         if (r.status === 404) { setNotFound(true); return null; }
@@ -41,7 +41,7 @@ export default function TagPage({ params }: { params: Promise<{ slug: string }> 
       .then((d) => { if (d) setData(d); })
       .catch(() => {})
       .finally(() => setLoading(false));
-    /* eslint-enable react-hooks/set-state-in-effect */
+     
   }, [slug]);
 
   if (loading) {

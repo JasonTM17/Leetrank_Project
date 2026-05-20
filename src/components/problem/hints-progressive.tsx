@@ -1,4 +1,4 @@
-/* eslint-disable react-hooks/set-state-in-effect, react-hooks/purity */
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -174,7 +174,7 @@ export function HintsProgressive({ slug, hints, isAuthenticated }: HintsProgress
             <li
               key={i}
               className="flex gap-2 rounded-md border border-dashed bg-muted/10 p-3 opacity-60"
-              aria-disabled={isFutureLocked || undefined}
+              data-locked={isFutureLocked || undefined}
             >
               <Lock className="h-4 w-4 mt-0.5 shrink-0 text-muted-foreground" />
               <div className="text-sm text-muted-foreground">

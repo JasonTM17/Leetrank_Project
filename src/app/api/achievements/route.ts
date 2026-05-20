@@ -10,6 +10,7 @@ import { logger } from "@/lib/logger";
  * their per-row earned/progress state. Hidden achievements are filtered out
  * unless the caller has earned them.
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function GET(_request: NextRequest) {
   try {
     const session = await getSession();

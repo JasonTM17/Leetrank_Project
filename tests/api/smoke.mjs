@@ -98,7 +98,7 @@ async function probe({ name, method = "GET", url, expect, body, headers, allow =
   };
   results.push(result);
   const tag = pass ? "PASS" : "FAIL";
-  // eslint-disable-next-line no-console
+   
   console.log(
     `[${tag}] ${method} ${url} -> ${status} ${latencyMs}ms${result.failure ? "  (" + result.failure + ")" : ""}`,
   );

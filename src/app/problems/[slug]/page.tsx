@@ -10,7 +10,7 @@ import { DiscussionsPanel } from "@/components/problem/discussions-panel";
 import { BookmarkButton } from "@/components/problem/bookmark-button";
 import { EditorSettingsPopover } from "@/components/problem/editor-settings";
 import { useEditorPrefs } from "@/hooks/useEditorPrefs";
-// eslint-disable-next-line @typescript-eslint/no-namespace
+// eslint-disable-next-line @typescript-eslint/no-namespace, @typescript-eslint/no-explicit-any
 declare namespace MonacoEditor { type IStandaloneCodeEditor = any; }
 type IStandaloneCodeEditor = MonacoEditor.IStandaloneCodeEditor;
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";

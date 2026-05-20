@@ -81,7 +81,7 @@ function write(level: Level, msg: string, fields: Fields): void {
       Object.keys(safe).length > 0
         ? " " + DIM + JSON.stringify(safe) + RESET
         : "";
-    // eslint-disable-next-line no-console
+     
     console.log(
       `${DIM}${ts}${RESET} ${colour}${level.toUpperCase().padEnd(5)}${RESET} ${msg}${extra}`
     );
@@ -92,7 +92,7 @@ function write(level: Level, msg: string, fields: Fields): void {
       msg,
       ...safe,
     };
-    // eslint-disable-next-line no-console
+     
     console.log(JSON.stringify(line));
   }
 }

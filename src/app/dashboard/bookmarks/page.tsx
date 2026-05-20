@@ -28,7 +28,7 @@ export default function BookmarksPage() {
       .then((data) => setBookmarks(data.bookmarks ?? []))
       .catch(() => setBookmarks([]))
       .finally(() => setLoading(false));
-    /* eslint-enable react-hooks/set-state-in-effect */
+     
   }, []);
 
   return (

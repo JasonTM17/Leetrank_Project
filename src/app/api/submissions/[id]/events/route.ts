@@ -9,13 +9,6 @@ import {
   type PlaybackEvent,
 } from "@/lib/code-playback";
 
-const rangeSchema = z.object({
-  startLineNumber: z.number().int().min(1),
-  startColumn: z.number().int().min(1),
-  endLineNumber: z.number().int().min(1),
-  endColumn: z.number().int().min(1),
-});
-
 const eventSchema = z.object({
   type: z.enum(["keystroke", "paste", "select", "snapshot"]),
   ts: z.number().int().nonnegative(),

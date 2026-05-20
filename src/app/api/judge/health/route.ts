@@ -8,6 +8,7 @@ import { envOr } from "@/lib/env";
 // snapshot — that's what dashboards care about.
 const JUDGE_URL = envOr("JUDGE_SERVICE_URL", "http://localhost:9090");
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function GET(_request: NextRequest) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 2_000);

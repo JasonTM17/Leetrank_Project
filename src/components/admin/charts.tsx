@@ -1,4 +1,4 @@
-/* eslint-disable react-hooks/set-state-in-effect, react-hooks/purity */
+ 
 /**
  * Pure-SVG admin chart primitives.
  *

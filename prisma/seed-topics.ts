@@ -84,13 +84,13 @@ async function main(): Promise<void> {
     await upsertTag(tag);
     created += 1;
   }
-  // eslint-disable-next-line no-console
+   
   console.log(`[seed-topics] upserted ${created} tags (${TOPICS.length} topic, ${COMPANIES.length} company)`);
 }
 
 main()
   .catch((err) => {
-    // eslint-disable-next-line no-console
+     
     console.error("[seed-topics] failed:", err);
     process.exit(1);
   })

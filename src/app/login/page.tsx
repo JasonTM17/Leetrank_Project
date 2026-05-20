@@ -57,7 +57,7 @@ export default function LoginPage() {
         }
       })
       .catch(() => {});
-  }, []);
+  }, [th]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

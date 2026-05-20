@@ -49,6 +49,7 @@ async function computeTop(): Promise<TopEntry[]> {
     .filter((x): x is TopEntry => x !== null);
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function GET(_request: NextRequest) {
   try {
     const top = await cache.remember(CACHE_KEY, TTL_MS, computeTop);
