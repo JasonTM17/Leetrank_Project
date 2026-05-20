@@ -10,7 +10,9 @@ import { DiscussionsPanel } from "@/components/problem/discussions-panel";
 import { BookmarkButton } from "@/components/problem/bookmark-button";
 import { EditorSettingsPopover } from "@/components/problem/editor-settings";
 import { useEditorPrefs } from "@/hooks/useEditorPrefs";
-import type { editor } from "monaco-editor";
+// eslint-disable-next-line @typescript-eslint/no-namespace
+declare namespace MonacoEditor { type IStandaloneCodeEditor = any; }
+type IStandaloneCodeEditor = MonacoEditor.IStandaloneCodeEditor;
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Tooltip } from "@/components/ui/tooltip";
 import { Dialog } from "@/components/ui/dialog";
@@ -108,7 +110,7 @@ export default function ProblemDetailPage({
 
   // Editor prefs (vim/theme/font/tab/wrap) — persisted to localStorage.
   const { prefs, setPrefs } = useEditorPrefs();
-  const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
+  const editorRef = useRef<IStandaloneCodeEditor | null>(null);
   const vimStatusRef = useRef<HTMLDivElement | null>(null);
   const vimDisposeRef = useRef<(() => void) | null>(null);
 
