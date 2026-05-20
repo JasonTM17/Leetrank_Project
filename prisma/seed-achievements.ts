@@ -5,7 +5,7 @@
  * Run: pnpm prisma db seed (chained from prisma/seed.ts) or invoke directly:
  *   pnpm tsx prisma/seed-achievements.ts
  */
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Prisma } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -16,7 +16,7 @@ interface SeedRow {
   icon: string;
   category: string;
   points: number;
-  criteriaJson: Record<string, unknown>;
+  criteriaJson: Prisma.InputJsonValue;
   isHidden?: boolean;
 }
 
