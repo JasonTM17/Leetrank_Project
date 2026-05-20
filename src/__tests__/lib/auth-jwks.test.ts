@@ -30,6 +30,7 @@ describe("auth — JWKS verify path branches", () => {
 
   it("returns null when alg=HS256 but legacy fallback disabled in production", async () => {
     const token = await signHs256({ userId: "u1", email: "u@x.c", username: "u", role: "user" });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (process.env as any).NODE_ENV = "production";
     process.env.LEGACY_HS256_FALLBACK = "false";
     expect(await verifyTokenJwks(token)).toBeNull();
@@ -37,6 +38,7 @@ describe("auth — JWKS verify path branches", () => {
 
   it("verifies HS256 token via legacy fallback in non-production", async () => {
     const token = await signToken({ userId: "u1", email: "u@x.c", username: "u", role: "user" });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (process.env as any).NODE_ENV = "test";
     delete process.env.LEGACY_HS256_FALLBACK;
     const payload = await verifyTokenJwks(token);
@@ -46,6 +48,7 @@ describe("auth — JWKS verify path branches", () => {
 
   it("verifies HS256 token when LEGACY_HS256_FALLBACK=true even in production", async () => {
     const token = await signToken({ userId: "u2", email: "u2@x.c", username: "u2", role: "admin" });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (process.env as any).NODE_ENV = "production";
     process.env.LEGACY_HS256_FALLBACK = "true";
     const payload = await verifyTokenJwks(token);

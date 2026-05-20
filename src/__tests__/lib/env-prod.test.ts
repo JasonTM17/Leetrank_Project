@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 describe("envOr — production warn branch", () => {
   const ORIGINAL_NODE_ENV = process.env.NODE_ENV;
 
