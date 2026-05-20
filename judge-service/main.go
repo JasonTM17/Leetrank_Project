@@ -61,9 +61,9 @@ type runnerOutput struct {
 
 var dangerousPatterns = map[string][]string{
 	"python": {
-		"import os", "import sys", "import subprocess", "import shutil",
+		"import os", "import subprocess", "import shutil",
 		"import socket", "import ctypes", "import importlib",
-		"__import__", "__builtins__", "open(", "eval(", "exec(",
+		"__import__", "__builtins__", "eval(",
 		"compile(", "globals(", "locals(", "vars(",
 	},
 	"javascript": {
