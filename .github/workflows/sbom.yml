@@ -3,7 +3,7 @@ name: SBOM
 on:
   push:
     branches: [main]
-    tags: ['v*']
+    tags: ["v*"]
   workflow_dispatch:
 
 permissions:
@@ -28,7 +28,7 @@ jobs:
         run: npm install --no-audit --no-fund
 
       - name: Generate CycloneDX SBOM
-        run: npx --yes @cyclonedx/cyclonedx-npm --output-file sbom.cdx.json
+        run: npx --yes @cyclonedx/cyclonedx-npm --ignore-npm-errors --output-file sbom.cdx.json
 
       - name: Upload SBOM artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

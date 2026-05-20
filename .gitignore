@@ -60,6 +60,15 @@ __pycache__/
 # vercel
 .vercel
 
+# Scratch JSON files from REST API debugging — never commit
+dep.json
+env-list.json
+redeploy*.json
+proj-patch.json
+ev.json
+vd.json
+.jwt-secret.tmp
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
