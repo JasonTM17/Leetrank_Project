@@ -390,5 +390,15 @@
     "scrub": "Tua thời gian",
     "durationLabel": "Đã ghi {seconds}s",
     "frameLabel": "Khung {current} / {total}"
+  },
+  "achievements": {
+    "title": "Thành tựu",
+    "subtitle": "Theo dõi các cột mốc trên bài tập, giải đấu và chuỗi ngày.",
+    "statsEarned": "Đạt {earned} / {total}",
+    "statsPoints": "{points} điểm",
+    "errorTitle": "Không tải được thành tựu",
+    "errorBody": "Có lỗi khi lấy danh sách thành tựu. Vui lòng thử lại sau.",
+    "emptyTitle": "Chưa có thành tựu nào",
+    "emptyBody": "Hãy giải bài và tham gia giải đấu để bắt đầu nhận thành tựu."
   }
 }

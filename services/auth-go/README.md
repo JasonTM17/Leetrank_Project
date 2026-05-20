@@ -1,18 +1,18 @@
-# leetrank-auth-go
+# leetrank-identity
 
-Production Go rewrite of `apps/auth`. Same wire surface, different runtime — chi + pgx v5 + go-jose + slog. Lives next to `apps/auth` during the cutover documented in [ADR 0017](../../docs/adr/0017-auth-go-rewrite.md).
+Canonical authentication issuer for LeetRank — chi + pgx v5 + go-jose + slog. The TypeScript predecessor `apps/auth` was retired in [ADR 0027](../../docs/adr/0027-retire-apps-auth.md); see [ADR 0017](../../docs/adr/0017-auth-go-rewrite.md) for the rewrite history.
 
 ## Purpose and responsibilities
 
-| Responsibility | Owned here? |
-|----------------|-------------|
-| Account creation (`POST /v1/auth/register`) | Yes |
-| Login + cookie issuance (`POST /v1/auth/login`) | Yes |
-| Session inspection (`GET /v1/auth/me`) | Yes |
-| Logout (`POST /v1/auth/logout`) | Yes |
-| Password change (`POST /v1/auth/change-password`) | Yes |
-| JWKS publication (`/jwks`, `/.well-known/jwks.json`) | Yes |
-| Submission writes, judge dispatch | No → `services/submissions-go` |
+| Responsibility                                       | Owned here?                    |
+| ---------------------------------------------------- | ------------------------------ |
+| Account creation (`POST /v1/auth/register`)          | Yes                            |
+| Login + cookie issuance (`POST /v1/auth/login`)      | Yes                            |
+| Session inspection (`GET /v1/auth/me`)               | Yes                            |
+| Logout (`POST /v1/auth/logout`)                      | Yes                            |
+| Password change (`POST /v1/auth/change-password`)    | Yes                            |
+| JWKS publication (`/jwks`, `/.well-known/jwks.json`) | Yes                            |
+| Submission writes, judge dispatch                    | No → `services/submissions-go` |
 
 ## Status
 
@@ -20,31 +20,31 @@ Production Go rewrite of `apps/auth`. Same wire surface, different runtime — c
 
 ## Endpoints
 
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| GET | `/healthz` | — | Liveness — 200 while process is up |
-| GET | `/readyz` | — | Readiness — Postgres ping |
-| GET | `/metrics` | — | Prometheus text exposition |
-| GET | `/jwks` | — | JWKS (HS256 today, Ed25519 in 3.1.5+) |
-| GET | `/.well-known/jwks.json` | — | JWKS alias |
-| POST | `/v1/auth/register` | — | Create account |
-| POST | `/v1/auth/login` | — | Issue session cookie |
-| POST | `/v1/auth/logout` | — | Clear session cookie |
-| GET | `/v1/auth/me` | cookie | Current session profile |
-| POST | `/v1/auth/change-password` | cookie | Update password |
-| GET | `/v1/auth/sessions` | — | 501 — session model not yet in schema |
+| Method | Path                       | Auth   | Description                           |
+| ------ | -------------------------- | ------ | ------------------------------------- |
+| GET    | `/healthz`                 | —      | Liveness — 200 while process is up    |
+| GET    | `/readyz`                  | —      | Readiness — Postgres ping             |
+| GET    | `/metrics`                 | —      | Prometheus text exposition            |
+| GET    | `/jwks`                    | —      | JWKS (HS256 today, Ed25519 in 3.1.5+) |
+| GET    | `/.well-known/jwks.json`   | —      | JWKS alias                            |
+| POST   | `/v1/auth/register`        | —      | Create account                        |
+| POST   | `/v1/auth/login`           | —      | Issue session cookie                  |
+| POST   | `/v1/auth/logout`          | —      | Clear session cookie                  |
+| GET    | `/v1/auth/me`              | cookie | Current session profile               |
+| POST   | `/v1/auth/change-password` | cookie | Update password                       |
+| GET    | `/v1/auth/sessions`        | —      | 501 — session model not yet in schema |
 
 Full machine-readable contract: [`services/auth-go/openapi.yaml`](./openapi.yaml).
 
 ## Environment variables
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `DATABASE_URL` | yes | — | PostgreSQL connection URL |
-| `JWT_SECRET` | yes | — | HS256 signing secret, 16+ chars |
-| `AUTH_PORT` | no | `4011` | HTTP listen port |
-| `CORS_ALLOWED_ORIGINS` | no | `""` | Comma-separated allowed origins |
-| `LOG_LEVEL` | no | `info` | slog level |
+| Variable               | Required | Default | Description                     |
+| ---------------------- | -------- | ------- | ------------------------------- |
+| `DATABASE_URL`         | yes      | —       | PostgreSQL connection URL       |
+| `JWT_SECRET`           | yes      | —       | HS256 signing secret, 16+ chars |
+| `AUTH_PORT`            | no       | `4011`  | HTTP listen port                |
+| `CORS_ALLOWED_ORIGINS` | no       | `""`    | Comma-separated allowed origins |
+| `LOG_LEVEL`            | no       | `info`  | slog level                      |
 
 Validated by `internal/config/config.go` at boot. Missing required values exit non-zero with a structured error log.
 
@@ -95,11 +95,11 @@ Tests cover: registration validation, login + cookie issuance, bcrypt timing-att
 ### Image build
 
 ```bash
-docker build -t nguyenson1710/leetrank-auth-go:latest \
-             -t nguyenson1710/leetrank-auth-go:$(git rev-parse --short HEAD) \
+docker build -t nguyenson1710/leetrank-identity:latest \
+             -t nguyenson1710/leetrank-identity:$(git rev-parse --short HEAD) \
              -f services/auth-go/Dockerfile services/auth-go
-docker push nguyenson1710/leetrank-auth-go:latest
-docker push nguyenson1710/leetrank-auth-go:$(git rev-parse --short HEAD)
+docker push nguyenson1710/leetrank-identity:latest
+docker push nguyenson1710/leetrank-identity:$(git rev-parse --short HEAD)
 ```
 
 CI handles this on every push to `main`. The runtime stage is distroless (`gcr.io/distroless/static`), ~15 MB total — see [ADR 0017](../../docs/adr/0017-auth-go-rewrite.md).
@@ -147,11 +147,11 @@ If `apps/api` or `apps/web` reject session cookies issued here:
 
 ### Logs
 
-| Source | Where |
-|--------|-------|
-| slog JSON logs | stdout — `docker compose logs auth-go` |
-| Prometheus metrics | scraped at `/metrics` |
-| Postgres slow queries | `pg_stat_statements` |
+| Source                | Where                                  |
+| --------------------- | -------------------------------------- |
+| slog JSON logs        | stdout — `docker compose logs auth-go` |
+| Prometheus metrics    | scraped at `/metrics`                  |
+| Postgres slow queries | `pg_stat_statements`                   |
 
 Every log line carries `request_id` (set by `internal/http/middleware.go`).
 

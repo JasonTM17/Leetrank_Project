@@ -390,5 +390,15 @@
     "scrub": "Scrub timeline",
     "durationLabel": "{seconds}s recorded",
     "frameLabel": "Frame {current} / {total}"
+  },
+  "achievements": {
+    "title": "Achievements",
+    "subtitle": "Track milestones across problems, contests, and streaks.",
+    "statsEarned": "{earned} of {total} earned",
+    "statsPoints": "{points} points",
+    "errorTitle": "Couldn't load achievements",
+    "errorBody": "We hit a snag fetching your achievements. Try again in a moment.",
+    "emptyTitle": "No achievements yet",
+    "emptyBody": "Solve problems and join contests to start earning achievements."
   }
 }

@@ -4,17 +4,17 @@ Read-only HTTP API for LeetRank. Standalone Hono service that owns the ported pu
 
 ## Purpose and responsibilities
 
-`apps/api` is the canonical read surface for the platform. It does **not** own auth issuance, code submission, or any write path that mutates user state — those live in `apps/auth` / `services/auth-go` and `services/submissions-go` respectively.
+`apps/api` is the canonical read surface for the platform. It does **not** own auth issuance, code submission, or any write path that mutates user state — those live in `services/auth-go` and `services/submissions-go` respectively.
 
-| Responsibility | Owned here? |
-|----------------|-------------|
-| Catalogue reads (problems, tags, contests) | Yes |
-| Aggregate stats (`/stats`) | Yes |
-| Top-N leaderboard (`/leaderboard/top`) | Yes |
-| Liveness / readiness / metrics | Yes |
-| Authentication (login, register, JWT issuance) | No → `apps/auth` |
-| Submission creation, judge dispatch | No → `services/submissions-go` |
-| Admin mutations | No → still in `apps/web` until Phase 3 |
+| Responsibility                                 | Owned here?                            |
+| ---------------------------------------------- | -------------------------------------- |
+| Catalogue reads (problems, tags, contests)     | Yes                                    |
+| Aggregate stats (`/stats`)                     | Yes                                    |
+| Top-N leaderboard (`/leaderboard/top`)         | Yes                                    |
+| Liveness / readiness / metrics                 | Yes                                    |
+| Authentication (login, register, JWT issuance) | No → `services/auth-go`                |
+| Submission creation, judge dispatch            | No → `services/submissions-go`         |
+| Admin mutations                                | No → still in `apps/web` until Phase 3 |
 
 ## Status
 
@@ -22,38 +22,38 @@ Read-only HTTP API for LeetRank. Standalone Hono service that owns the ported pu
 
 ## Endpoints
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/` | Service info (name, version) |
-| GET | `/healthz` | Liveness — always 200 while process is up |
-| GET | `/health` | Alias for `/readyz` |
-| GET | `/readyz` | Readiness — probes Postgres |
-| GET | `/metrics` | Prometheus text exposition |
-| GET | `/stats` | Platform-wide counts (problems, contests, users, accepted) |
-| GET | `/leaderboard/top` | Top-N leaderboard entries |
-| GET | `/tags` | All tags |
-| GET | `/tags/:slug` | Tag detail + paginated problem list |
-| GET | `/contests` | All contests (with entry/problem counts) |
-| GET | `/contests/active` | Active contests only |
-| GET | `/contests/upcoming` | Upcoming contests only |
-| GET | `/contests/:slug` | Contest detail + problem list |
-| GET | `/problems` | Paginated problem list (filter by difficulty, tag, search) |
-| GET | `/problems/trending` | Top trending problems by recent accepted count |
-| GET | `/problems/random` | One random problem summary |
-| GET | `/problems/:slug` | Full problem detail + test cases |
+| Method | Path                 | Description                                                |
+| ------ | -------------------- | ---------------------------------------------------------- |
+| GET    | `/`                  | Service info (name, version)                               |
+| GET    | `/healthz`           | Liveness — always 200 while process is up                  |
+| GET    | `/health`            | Alias for `/readyz`                                        |
+| GET    | `/readyz`            | Readiness — probes Postgres                                |
+| GET    | `/metrics`           | Prometheus text exposition                                 |
+| GET    | `/stats`             | Platform-wide counts (problems, contests, users, accepted) |
+| GET    | `/leaderboard/top`   | Top-N leaderboard entries                                  |
+| GET    | `/tags`              | All tags                                                   |
+| GET    | `/tags/:slug`        | Tag detail + paginated problem list                        |
+| GET    | `/contests`          | All contests (with entry/problem counts)                   |
+| GET    | `/contests/active`   | Active contests only                                       |
+| GET    | `/contests/upcoming` | Upcoming contests only                                     |
+| GET    | `/contests/:slug`    | Contest detail + problem list                              |
+| GET    | `/problems`          | Paginated problem list (filter by difficulty, tag, search) |
+| GET    | `/problems/trending` | Top trending problems by recent accepted count             |
+| GET    | `/problems/random`   | One random problem summary                                 |
+| GET    | `/problems/:slug`    | Full problem detail + test cases                           |
 
 Full machine-readable contract: [`apps/api/openapi.yaml`](./openapi.yaml).
 
 ## Environment variables
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `DATABASE_URL` | yes | — | PostgreSQL connection URL |
-| `JWT_SECRET` | production only | dev fallback | HS256 signing secret (16+ chars). Process exits at startup if missing in `production`. |
-| `API_PORT` | no | `4000` | HTTP listen port |
-| `CORS_ALLOWED_ORIGINS` | no | `""` | Comma-separated allowed origins. Empty in production rejects cross-origin requests. |
-| `NODE_ENV` | no | `development` | `development` / `production` / `test` |
-| `LOG_LEVEL` | no | `info` | Logger threshold (`debug` / `info` / `warn` / `error`) |
+| Variable               | Required        | Default       | Description                                                                            |
+| ---------------------- | --------------- | ------------- | -------------------------------------------------------------------------------------- |
+| `DATABASE_URL`         | yes             | —             | PostgreSQL connection URL                                                              |
+| `JWT_SECRET`           | production only | dev fallback  | HS256 signing secret (16+ chars). Process exits at startup if missing in `production`. |
+| `API_PORT`             | no              | `4000`        | HTTP listen port                                                                       |
+| `CORS_ALLOWED_ORIGINS` | no              | `""`          | Comma-separated allowed origins. Empty in production rejects cross-origin requests.    |
+| `NODE_ENV`             | no              | `development` | `development` / `production` / `test`                                                  |
+| `LOG_LEVEL`            | no              | `info`        | Logger threshold (`debug` / `info` / `warn` / `error`)                                 |
 
 `JWT_SECRET` is validated by `src/env.ts` at startup. The dev fallback is deterministic and insecure; never deploy it.
 
@@ -113,11 +113,11 @@ The service is stateless. Scale by adding replicas behind any L7 load balancer; 
 
 ### Health probes
 
-| Endpoint | Purpose | Typical use |
-|----------|---------|-------------|
+| Endpoint       | Purpose                            | Typical use                                |
+| -------------- | ---------------------------------- | ------------------------------------------ |
 | `GET /healthz` | Liveness — returns 200 immediately | k8s `livenessProbe`, compose `healthcheck` |
-| `GET /readyz` | Readiness — pings Postgres | k8s `readinessProbe`, gateway warm-check |
-| `GET /metrics` | Prometheus text format | Prometheus scrape target |
+| `GET /readyz`  | Readiness — pings Postgres         | k8s `readinessProbe`, gateway warm-check   |
+| `GET /metrics` | Prometheus text format             | Prometheus scrape target                   |
 
 Compose healthcheck is `wget --spider http://localhost:4000/healthz` (5 s interval, 30 s start period).
 
@@ -146,11 +146,11 @@ Container exits at startup with this message in `production`. Set the env var vi
 
 ### Logs
 
-| Source | Where |
-|--------|-------|
-| Application JSON logs | stdout — collected by docker logging driver |
-| Caddy access logs | the Caddy container, `/var/log/caddy/access.log` |
-| Prometheus metrics | scraped at `/metrics` |
+| Source                | Where                                            |
+| --------------------- | ------------------------------------------------ |
+| Application JSON logs | stdout — collected by docker logging driver      |
+| Caddy access logs     | the Caddy container, `/var/log/caddy/access.log` |
+| Prometheus metrics    | scraped at `/metrics`                            |
 
 Filter by request id: every log line includes `request_id` set by the Hono request-id middleware.
 
