@@ -126,41 +126,128 @@ Roughly 500+ commits since `v0.1.0`. The full breakdown is in [CHANGELOG.md](CHA
 ## Architecture
 
 ```mermaid
-flowchart LR
+flowchart TB
     User([Browser / CLI]) -->|HTTPS| Caddy[Caddy reverse proxy]
 
-    Caddy --> Web[apps/web<br/>Next.js 16 SSR]
-    Caddy --> API[apps/api<br/>Hono - read API]
-    Caddy --> Auth[services/auth-go<br/>identity — JWT issuer + JWKS]
-    Caddy --> Problems[services/problems-go<br/>problems read API]
-    Caddy --> Submissions[services/submissions-go<br/>submissions read/write]
+    subgraph Frontend["Frontend tier"]
+        Web[apps/web<br/>Next.js 16 SSR]
+    end
+
+    subgraph BackendApis["Backend APIs"]
+        API[apps/api<br/>Hono — read API]
+        Auth[services/auth-go<br/>identity — JWT issuer + JWKS]
+        Problems[services/problems-go<br/>problems catalogue]
+        Submissions[services/submissions-go<br/>submissions read/write]
+        Realtime[services/realtime-go<br/>WebSocket fan-out]
+        Leaderboard[services/leaderboard-rust<br/>rankings + Glicko-2]
+        Analytics[services/analytics-python<br/>FastAPI charts + heatmap]
+        Notifications[services/notifications-ruby<br/>Sinatra email + webhooks]
+        Judge[judge-service<br/>nsjail sandbox runner]
+    end
+
+    subgraph DataStores["Data stores"]
+        PG[(PostgreSQL 16<br/>primary)]
+        Redis[(Redis 7<br/>cache + queue + ratelimit)]
+        N8NPG[(Postgres for n8n)]
+    end
+
+    subgraph Workflow["Workflow + automation"]
+        N8N[n8n<br/>chatbot + alert routing]
+        NotifWorker[notifications worker<br/>Redis stream consumer]
+    end
+
+    subgraph Observability["Observability stack"]
+        Prom[Prometheus<br/>:9091]
+        Loki[Loki<br/>logs]
+        Promtail[Promtail<br/>log shipper]
+        Tempo[Tempo<br/>OTLP traces :4317/:4318]
+        Alertmgr[Alertmanager<br/>:9093 routes to n8n]
+        Grafana[Grafana<br/>dashboards :3000]
+    end
+
+    Caddy --> Web
+    Caddy --> API
+    Caddy --> Auth
+    Caddy --> Problems
+    Caddy --> Submissions
+    Caddy --> Realtime
+    Caddy --> Leaderboard
+    Caddy --> Analytics
+    Caddy --> Notifications
 
     Web -.SSR fetch.-> API
-    Submissions -->|enqueue| Judge[judge-service<br/>Go sandbox runner]
+    Web -.JWKS verify.-> Auth
+    Web -.real-time.-> Realtime
+    Submissions -->|enqueue| Judge
+    Judge --> Sandbox[Per-submission<br/>nsjail container]
 
-    API --> PG[(PostgreSQL 16)]
+    API --> PG
     Auth --> PG
     Problems --> PG
     Submissions --> PG
     Web --> PG
+    Analytics --> PG
+    Leaderboard --> PG
+    Realtime --> PG
 
-    API --> Redis[(Redis 7)]
+    API --> Redis
     Submissions --> Redis
     Web --> Redis
+    Realtime --> Redis
+    Leaderboard --> Redis
+    Analytics --> Redis
+    Notifications --> Redis
+    NotifWorker --> Redis
 
-    Web -.webhook.-> N8N[n8n<br/>chatbot orchestration]
+    Web -.HMAC webhook.-> N8N
+    Notifications -.HMAC webhook.-> N8N
+    N8N --> N8NPG
+    NotifWorker --> Notifications
 
-    Judge --> Sandbox[Per-submission<br/>Docker container]
+    Prom -.scrape /metrics.-> API
+    Prom -.scrape.-> Auth
+    Prom -.scrape.-> Problems
+    Prom -.scrape.-> Submissions
+    Prom -.scrape.-> Realtime
+    Prom -.scrape.-> Leaderboard
+    Prom -.scrape.-> Analytics
+    Prom -.scrape.-> Notifications
+    Prom -.scrape.-> Judge
+    Prom -.scrape.-> Web
+
+    Promtail --> Loki
+    Web -.OTLP.-> Tempo
+    Auth -.OTLP.-> Tempo
+    Submissions -.OTLP.-> Tempo
+
+    Prom --> Alertmgr
+    Alertmgr -->|severity routes| N8N
+
+    Grafana --> Prom
+    Grafana --> Loki
+    Grafana --> Tempo
 
     classDef svc fill:#1f6feb,stroke:#0d419d,color:#fff
     classDef store fill:#238636,stroke:#0d4218,color:#fff
     classDef edge fill:#8957e5,stroke:#4c2889,color:#fff
-    class Web,API,Auth,Problems,Submissions,Judge,N8N svc
-    class PG,Redis,Sandbox store
+    classDef obs fill:#bf8700,stroke:#7a5400,color:#fff
+    classDef flow fill:#cf222e,stroke:#82161f,color:#fff
+    class Web,API,Auth,Problems,Submissions,Realtime,Leaderboard,Analytics,Notifications,Judge,NotifWorker svc
+    class PG,Redis,N8NPG,Sandbox store
     class Caddy edge
+    class Prom,Loki,Promtail,Tempo,Alertmgr,Grafana obs
+    class N8N flow
 ```
 
-The split is deliberate. See [ADR 0011](docs/adr/0011-split-backend-frontend.md) for the rationale and [ADR 0018](docs/adr/0018-go-services-buildout.md) for the Go rewrite plan.
+The architecture splits into 5 tiers:
+
+- **Edge** — Caddy terminates TLS and routes to web + 8 backend services.
+- **Frontend** — Next.js SSR app (apps/web).
+- **Backend APIs** — 9 polyglot services (TS Hono, Go ×4, Rust, Python, Ruby, Go judge).
+- **Data** — Postgres 16 (primary), Redis 7 (cache + queue + rate-limit), separate Postgres for n8n.
+- **Observability** — Prometheus + Loki + Tempo + Alertmanager + Grafana, with alerts routed through n8n for notification fan-out.
+
+The split is deliberate. See [ADR 0011](docs/adr/0011-split-backend-frontend.md) for the rationale, [ADR 0018](docs/adr/0018-go-services-buildout.md) for the Go rewrite plan, and [ADR 0024](docs/adr/0024-observability-stack.md) for the observability tier.
 
 ## Run locally
 

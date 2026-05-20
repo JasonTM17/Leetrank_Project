@@ -121,3 +121,5 @@ RULES.md
 
 # pnpm is the workspace package manager — no npm lockfile in the tree
 package-lock.json
+
+.vercel
