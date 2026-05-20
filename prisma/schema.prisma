@@ -16,6 +16,8 @@ model User {
   username  String   @unique
   password  String
   role      String   @default("user")
+  failedLoginCount   Int       @default(0)
+  lockedUntil        DateTime?
   avatar    String?
   bio       String?
   createdAt DateTime @default(now())
@@ -41,6 +43,7 @@ model User {
   dailyChallengeStreak DailyChallengeStreak?
   achievements      UserAchievement[]
   studyPlans        UserStudyPlan[]
+  auditLogs         AuditLog[]
 
   @@index([role])
   @@index([rating(sort: Desc)])
@@ -441,4 +444,21 @@ model UserStudyPlan {
   @@id([userId, studyPlanId])
   @@index([userId, lastActivityAt(sort: Desc)])
   @@index([studyPlanId])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  actor      User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  action     String
+  targetType String?
+  targetId   String?
+  metadata   Json?
+  ip         String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@index([actorId, createdAt])
+  @@index([action, createdAt])
+  @@index([targetType, targetId])
 }
