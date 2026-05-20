@@ -40,6 +40,36 @@ function redactLongCodeBlocks(text: string): string {
   });
 }
 
+/**
+ * Local fallback reply generator when n8n / external LLM is not configured.
+ * Provides simple keyword-based hints so the chatbot UI keeps working in dev
+ * and standalone deployments. Production should always have n8n configured.
+ */
+function generateLocalReply(message: string, problemId?: string): string {
+  const lower = message.toLowerCase().trim();
+  if (/^(hi|hello|hey|chào|xin chào)/.test(lower)) {
+    return "Hi! I'm the LeetRank assistant. Ask me about a problem (paste the prompt or share your approach) and I'll help you reason through it.";
+  }
+  if (/(hint|gợi ý|help|stuck|không biết)/.test(lower)) {
+    return problemId
+      ? "Try walking through the problem on a small example first. What's the input shape, and what should the output look like? Share your current approach and I'll suggest where to focus."
+      : "Pick a problem and I'll guide you. Common starting points: identify the input pattern, think about brute force first, then optimize with a data structure (hash, heap, two pointers).";
+  }
+  if (/(time|timeout|tle|too slow|chậm)/.test(lower)) {
+    return "TLE usually means your algorithm is one complexity class too high. Look at nested loops — can you replace one with a hashmap lookup? Sort once and binary-search? Sliding window?";
+  }
+  if (/(wrong|wa|fail|sai)/.test(lower)) {
+    return "Wrong answer often comes from edge cases: empty input, single element, duplicates, negatives, integer overflow. Try the smallest possible test case manually and compare your output to the expected.";
+  }
+  if (/(complexity|big-o|o\(|độ phức tạp)/.test(lower)) {
+    return "Count your nested loops and the size of any data structures you build. O(n) is one pass; O(n log n) is sort or balanced tree; O(n²) is double loop. The constraints in the problem usually tell you what's required.";
+  }
+  if (/(thank|thanks|cảm ơn)/.test(lower)) {
+    return "Glad to help! Keep practicing — consistency beats intensity.";
+  }
+  return "I hear you. Could you share more context — the problem statement, your current approach, or the specific test case that's failing? The more concrete you are, the more useful my hints can be.";
+}
+
 export async function POST(request: NextRequest) {
   const session = await getSession();
   if (!session) {
@@ -96,50 +126,59 @@ export async function POST(request: NextRequest) {
   });
 
   const webhookUrl = process.env.N8N_CHATBOT_WEBHOOK_URL;
-  if (!webhookUrl) {
-    console.warn("[chat] N8N_CHATBOT_WEBHOOK_URL is not set");
-    return Response.json({ error: "Chatbot temporarily unavailable" }, { status: 503 });
-  }
-
   const redactedMessage = redactLongCodeBlocks(message);
 
   let reply: string;
-  try {
-    const rawBody = JSON.stringify({
-      userId: session.userId,
-      ...(problemId ? { problemId } : {}),
-      ...(contestId ? { contestId } : {}),
-      message: redactedMessage,
-      history: history.reverse().map((m: { role: string; content: string }) => ({ role: m.role, content: m.content })),
-    });
 
-    const headers: Record<string, string> = { "Content-Type": "application/json" };
-    const secret = n8nHmacSecret();
-    if (secret) {
-      headers["X-LeetRank-Signature"] = createHmac("sha256", secret).update(rawBody).digest("hex");
+  if (!webhookUrl) {
+    // Local fallback when n8n is not configured (dev/standalone deployments).
+    // Returns a canned but useful response so the chatbot UI keeps working.
+    reply = generateLocalReply(redactedMessage, problemId);
+  } else {
+    try {
+      const rawBody = JSON.stringify({
+        userId: session.userId,
+        ...(problemId ? { problemId } : {}),
+        ...(contestId ? { contestId } : {}),
+        message: redactedMessage,
+        history: history
+          .reverse()
+          .map((m: { role: string; content: string }) => ({ role: m.role, content: m.content })),
+      });
+
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      const secret = n8nHmacSecret();
+      if (secret) {
+        headers["X-LeetRank-Signature"] = createHmac("sha256", secret)
+          .update(rawBody)
+          .digest("hex");
+      }
+
+      const n8nResponse = await fetch(webhookUrl, {
+        method: "POST",
+        headers,
+        body: rawBody,
+        signal: AbortSignal.timeout(30_000),
+      });
+
+      if (!n8nResponse.ok) {
+        console.warn(
+          `[chat] n8n returned non-200: ${n8nResponse.status} — falling back to local reply`
+        );
+        reply = generateLocalReply(redactedMessage, problemId);
+      } else {
+        const data = (await n8nResponse.json()) as { reply?: string };
+        if (typeof data.reply !== "string") {
+          console.warn("[chat] n8n response missing reply field — falling back to local reply");
+          reply = generateLocalReply(redactedMessage, problemId);
+        } else {
+          reply = data.reply;
+        }
+      }
+    } catch (err) {
+      console.warn("[chat] n8n request failed, falling back to local reply:", err);
+      reply = generateLocalReply(redactedMessage, problemId);
     }
-
-    const n8nResponse = await fetch(webhookUrl, {
-      method: "POST",
-      headers,
-      body: rawBody,
-      signal: AbortSignal.timeout(30_000),
-    });
-
-    if (!n8nResponse.ok) {
-      console.warn(`[chat] n8n returned non-200: ${n8nResponse.status}`);
-      return Response.json({ error: "Chatbot temporarily unavailable" }, { status: 503 });
-    }
-
-    const data = (await n8nResponse.json()) as { reply?: string };
-    if (typeof data.reply !== "string") {
-      console.warn("[chat] n8n response missing reply field", data);
-      return Response.json({ error: "Chatbot temporarily unavailable" }, { status: 503 });
-    }
-    reply = data.reply;
-  } catch (err) {
-    console.warn("[chat] n8n request failed:", err);
-    return Response.json({ error: "Chatbot temporarily unavailable" }, { status: 503 });
   }
 
   // Persist the assistant reply.
@@ -175,8 +214,5 @@ export async function GET(request: NextRequest) {
     select: { id: true, role: true, content: true, createdAt: true },
   });
 
-  return Response.json(
-    { messages },
-    { headers: { "Cache-Control": "no-store" } }
-  );
+  return Response.json({ messages }, { headers: { "Cache-Control": "no-store" } });
 }
