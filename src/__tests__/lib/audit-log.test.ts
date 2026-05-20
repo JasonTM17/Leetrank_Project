@@ -87,9 +87,9 @@ describe("recordAuditEvent", () => {
     // Should not throw
     await expect(recordAuditEvent(event)).resolves.toBeUndefined();
 
-    expect(mockLoggerError).toHaveBeenCalledWith(
-      { err: dbError, event: "admin.user.delete" },
-      "audit-log.write_failed"
-    );
+    expect(mockLoggerError).toHaveBeenCalledWith("audit-log.write_failed", {
+      err: dbError,
+      event: "admin.user.delete",
+    });
   });
 });
