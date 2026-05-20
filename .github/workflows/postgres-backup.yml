@@ -87,7 +87,8 @@ jobs:
 
       - name: Dump from CI postgres (smoke)
         env:
-          DATABASE_URL: "postgresql://leetrank:leetrank-ci@127.0.0.1:5432/leetrank?schema=public"
+          # pg_dump rejects Prisma-style `?schema=public`; use plain libpq URI.
+          DATABASE_URL: "postgresql://leetrank:leetrank-ci@127.0.0.1:5432/leetrank"
         run: |
           mkdir -p backups
           STAMP="$(date -u +%Y%m%d)"
