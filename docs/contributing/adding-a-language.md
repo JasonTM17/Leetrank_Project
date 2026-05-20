@@ -6,14 +6,14 @@ The judge language manifest is the single source of truth. Adding a language is 
 
 ## Overview of files to change
 
-| File | What changes |
-| --- | --- |
-| `judge-service/languages.json` | New language entry |
-| `judge-service/Dockerfile` | Toolchain installation |
-| `judge-service/main.go` | `dangerousPatterns` blocklist |
-| `src/lib/languages.ts` | Frontend `LanguageDef` entry |
-| `src/__tests__/languages.test.ts` | Sorted-ID assertion |
-| `judge-service/README.md` | Language table |
+| File                              | What changes                  |
+| --------------------------------- | ----------------------------- |
+| `judge-service/languages.json`    | New language entry            |
+| `judge-service/Dockerfile`        | Toolchain installation        |
+| `judge-service/main.go`           | `dangerousPatterns` blocklist |
+| `src/lib/languages.ts`            | Frontend `LanguageDef` entry  |
+| `src/__tests__/languages.test.ts` | Sorted-ID assertion           |
+| `judge-service/README.md`         | Language table                |
 
 ---
 
@@ -52,10 +52,10 @@ The file is the canonical manifest. The `$comment` at the top of the file explai
 
 Placeholders:
 
-| Placeholder | Expands to |
-| --- | --- |
-| `{src}` | Absolute path to the submitted source file |
-| `{bin}` | Absolute path for the compiled output binary |
+| Placeholder | Expands to                                     |
+| ----------- | ---------------------------------------------- |
+| `{src}`     | Absolute path to the submitted source file     |
+| `{bin}`     | Absolute path for the compiled output binary   |
 | `{workdir}` | Temporary working directory for the submission |
 
 Valid `category` values: `scripting`, `compiled`, `jvm`, `functional`, `data`, `esoteric`.
@@ -145,4 +145,4 @@ The output must be `hello`. If the toolchain is not on PATH or the runner fails,
 
 ---
 
-*LeetRank — a learning project by Nguyễn Sơn (jasonbmt06@gmail.com). Feedback and questions welcome via email or [GitHub Issues](https://github.com/JasonTM17/LeetRank_Project/issues).*
+_LeetRank — a learning project by Nguyễn Sơn (jasonbmt06@gmail.com). Feedback and questions welcome via email or [GitHub Issues](https://github.com/JasonTM17/Leetrank_Project/issues)._

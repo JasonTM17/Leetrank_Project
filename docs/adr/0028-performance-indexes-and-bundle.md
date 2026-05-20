@@ -4,7 +4,7 @@ Date: 2026-05-19
 
 ## Status
 
-Accepted.
+Accepted. P-01 partially superseded by [ADR 0027](./0027-retire-apps-auth.md): the `apps/auth` Dockerfile mentioned in P-01 was retired with the rest of `apps/auth`; only `apps/api/Dockerfile` retains the slim-install pattern documented here.
 
 ## Context
 

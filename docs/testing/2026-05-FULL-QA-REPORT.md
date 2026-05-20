@@ -12,28 +12,28 @@ alongside each finding.
 
 ## Summary
 
-| Severity | Count | Notes                                     |
-| -------- | ----: | ----------------------------------------- |
-| P0       |     6 | Block launch / silent business breakage   |
+| Severity | Count | Notes                                        |
+| -------- | ----: | -------------------------------------------- |
+| P0       |     6 | Block launch / silent business breakage      |
 | P1       |    14 | Bad UX, inconsistent contracts, surface gaps |
-| P2       |    11 | Nits, polish, low blast radius            |
+| P2       |    11 | Nits, polish, low blast radius               |
 
 Total flows exercised: 47 (auth 12, problems 8, submissions 7,
 contests 5, bookmarks 4, search 3, admin 3, profile 3, misc 2).
 
 Stack snapshot at probe time:
 
-| Service        | Port  | Health      | Notes                                  |
-| -------------- | ----- | ----------- | -------------------------------------- |
-| postgres       | 15432 | healthy     | seed loaded (10 problems, 1 contest)   |
-| redis          | 16379 | healthy     | rate limiter back-end                  |
-| app (Next.js)  | 13000 | healthy     | uptime 4h+                             |
-| api (Hono)     | 14000 | healthy     |                                        |
-| auth (Hono)    | 14001 | healthy     | `POST /login` is a 501 stub            |
-| judge (Go)     | 19090 | **unhealthy** in compose, 200 to /health |
-| identity (Go)  | 14011 | DOWN        | not booted — see API smoke report      |
-| submissions    | 14012 | DOWN        | not booted                             |
-| problems       | 14013 | DOWN        | not booted                             |
+| Service       | Port  | Health                                   | Notes                                |
+| ------------- | ----- | ---------------------------------------- | ------------------------------------ |
+| postgres      | 15432 | healthy                                  | seed loaded (10 problems, 1 contest) |
+| redis         | 16379 | healthy                                  | rate limiter back-end                |
+| app (Next.js) | 13000 | healthy                                  | uptime 4h+                           |
+| api (Hono)    | 14000 | healthy                                  |                                      |
+| auth (Hono)   | 14001 | healthy                                  | `POST /login` is a 501 stub          |
+| judge (Go)    | 19090 | **unhealthy** in compose, 200 to /health |
+| identity (Go) | 14011 | DOWN                                     | not booted — see API smoke report    |
+| submissions   | 14012 | DOWN                                     | not booted                           |
+| problems      | 14013 | DOWN                                     | not booted                           |
 
 The three "not booted" Go services are tracked in `docs/testing/2026-05-API-TEST-REPORT.md` (Build failures section); the report below treats them as expected-down so we don't double-count.
 
@@ -78,9 +78,9 @@ The three "not booted" Go services are tracked in `docs/testing/2026-05-API-TEST
 - Surface: `GET /status` (UI).
 - Repro:
   1. `curl -i http://localhost:13000/status`
-  2. Compare with `ls D:/LeetRank_Project/src/app/status` — file is present and exports a default page component.
+  2. Compare with `ls D:/Leetrank_Project/src/app/status` — file is present and exports a default page component.
 - Expected: 200 with the live status page (recent commit `0e5e1d4 feat(status): public /status page with live service health`).
-- Actual: `HTTP/1.1 404 Not Found` with `x-nextjs-cache: HIT` and `x-nextjs-prerender: 1` — Next.js prerendered the *not-found* fallback. The fetch to `/api/status` (line 114 of the page) likely throws on build because there is no `src/app/api/status/route.ts` (the file is `src/app/api/health/route.ts`).
+- Actual: `HTTP/1.1 404 Not Found` with `x-nextjs-cache: HIT` and `x-nextjs-prerender: 1` — Next.js prerendered the _not-found_ fallback. The fetch to `/api/status` (line 114 of the page) likely throws on build because there is no `src/app/api/status/route.ts` (the file is `src/app/api/health/route.ts`).
 - Why P0: A feature shipped to main on 2026-05-18 is dead in production. Marketing links to `/status` will break.
 - Recommended fix: either create `/api/status` as an alias of `/api/health`, or change the page's fetch to `/api/health`. Then trigger a fresh build so the page exits the "not-found" pre-render bucket.
 
@@ -116,7 +116,6 @@ The three "not booted" Go services are tracked in `docs/testing/2026-05-API-TEST
 - Actual: bare 404. Anyone navigating to `/discussions` from the global nav, sitemap, or marketing copy lands on the not-found page.
 - Why P0: Discussions are a shipped feature (the API exists at `/api/discussions?problemId=`), but the entry-point page is missing. Either delete the feature surface or build the list page.
 
-
 ---
 
 ## P1 — bad UX / inconsistencies
@@ -139,7 +138,7 @@ The three "not booted" Go services are tracked in `docs/testing/2026-05-API-TEST
 - Surface: `POST /api/auth/register`.
 - Repro: register one user, then immediately register a second (different email/username, same IP).
 - Expected: 201 — the rate limit window for "create account" should be larger than two requests per session.
-- Actual: 429 `"Too many registration attempts. Try again later."` on the *second* call, even with a valid distinct email and username.
+- Actual: 429 `"Too many registration attempts. Try again later."` on the _second_ call, even with a valid distinct email and username.
 - Evidence:
   ```
   dup1:201
@@ -195,19 +194,19 @@ The three "not booted" Go services are tracked in `docs/testing/2026-05-API-TEST
 
 ### bug-15 — `/api/leaderboard` reports `total: 0` while `/api/stats` reports `users: 6`
 
-- Surface: contract drift between `/api/stats` (counts of every user) and `/api/leaderboard` (counts of users *with at least one solved problem*).
+- Surface: contract drift between `/api/stats` (counts of every user) and `/api/leaderboard` (counts of users _with at least one solved problem_).
 - Why P1: The dashboard "Active climbers" stat card and the leaderboard footer disagree on N — confusing for end users.
 - Fix: leaderboard page should display "ranked players" wording, or stats endpoint should split `users` into `total` vs `ranked`.
 
 ### bug-16 — Submission verdict has no judge `output` or `error` fields populated
 
 - After Two Sum and Reverse String submissions, `output: null, error: null` for both — even for `wrong_answer`. The judge must be returning per-test diffs in some form, but the API drops them on the floor.
-- Why P1: Without a diff, users can't debug *why* a verdict was WA. This makes the platform feel useless on contest day.
+- Why P1: Without a diff, users can't debug _why_ a verdict was WA. This makes the platform feel useless on contest day.
 
 ### bug-17 — `/contests/{slug}/leaderboard` returns 200 with `contestStatus:"upcoming"` and `[]`
 
 - Repro: `GET /api/contests/weekly-contest-1/leaderboard`.
-- Expected: 425 / 412 *Too Early* or a 200 with explicit `available: false` and a UI gate.
+- Expected: 425 / 412 _Too Early_ or a 200 with explicit `available: false` and a UI gate.
 - Actual: 200 `{"contestStatus":"upcoming","leaderboard":[]}`. UI consumers without contestStatus parsing will render an empty leaderboard with no explanation.
 
 ### bug-18 — `/contests/{slug}/join` accepts join on **upcoming** contests with no time gate
@@ -218,13 +217,12 @@ The three "not booted" Go services are tracked in `docs/testing/2026-05-API-TEST
 
 ### bug-19 — `429` on registration uses generic `"Too many registration attempts"` even for first-call validation errors
 
-- After hitting the regex-failure path (no username supplied), subsequent valid retries still 429. The 429 fires *before* schema validation, which means a typo costs you a cooldown. Fix: rate-limit only on success, or count only requests that pass schema.
+- After hitting the regex-failure path (no username supplied), subsequent valid retries still 429. The 429 fires _before_ schema validation, which means a typo costs you a cooldown. Fix: rate-limit only on success, or count only requests that pass schema.
 
 ### bug-20 — `X-Forwarded-For` is honored for IP-bucket rate-limit (verified via spoofed header → distinct bucket)
 
 - Repro: `POST /api/auth/register -H 'X-Forwarded-For: 198.51.100.7'` succeeded with 201 right after a 429 from the real IP.
-- Why P1: if Caddy / NGINX is *not* in front of Next.js, an attacker can rotate the header to bypass IP-based rate limits. Confirm trust-proxy semantics. If the rate limit is meant to apply per real IP, set `app.set('trust proxy', 1)` or read from a hop-counted forwarded chain.
-
+- Why P1: if Caddy / NGINX is _not_ in front of Next.js, an attacker can rotate the header to bypass IP-based rate limits. Confirm trust-proxy semantics. If the rate limit is meant to apply per real IP, set `app.set('trust proxy', 1)` or read from a hop-counted forwarded chain.
 
 ---
 
@@ -274,7 +272,6 @@ The three "not booted" Go services are tracked in `docs/testing/2026-05-API-TEST
 
 - Tone mismatch between meta and visible brand. Pick one.
 
-
 ---
 
 ## Won't fix / by design
@@ -290,15 +287,15 @@ The three "not booted" Go services are tracked in `docs/testing/2026-05-API-TEST
 
 ## Recommended fix teams
 
-| Team   | Owns                                        | Bugs covered             |
-| ------ | ------------------------------------------- | ------------------------ |
-| TEAM-J | Judge harness, testcase format, verdict shape | bug-1, bug-16, bug-28    |
-| TEAM-A | Auth flows, rate limit policy, session lifecycle | bug-2, bug-8, bug-19, bug-20, bug-23 |
-| TEAM-S | Status / discussions surface, ISR cache    | bug-3, bug-6, bug-12, bug-13 |
-| TEAM-C | API contract polish (error msgs, schemas, methods) | bug-4, bug-5, bug-7, bug-10, bug-21, bug-26, bug-27 |
-| TEAM-P | Profile / settings hardening (avatar URL, validation) | bug-9, bug-11 |
-| TEAM-L | Contests + leaderboard contract            | bug-14, bug-15, bug-17, bug-18 |
-| TEAM-N | Nits / copy / metadata                     | bug-22, bug-24, bug-25, bug-29, bug-30, bug-31 |
+| Team   | Owns                                                  | Bugs covered                                        |
+| ------ | ----------------------------------------------------- | --------------------------------------------------- |
+| TEAM-J | Judge harness, testcase format, verdict shape         | bug-1, bug-16, bug-28                               |
+| TEAM-A | Auth flows, rate limit policy, session lifecycle      | bug-2, bug-8, bug-19, bug-20, bug-23                |
+| TEAM-S | Status / discussions surface, ISR cache               | bug-3, bug-6, bug-12, bug-13                        |
+| TEAM-C | API contract polish (error msgs, schemas, methods)    | bug-4, bug-5, bug-7, bug-10, bug-21, bug-26, bug-27 |
+| TEAM-P | Profile / settings hardening (avatar URL, validation) | bug-9, bug-11                                       |
+| TEAM-L | Contests + leaderboard contract                       | bug-14, bug-15, bug-17, bug-18                      |
+| TEAM-N | Nits / copy / metadata                                | bug-22, bug-24, bug-25, bug-29, bug-30, bug-31      |
 
 ---
 
@@ -333,7 +330,6 @@ node tests/api/smoke.mjs
 
 ## Test artefacts
 
-- Smoke runner output: `docs/testing/smoke-report.json` (60/60 pass, no regression in HTTP-layer probes — all bugs above are *behavioural*, not status-code regressions).
+- Smoke runner output: `docs/testing/smoke-report.json` (60/60 pass, no regression in HTTP-layer probes — all bugs above are _behavioural_, not status-code regressions).
 - Earlier API report: `docs/testing/2026-05-API-TEST-REPORT.md`.
 - This report: `docs/testing/2026-05-FULL-QA-REPORT.md`.
-

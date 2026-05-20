@@ -59,6 +59,7 @@ A single ops-only at-a-glance dashboard that answers "is the system OK right now
 ### Why no new persistence
 
 V1 reads from existing endpoints and database tables only. We do not add a `devops_event` table because:
+
 1. Logs already exist (Loki / file).
 2. Metrics already exist (Prometheus).
 3. CI history already exists (GitHub).
@@ -97,7 +98,7 @@ Each aggregator returns a discriminated `{ ok: true, data } | { ok: false, error
 ## Env vars
 
 - `GH_DEVOPS_TOKEN` — GitHub PAT for read-only Actions API. Optional. If unset, CI tile shows "GH token unset" placeholder.
-- `GH_DEVOPS_REPO` — `owner/name` (defaults to `JasonTM17/LeetRank_Project`).
+- `GH_DEVOPS_REPO` — `owner/name` (defaults to `JasonTM17/Leetrank_Project`).
 - Existing: `JUDGE_SERVICE_URL`, `API_INTERNAL_URL`, `AUTH_INTERNAL_URL`, `JUDGE_INTERNAL_URL`.
 
 ## Service inventory (10 tiles)

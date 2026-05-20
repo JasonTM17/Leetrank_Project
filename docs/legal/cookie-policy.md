@@ -14,9 +14,9 @@ Cookies are small text files stored in your browser by a website. LeetRank uses 
 
 ### Essential cookies
 
-| Name | Purpose | Duration | Attributes |
-| --- | --- | --- | --- |
-| `leetrank_session` | Stores a signed JWT that identifies your logged-in session | 7 days | `HttpOnly`, `SameSite=Lax`, `Secure` (production only) |
+| Name               | Purpose                                                    | Duration | Attributes                                             |
+| ------------------ | ---------------------------------------------------------- | -------- | ------------------------------------------------------ |
+| `leetrank_session` | Stores a signed JWT that identifies your logged-in session | 7 days   | `HttpOnly`, `SameSite=Lax`, `Secure` (production only) |
 
 This cookie is **required** for the platform to work. Without it, you cannot log in or access any authenticated page.
 
@@ -57,4 +57,4 @@ Questions about this policy: jasonbmt06@gmail.com
 
 ---
 
-*LeetRank — a learning project by Nguyễn Sơn (jasonbmt06@gmail.com). Feedback and questions welcome via email or [GitHub Issues](https://github.com/JasonTM17/LeetRank_Project/issues).*
+_LeetRank — a learning project by Nguyễn Sơn (jasonbmt06@gmail.com). Feedback and questions welcome via email or [GitHub Issues](https://github.com/JasonTM17/Leetrank_Project/issues)._

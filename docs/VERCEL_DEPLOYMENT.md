@@ -40,7 +40,7 @@ Vars that are only relevant inside docker-compose (`POSTGRES_*`,
 ## Setup walkthrough
 
 1. **Connect the repo at vercel.com.**
-   - New Project → Import Git Repository → select `LeetRank_Project`.
+   - New Project → Import Git Repository → select `Leetrank_Project`.
    - Framework preset: Next.js (auto-detected).
    - Root directory: keep at `/` — `vercel.json` already scopes the build.
    - Build/install commands: keep the values from `vercel.json`

@@ -70,8 +70,8 @@ The in-platform chatbot stores each message with your user ID, the message conte
 
 LeetRank sets one cookie:
 
-| Name | Purpose | Attributes |
-| --- | --- | --- |
+| Name               | Purpose                                             | Attributes                                                      |
+| ------------------ | --------------------------------------------------- | --------------------------------------------------------------- |
 | `leetrank_session` | Stores a signed JWT that authenticates your session | `HttpOnly`, `SameSite=Lax`, `Secure` (production), 7-day expiry |
 
 `HttpOnly` means JavaScript cannot read the cookie. `SameSite=Lax` blocks it from being sent on cross-site POST requests. `Secure` ensures it is only transmitted over HTTPS in production.
@@ -101,10 +101,10 @@ Logs are written to stdout and collected by the container runtime. They are not 
 
 ## Third-party services
 
-| Service | What it receives | Why |
-| --- | --- | --- |
-| Judge service (internal Go container) | Source code, language ID, test case inputs | Executes submitted code in a sandbox; receives no PII |
-| n8n chatbot service | Message text, user ID | Powers the in-platform assistant; does not receive email, password, or submission code |
+| Service                               | What it receives                           | Why                                                                                    |
+| ------------------------------------- | ------------------------------------------ | -------------------------------------------------------------------------------------- |
+| Judge service (internal Go container) | Source code, language ID, test case inputs | Executes submitted code in a sandbox; receives no PII                                  |
+| n8n chatbot service                   | Message text, user ID                      | Powers the in-platform assistant; does not receive email, password, or submission code |
 
 We do not share data with advertisers, analytics providers, or data brokers.
 
@@ -127,14 +127,14 @@ To exercise any of these rights, email jasonbmt06@gmail.com with the subject lin
 
 ## Data retention
 
-| Data type | Retention |
-| --- | --- |
-| Account (email, username, hashed password, profile) | Until you request deletion |
-| Submissions | Kept indefinitely as part of leaderboard history |
-| Contest entries | Kept indefinitely |
-| Discussions and comments | Kept indefinitely |
-| Bookmarks | Deleted when you delete your account |
-| Chat messages | 30 days from creation |
+| Data type                                           | Retention                                        |
+| --------------------------------------------------- | ------------------------------------------------ |
+| Account (email, username, hashed password, profile) | Until you request deletion                       |
+| Submissions                                         | Kept indefinitely as part of leaderboard history |
+| Contest entries                                     | Kept indefinitely                                |
+| Discussions and comments                            | Kept indefinitely                                |
+| Bookmarks                                           | Deleted when you delete your account             |
+| Chat messages                                       | 30 days from creation                            |
 
 > Note: Automated 30-day purge of chat messages is not yet enforced at the database level. This is a known gap tracked in the production-readiness audit.
 
@@ -157,4 +157,4 @@ We will update the "Last updated" date at the top of this file when the policy c
 
 ---
 
-*LeetRank — a learning project by Nguyễn Sơn (jasonbmt06@gmail.com). Feedback and questions welcome via email or [GitHub Issues](https://github.com/JasonTM17/LeetRank_Project/issues).*
+_LeetRank — a learning project by Nguyễn Sơn (jasonbmt06@gmail.com). Feedback and questions welcome via email or [GitHub Issues](https://github.com/JasonTM17/Leetrank_Project/issues)._

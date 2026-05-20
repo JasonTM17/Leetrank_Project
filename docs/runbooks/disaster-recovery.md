@@ -6,10 +6,10 @@ Procedures for recovering the LeetRank stack from data loss, service compromise,
 
 ## RTO / RPO targets
 
-| Target | Value | Notes |
-|---|---|---|
-| RTO (Recovery Time Objective) | **30 minutes** | Time from incident declaration to service restored. Achievable when (a) latest dump is local + decrypted, (b) Docker Hub images are reachable, (c) DNS TTL ≤ 300s. |
-| RPO (Recovery Point Objective) | **24 hours** | Maximum acceptable data loss. Anchored to the daily 03:00 UTC `postgres-backup` workflow (`.github/workflows/postgres-backup.yml`, ADR 0029). Tighten to 1h once WAL archiving / PITR (F-009) lands. |
+| Target                         | Value          | Notes                                                                                                                                                                                                |
+| ------------------------------ | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| RTO (Recovery Time Objective)  | **30 minutes** | Time from incident declaration to service restored. Achievable when (a) latest dump is local + decrypted, (b) Docker Hub images are reachable, (c) DNS TTL ≤ 300s.                                   |
+| RPO (Recovery Point Objective) | **24 hours**   | Maximum acceptable data loss. Anchored to the daily 03:00 UTC `postgres-backup` workflow (`.github/workflows/postgres-backup.yml`, ADR 0029). Tighten to 1h once WAL archiving / PITR (F-009) lands. |
 
 These are the operational targets after ADR 0029. They assume a single-host Docker Compose deployment with the daily GH Actions backup. Automated backup (F-008 — addressed) and a staging environment (F-051) are prerequisites for reliably meeting these targets.
 
@@ -19,13 +19,13 @@ These are the operational targets after ADR 0029. They assume a single-host Dock
 
 ## Backup inventory
 
-| Asset | Location | Cadence | Status |
-|---|---|---|---|
-| Postgres data | `postgres_data` Docker volume (local) | Manual only | **Gap: F-008 — automated backup not yet implemented** |
-| Redis AOF | `redis_data` Docker volume (local) | Continuous (AOF) | Local only; no off-site copy (F-010) |
-| Container images | Docker Hub (`jasontm17/leetrank-*`) | On every push to `main` | `latest` + SHA tag |
-| Application code | GitHub (`JasonTM17/LeetRank_Project`) | On every push | Primary source of truth |
-| Caddy TLS certs | `caddy_data` Docker volume (local) | Auto-renewed by Caddy | Regenerated automatically if lost |
+| Asset            | Location                              | Cadence                 | Status                                                |
+| ---------------- | ------------------------------------- | ----------------------- | ----------------------------------------------------- |
+| Postgres data    | `postgres_data` Docker volume (local) | Manual only             | **Gap: F-008 — automated backup not yet implemented** |
+| Redis AOF        | `redis_data` Docker volume (local)    | Continuous (AOF)        | Local only; no off-site copy (F-010)                  |
+| Container images | Docker Hub (`jasontm17/leetrank-*`)   | On every push to `main` | `latest` + SHA tag                                    |
+| Application code | GitHub (`JasonTM17/Leetrank_Project`) | On every push           | Primary source of truth                               |
+| Caddy TLS certs  | `caddy_data` Docker volume (local)    | Auto-renewed by Caddy   | Regenerated automatically if lost                     |
 
 > **Critical gap:** Postgres has no automated off-site backup. Until F-008 is resolved, run a manual `pg_dump` before any risky operation and store the dump off-host.
 
@@ -110,6 +110,7 @@ docker compose up -d
 **Symptoms:** The VM or physical host is unrecoverable (hardware failure, provider incident, accidental deletion).
 
 **Prerequisites:**
+
 - A Postgres dump stored off-host (or accept data loss up to RPO).
 - Docker and Docker Compose installed on the new host.
 - `.env` file with all secrets (stored securely off-host — never in the repo).
@@ -122,8 +123,8 @@ docker compose up -d
 # (follow https://docs.docker.com/engine/install/)
 
 # 2. Clone the repository
-git clone https://github.com/JasonTM17/LeetRank_Project.git
-cd LeetRank_Project
+git clone https://github.com/JasonTM17/Leetrank_Project.git
+cd Leetrank_Project
 
 # 3. Restore .env from secure storage
 # (copy your .env file to the project root)
@@ -165,7 +166,7 @@ curl http://localhost:4000/readyz | jq
 ```bash
 # Option A: Restore from a local clone
 # If any developer has a recent local clone:
-git remote set-url origin https://github.com/JasonTM17/LeetRank_Project.git
+git remote set-url origin https://github.com/JasonTM17/Leetrank_Project.git
 git push --mirror origin
 
 # Option B: Restore from Docker Hub images
@@ -177,10 +178,10 @@ docker rm tmp
 
 # Option C: Restore from GitHub forks
 # If forks exist, clone from a fork and push to a new repo:
-gh repo create JasonTM17/LeetRank_Project --public
-git clone https://github.com/<fork-owner>/LeetRank_Project.git
-cd LeetRank_Project
-git remote set-url origin https://github.com/JasonTM17/LeetRank_Project.git
+gh repo create JasonTM17/Leetrank_Project --public
+git clone https://github.com/<fork-owner>/Leetrank_Project.git
+cd Leetrank_Project
+git remote set-url origin https://github.com/JasonTM17/Leetrank_Project.git
 git push --mirror origin
 ```
 
@@ -255,11 +256,11 @@ If wall-clock exceeded RTO=30min, file a finding in the post-mortem with the slo
 
 ## Drill cadence
 
-| Drill type | Frequency | Description |
-|---|---|---|
-| Tabletop exercise | Quarterly | Walk through a scenario verbally; identify gaps without executing |
+| Drill type          | Frequency | Description                                                          |
+| ------------------- | --------- | -------------------------------------------------------------------- |
+| Tabletop exercise   | Quarterly | Walk through a scenario verbally; identify gaps without executing    |
 | Backup restore test | Quarterly | Restore a Postgres dump to a test environment; verify data integrity |
-| Full restore drill | Annually | Execute scenario 3 (full host loss) on a spare VM |
+| Full restore drill  | Annually  | Execute scenario 3 (full host loss) on a spare VM                    |
 
 Record drill results in `docs/post-mortems/YYYY-MM-DD-dr-drill.md`.
 
@@ -269,20 +270,20 @@ Record drill results in `docs/post-mortems/YYYY-MM-DD-dr-drill.md`.
 
 The following items from the prod-readiness audit directly affect DR posture. They must be resolved before this runbook can be considered reliable.
 
-| ID | Finding | Priority |
-|---|---|---|
-| F-008 | No automated Postgres backup | Blocker |
-| F-010 | No off-site Redis backup | Major |
-| F-019 | Alertmanager not configured — no paging | Blocker |
-| F-020 | No paging webhook (Slack/PagerDuty) | Blocker |
+| ID    | Finding                                      | Priority            |
+| ----- | -------------------------------------------- | ------------------- |
+| F-008 | No automated Postgres backup                 | Blocker             |
+| F-010 | No off-site Redis backup                     | Major               |
+| F-019 | Alertmanager not configured — no paging      | Blocker             |
+| F-020 | No paging webhook (Slack/PagerDuty)          | Blocker             |
 | F-034 | RTO/RPO were undefined (now documented here) | Blocker — addressed |
-| F-037 | Per-service runbooks missing (now written) | Blocker — addressed |
-| F-038 | On-call rotation undefined | Blocker |
-| F-041 | No status page | Major |
-| F-051 | No staging environment | Major |
-| F-072 | DR doc missing (this document) | Blocker — addressed |
-| F-009 | No PITR (point-in-time recovery) | Major |
-| F-011 | No pgBouncer (connection storm risk) | Major |
+| F-037 | Per-service runbooks missing (now written)   | Blocker — addressed |
+| F-038 | On-call rotation undefined                   | Blocker             |
+| F-041 | No status page                               | Major               |
+| F-051 | No staging environment                       | Major               |
+| F-072 | DR doc missing (this document)               | Blocker — addressed |
+| F-009 | No PITR (point-in-time recovery)             | Major               |
+| F-011 | No pgBouncer (connection storm risk)         | Major               |
 
 ---
 

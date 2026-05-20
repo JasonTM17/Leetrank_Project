@@ -26,6 +26,7 @@ cp docs/adr/template.md docs/adr/NNNN-<short-slug>.md
 Where `NNNN` is the next available four-digit sequence number (check the existing files in `docs/adr/` to find it). The slug should be lowercase, hyphen-separated, and describe the decision in 3–5 words.
 
 Examples:
+
 - `0017-use-redis-for-rate-limiting.md`
 - `0018-drop-graphql-in-favour-of-rest.md`
 
@@ -113,4 +114,4 @@ Do not delete old ADRs. The history of decisions is as valuable as the decisions
 
 ---
 
-*LeetRank — a learning project by Nguyễn Sơn (jasonbmt06@gmail.com). Feedback and questions welcome via email or [GitHub Issues](https://github.com/JasonTM17/LeetRank_Project/issues).*
+_LeetRank — a learning project by Nguyễn Sơn (jasonbmt06@gmail.com). Feedback and questions welcome via email or [GitHub Issues](https://github.com/JasonTM17/Leetrank_Project/issues)._
