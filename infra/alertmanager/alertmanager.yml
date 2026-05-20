@@ -19,17 +19,17 @@ route:
 receivers:
   - name: "default"
     webhook_configs:
-      - url: "${ALERTMANAGER_WEBHOOK_URL:-http://n8n:5678/webhook/alerts}"
+      - url: "http://n8n:5678/webhook/alerts"
         send_resolved: true
 
   - name: "critical"
     webhook_configs:
-      - url: "${ALERTMANAGER_CRITICAL_WEBHOOK_URL:-http://n8n:5678/webhook/alerts-critical}"
+      - url: "http://n8n:5678/webhook/alerts-critical"
         send_resolved: true
 
   - name: "warning"
     webhook_configs:
-      - url: "${ALERTMANAGER_WARNING_WEBHOOK_URL:-http://n8n:5678/webhook/alerts-warning}"
+      - url: "http://n8n:5678/webhook/alerts-warning"
         send_resolved: true
 
 inhibit_rules:
