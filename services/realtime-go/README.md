@@ -61,6 +61,16 @@ Smoke (token from `/api/v1/auth/login`):
 wscat -c "ws://localhost:4017/v1/realtime?token=$JWT&channels=verdicts:user:$UID"
 ```
 
+## Test
+
+```bash
+go test ./... -v -cover
+```
+
+Coverage threshold: **≥ 70%** (standard Go service — see global rule #5).
+
+Tests cover: WebSocket upgrade + JWT verification, subscribe/unsubscribe actions, channel prefix validation, Redis pubsub fan-out, client send-buffer overflow handling, ping/pong keepalive, and readiness probe (Redis PING).
+
 ## Production runbook
 
 Stateless. Horizontal scale is fine — every replica subscribes to redis pubsub and fans out to its own clients. Sticky sessions are NOT required.

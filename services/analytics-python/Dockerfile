@@ -17,6 +17,12 @@ RUN pip wheel --wheel-dir=/wheels -r requirements.txt
 
 # Stage 2: minimal runtime
 FROM python:3.13-slim AS runtime
+
+ARG COMMIT_SHA=unknown
+LABEL org.opencontainers.image.source="https://github.com/JasonTM17/Leetrank_Project"
+LABEL org.opencontainers.image.licenses="MIT"
+LABEL org.opencontainers.image.revision="$COMMIT_SHA"
+
 WORKDIR /app
 
 ENV PYTHONUNBUFFERED=1 \

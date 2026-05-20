@@ -46,6 +46,19 @@ curl -s -X POST -H "X-Admin-Token: $ADMIN_TOKEN" \
   http://localhost:4014/v1/leaderboard/recompute
 ```
 
+## Test
+
+```bash
+cargo test
+
+# Coverage (requires cargo-tarpaulin):
+cargo tarpaulin --out Html
+```
+
+Coverage threshold: **≥ 70%** (standard Rust service — see global rule #5).
+
+Tests cover: paginated leaderboard retrieval (ZREVRANGE), single-user rank lookup, admin recompute endpoint (auth via X-Admin-Token and JWT), readiness probe (Redis PING + Postgres SELECT 1), and error responses for missing users.
+
 ## Production runbook
 
 Stateless. Hot path is the Redis ZRANGE; recompute is the only Postgres traffic. Scale horizontally without coordination.

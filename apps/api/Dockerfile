@@ -37,6 +37,11 @@ RUN npm install --no-audit --no-fund \
 # --- Runtime stage ---
 FROM node:20-slim AS runtime
 
+ARG COMMIT_SHA=unknown
+LABEL org.opencontainers.image.source="https://github.com/JasonTM17/Leetrank_Project"
+LABEL org.opencontainers.image.licenses="MIT"
+LABEL org.opencontainers.image.revision="$COMMIT_SHA"
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
     openssl ca-certificates wget \
  && rm -rf /var/lib/apt/lists/*

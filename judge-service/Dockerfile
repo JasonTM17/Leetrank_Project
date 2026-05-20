@@ -18,6 +18,11 @@ RUN CGO_ENABLED=0 GOOS=linux go build -mod=mod -ldflags="-s -w" -o judge-service
 # ── Stage 2: Runtime image ────────────────────────────────────────────────────
 FROM ubuntu:22.04
 
+ARG COMMIT_SHA=unknown
+LABEL org.opencontainers.image.source="https://github.com/JasonTM17/Leetrank_Project"
+LABEL org.opencontainers.image.licenses="MIT"
+LABEL org.opencontainers.image.revision="$COMMIT_SHA"
+
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install language runtimes and utilities. One big RUN to keep layers small.

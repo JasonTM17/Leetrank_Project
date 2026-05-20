@@ -15,6 +15,12 @@ RUN cargo build --release --bin leaderboard-rust
 
 # Stage 2: minimal runtime
 FROM gcr.io/distroless/cc-debian12:nonroot
+
+ARG COMMIT_SHA=unknown
+LABEL org.opencontainers.image.source="https://github.com/JasonTM17/Leetrank_Project"
+LABEL org.opencontainers.image.licenses="MIT"
+LABEL org.opencontainers.image.revision="$COMMIT_SHA"
+
 WORKDIR /app
 
 COPY --from=builder /src/target/release/leaderboard-rust /app/leaderboard-rust

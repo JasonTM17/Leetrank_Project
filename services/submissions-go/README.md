@@ -76,6 +76,16 @@ curl -s "http://localhost:4012/v1/submissions/recent?limit=5" | jq
 curl -s -H "X-User-ID: <USER_UUID>" http://localhost:4012/v1/submissions | jq
 ```
 
+## Test
+
+```bash
+go test ./... -v -cover
+```
+
+Coverage threshold: **≥ 70%** (standard Go service — see global rule #5).
+
+Tests cover: submission list pagination, single submission retrieval, recent public feed, X-User-ID auth enforcement (401 on missing header), readiness probe, and middleware chain (request-id, recover, timeout, metrics).
+
 ## Production runbook
 
 ### Image build

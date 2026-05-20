@@ -15,6 +15,12 @@ COPY . .
 
 # Stage 2: runtime — alpine for the 1MB SMTP/Net::HTTP delta over distroless.
 FROM ruby:3.3-alpine AS runtime
+
+ARG COMMIT_SHA=unknown
+LABEL org.opencontainers.image.source="https://github.com/JasonTM17/Leetrank_Project"
+LABEL org.opencontainers.image.licenses="MIT"
+LABEL org.opencontainers.image.revision="$COMMIT_SHA"
+
 WORKDIR /app
 
 RUN apk add --no-cache tini ca-certificates && \

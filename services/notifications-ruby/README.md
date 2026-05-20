@@ -47,6 +47,16 @@ curl -s -X POST http://localhost:4015/v1/notifications/send \
   -d '{"kind":"problem-of-the-day","to":"user@example.com","subject":"Daily","text":"Hello"}'
 ```
 
+## Test
+
+```bash
+bundle exec rspec
+```
+
+Coverage threshold: **≥ 80%** (backend Ruby — see global rule #5).
+
+Tests cover: notification enqueue via POST /send, worker dispatch (SMTP and webhook paths), dead-letter queue on failure, readiness probe (Redis PING + queue depth), and input validation on payload schema.
+
 ## Production runbook
 
 The HTTP API and the worker are two processes (Procfile). Containerize both — compose runs the HTTP service and a sidecar worker reuses the same image with `command: bundle exec ruby worker.rb`.

@@ -78,6 +78,16 @@ curl -s "http://localhost:4013/v1/problems/trending?limit=5" | jq
 curl -s "http://localhost:4013/v1/leaderboard/top?limit=10" | jq
 ```
 
+## Test
+
+```bash
+go test ./... -v -cover
+```
+
+Coverage threshold: **≥ 70%** (standard Go service — see global rule #5).
+
+Tests cover: problem list pagination and filtering, trending/random endpoints, leaderboard top-N query, stats aggregation, readiness probe (DB ping), and middleware chain (request-id, recover, timeout, metrics).
+
 ## Production runbook
 
 ### Image build

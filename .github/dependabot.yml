@@ -117,3 +117,73 @@ updates:
     labels:
       - "dependencies"
       - "scope:ci"
+
+  # ── services/analytics-python (Python) ────────────────────────────────
+  - package-ecosystem: "pip"
+    directory: "/services/analytics-python"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 2
+    labels:
+      - "dependencies"
+      - "scope:analytics"
+
+  # ── services/auth-go (Go) ─────────────────────────────────────────────
+  - package-ecosystem: "gomod"
+    directory: "/services/auth-go"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 2
+    labels:
+      - "dependencies"
+      - "scope:identity"
+
+  # ── services/problems-go (Go) ─────────────────────────────────────────
+  - package-ecosystem: "gomod"
+    directory: "/services/problems-go"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 2
+    labels:
+      - "dependencies"
+      - "scope:problems"
+
+  # ── services/submissions-go (Go) ──────────────────────────────────────
+  - package-ecosystem: "gomod"
+    directory: "/services/submissions-go"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 2
+    labels:
+      - "dependencies"
+      - "scope:submissions"
+
+  # ── services/realtime-go (Go) ─────────────────────────────────────────
+  - package-ecosystem: "gomod"
+    directory: "/services/realtime-go"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 2
+    labels:
+      - "dependencies"
+      - "scope:realtime"
+
+  # ── services/notifications-ruby (Ruby) ────────────────────────────────
+  - package-ecosystem: "bundler"
+    directory: "/services/notifications-ruby"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 2
+    labels:
+      - "dependencies"
+      - "scope:notifications"
+
+  # ── services/leaderboard-rust (Rust) ──────────────────────────────────
+  - package-ecosystem: "cargo"
+    directory: "/services/leaderboard-rust"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 2
+    labels:
+      - "dependencies"
+      - "scope:leaderboard"

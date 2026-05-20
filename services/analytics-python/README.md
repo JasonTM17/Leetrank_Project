@@ -43,6 +43,16 @@ curl -s "http://localhost:4016/v1/analytics/users/jason/heatmap?days=90" | jq
 curl -s "http://localhost:4016/v1/analytics/problems/two-sum/stats" | jq
 ```
 
+## Test
+
+```bash
+pytest --cov=app tests/
+```
+
+Coverage threshold: **≥ 80%** (backend Node/TS/Python — see global rule #5).
+
+Tests cover: heatmap aggregation (per-day solve counts), problem acceptance-rate-per-language stats, contest rank deltas, readiness probe (asyncpg pool), and input validation on path/query parameters.
+
 ## Production runbook
 
 Stateless. Scale horizontally. The heatmap and stats endpoints can be slow on cold cache — Phase 4 adds Redis cache in front of `queries.heatmap_for_user`.

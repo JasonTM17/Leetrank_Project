@@ -17,6 +17,12 @@ RUN CGO_ENABLED=0 GOOS=linux go build \
 
 # ── Stage 2: Minimal runtime ─────────────────────────────────────────────────
 FROM gcr.io/distroless/static-debian12:nonroot
+
+ARG COMMIT_SHA=unknown
+LABEL org.opencontainers.image.source="https://github.com/JasonTM17/Leetrank_Project"
+LABEL org.opencontainers.image.licenses="MIT"
+LABEL org.opencontainers.image.revision="$COMMIT_SHA"
+
 WORKDIR /app
 
 COPY --from=builder /out/auth-go /app/auth-go

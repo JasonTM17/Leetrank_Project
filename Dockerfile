@@ -42,6 +42,12 @@ RUN npm run build
 
 # Stage 3: Production runner
 FROM node:20-slim AS runner
+
+ARG COMMIT_SHA=unknown
+LABEL org.opencontainers.image.source="https://github.com/JasonTM17/Leetrank_Project"
+LABEL org.opencontainers.image.licenses="MIT"
+LABEL org.opencontainers.image.revision="$COMMIT_SHA"
+
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \

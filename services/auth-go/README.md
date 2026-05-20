@@ -80,6 +80,16 @@ curl -s -X POST http://localhost:4011/v1/auth/login \
 curl -s -b /tmp/leetrank.cookies http://localhost:4011/v1/auth/me
 ```
 
+## Test
+
+```bash
+go test ./... -v -cover
+```
+
+Coverage threshold: **≥ 90%** (critical auth path — see global rule #5).
+
+Tests cover: registration validation, login + cookie issuance, bcrypt timing-attack mitigation, rate limiter sliding window, JWT signing/verification, JWKS endpoint, password change flow, and middleware chain (request-id, recover, timeout).
+
 ## Production runbook
 
 ### Image build
