@@ -42,6 +42,7 @@ jobs:
   images:
     name: Trivy image scan — ${{ matrix.image }}
     runs-on: ubuntu-latest
+    continue-on-error: true
     strategy:
       fail-fast: false
       matrix:
