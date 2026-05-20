@@ -130,7 +130,7 @@ flowchart TB
     User([Browser / CLI]) -->|HTTPS| Caddy[Caddy reverse proxy]
 
     subgraph Frontend["Frontend tier"]
-        Web[apps/web<br/>Next.js 16 SSR]
+        Web[Web app<br/>Next.js 16 SSR<br/>root src/]
     end
 
     subgraph BackendApis["Backend APIs"]
@@ -242,7 +242,7 @@ flowchart TB
 The architecture splits into 5 tiers:
 
 - **Edge** — Caddy terminates TLS and routes to web + 8 backend services.
-- **Frontend** — Next.js SSR app (apps/web).
+- **Frontend** — Next.js SSR app (root `src/`).
 - **Backend APIs** — 9 polyglot services (TS Hono, Go ×4, Rust, Python, Ruby, Go judge).
 - **Data** — Postgres 16 (primary), Redis 7 (cache + queue + rate-limit), separate Postgres for n8n.
 - **Observability** — Prometheus + Loki + Tempo + Alertmanager + Grafana, with alerts routed through n8n for notification fan-out.
@@ -333,7 +333,7 @@ Demo accounts after seeding: `admin@leetrank.local` / `Admin123!` and `demo@leet
 
 | Path                          | Image                                       | Port | Status                  | README                                          |
 | ----------------------------- | ------------------------------------------- | ---- | ----------------------- | ----------------------------------------------- |
-| `apps/web` (root `src/`)      | `nguyenson1710/leetrank-app`                | 3000 | Active                  | —                                               |
+| Web (root `src/`)             | `nguyenson1710/leetrank-app`                | 3000 | Active                  | —                                               |
 | `apps/api`                    | `nguyenson1710/leetrank-api`                | 4000 | Active                  | [README](apps/api/README.md)                    |
 | `services/auth-go`            | `nguyenson1710/leetrank-identity`           | 4011 | Active (canonical auth) | [README](services/auth-go/README.md)            |
 | `services/problems-go`        | `nguyenson1710/leetrank-problems-go`        | 4013 | Active                  | [README](services/problems-go/README.md)        |
