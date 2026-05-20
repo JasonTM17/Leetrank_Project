@@ -4,8 +4,8 @@
 FROM golang:1.22-alpine AS builder
 WORKDIR /src
 
-COPY go.mod ./
-RUN go mod download || true
+COPY go.mod go.sum ./
+RUN go mod download
 
 COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build \
@@ -30,5 +30,8 @@ COPY --from=builder /out/realtime-go /app/realtime-go
 USER nonroot:nonroot
 EXPOSE 4017
 ENV REALTIME_PORT=4017
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD ["/app/realtime-go", "-healthcheck"]
 
 ENTRYPOINT ["/app/realtime-go"]

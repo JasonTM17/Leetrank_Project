@@ -5,7 +5,7 @@ FROM golang:1.22-alpine AS builder
 WORKDIR /src
 
 # Cache the module graph before copying source.
-COPY go.mod ./
+COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
@@ -32,7 +32,8 @@ EXPOSE 4011
 
 ENV AUTH_PORT=4011
 
-# distroless doesn't ship wget/curl; the Go server itself answers /healthz so
-# rely on `docker compose healthcheck` with a TCP probe instead, configured
-# at the compose level.
+# distroless has no wget/curl; use the binary's built-in healthcheck mode.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD ["/app/auth-go", "-healthcheck"]
+
 ENTRYPOINT ["/app/auth-go"]

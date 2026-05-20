@@ -6,20 +6,20 @@ Everything you need to go from zero to a running LeetRank stack on your local ma
 
 ## Required tools
 
-| Tool | Minimum version | Install |
-|------|----------------|---------|
-| Node.js | 20 | https://nodejs.org |
-| Go | 1.21 | https://go.dev/dl |
-| Docker + Docker Compose | Engine 24, Compose v2.20 | https://docs.docker.com/get-docker |
-| pnpm | 9 | `npm install -g pnpm` |
+| Tool                    | Minimum version          | Install                                                      |
+| ----------------------- | ------------------------ | ------------------------------------------------------------ |
+| Node.js                 | 20                       | https://nodejs.org                                           |
+| Go                      | 1.22                     | https://go.dev/dl                                            |
+| Docker + Docker Compose | Engine 24, Compose v2.20 | https://docs.docker.com/get-docker                           |
+| pnpm                    | 10                       | `corepack enable && corepack prepare pnpm@latest --activate` |
 
 Verify before continuing:
 
 ```bash
 node --version    # v20+
-go version        # go1.21+
+go version        # go1.22+
 docker --version  # 24+
-pnpm --version    # 9+
+pnpm --version    # 10+
 ```
 
 ---
@@ -47,7 +47,7 @@ Open `.env` and fill in at minimum:
 ### 3. Install dependencies
 
 ```bash
-npm install
+pnpm install --frozen-lockfile
 ```
 
 This installs workspace dependencies for `apps/web`, `apps/api`, and all packages in one pass.
@@ -63,7 +63,7 @@ This applies `prisma/schema.prisma` to the database without creating a migration
 ### 5. Seed 1000 problems and 1000 contests
 
 ```bash
-npm run seed:1k
+pnpm run seed:1k
 ```
 
 This runs `prisma/seed-bulk.ts` with a deterministic RNG — the same command always produces the same dataset. It also seeds the hand-curated problem set from `prisma/seed.ts` if it has not been run yet.
@@ -76,14 +76,14 @@ docker compose up postgres redis app api identity judge
 
 This starts:
 
-| Service | URL | Role |
-|---------|-----|------|
-| `app` | http://localhost:3000 | Next.js frontend |
-| `api` | http://localhost:4000 | Hono read-only API |
-| `auth` | http://localhost:4001 | Auth service scaffold |
-| `judge` | http://localhost:9090 | Go code execution |
-| `postgres` | localhost:5432 | Database |
-| `redis` | localhost:6379 | Cache |
+| Service    | URL                   | Role                  |
+| ---------- | --------------------- | --------------------- |
+| `app`      | http://localhost:3000 | Next.js frontend      |
+| `api`      | http://localhost:4000 | Hono read-only API    |
+| `auth`     | http://localhost:4001 | Auth service scaffold |
+| `judge`    | http://localhost:9090 | Go code execution     |
+| `postgres` | localhost:5432        | Database              |
+| `redis`    | localhost:6379        | Cache                 |
 
 For hot-reload during development:
 
@@ -99,11 +99,11 @@ Navigate to http://localhost:3000. You should see the LeetRank landing page.
 
 The seed creates these accounts:
 
-| Username | Password | Role |
-|----------|----------|------|
-| `admin` | `password123` | Admin |
-| `user1` | `password123` | User |
-| `user2` | `password123` | User |
+| Username | Password      | Role  |
+| -------- | ------------- | ----- |
+| `admin`  | `password123` | Admin |
+| `user1`  | `password123` | User  |
+| `user2`  | `password123` | User  |
 
 Log in as `user1` to explore the platform as a regular user. Log in as `admin` to access the admin panel at `/admin`.
 

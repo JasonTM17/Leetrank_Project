@@ -10,6 +10,7 @@ require "json"
 require "logger"
 require "mail"
 require "net/http"
+require "openssl"
 require "uri"
 
 require_relative "lib/queue"
@@ -23,6 +24,8 @@ SMTP_USER = ENV.fetch("SMTP_USER", nil)
 SMTP_PASS = ENV.fetch("SMTP_PASS", nil)
 SMTP_FROM = ENV.fetch("SMTP_FROM", "noreply@leetrank.local")
 WEBHOOK_URL = ENV.fetch("NOTIFICATION_WEBHOOK_URL", nil)
+WEBHOOK_HMAC_SECRET = ENV.fetch("WEBHOOK_HMAC_SECRET", nil)
+@hmac_warned = false
 
 if SMTP_HOST
   Mail.defaults do
@@ -62,8 +65,21 @@ def deliver_webhook(msg)
   http.read_timeout = 10
   http.open_timeout = 5
 
-  req = Net::HTTP::Post.new(uri.request_uri, "Content-Type" => "application/json")
-  req.body = JSON.generate(msg)
+  body = JSON.generate(msg)
+  headers = { "Content-Type" => "application/json" }
+
+  if WEBHOOK_HMAC_SECRET && !WEBHOOK_HMAC_SECRET.empty?
+    sig = OpenSSL::HMAC.hexdigest("SHA256", WEBHOOK_HMAC_SECRET, body)
+    headers["X-Signature-SHA256"] = sig
+  else
+    unless @hmac_warned
+      LOG.warn("WEBHOOK_HMAC_SECRET unset — webhook delivered without HMAC (dev only)")
+      @hmac_warned = true
+    end
+  end
+
+  req = Net::HTTP::Post.new(uri.request_uri, headers)
+  req.body = body
   resp = http.request(req)
 
   raise "webhook #{resp.code}" unless resp.is_a?(Net::HTTPSuccess)

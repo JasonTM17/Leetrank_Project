@@ -5,7 +5,7 @@ FROM golang:1.22-alpine AS builder
 WORKDIR /src
 
 # Cache the module graph before copying source.
-COPY go.mod ./
+COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
@@ -33,6 +33,8 @@ EXPOSE 4012
 
 ENV SUBMISSIONS_PORT=4012
 
-# distroless has no wget/curl; the Go binary itself answers /healthz so
-# rely on `docker compose healthcheck` with the in-image binary probe.
+# distroless has no wget/curl; use the binary's built-in healthcheck mode.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD ["/app/submissions-go", "-healthcheck"]
+
 ENTRYPOINT ["/app/submissions-go"]

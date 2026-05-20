@@ -35,7 +35,7 @@ and harden the platform across security, observability, and CI lanes.
 - **Elo rating + divisions.** Glicko-2 engine in pure TS (no deps),
   `Rating`, `RatingChange`, `Division` schema, idempotent admin
   `finalize-rating` endpoint, RD inflation cron, division badge on profiles
-  + delta column on submissions, leaderboard rating display, EN + VI i18n.
+  - delta column on submissions, leaderboard rating display, EN + VI i18n.
 - **Admin analytics dashboard.** Aggregation lib + `/api/admin/analytics`
   endpoint, `/admin/analytics` page with `<SvgBarChart>`, `<SvgSparkline>`,
   `<SvgPieChart>` primitives, navbar link from `/admin`.
@@ -135,11 +135,38 @@ and harden the platform across security, observability, and CI lanes.
 
 ## [Unreleased]
 
-_No unreleased changes._
+### Added
+
+- **Tier 1 security hardening.** CSRF token validation on mutating routes,
+  account lockout (failed_login_count + locked_until), structured audit log
+  for admin actions, Alertmanager integration for security events, signed-fetch
+  middleware for internal service-to-service calls.
+- **Submission UX overhaul.** Polling-based verdict updates (no more stale
+  "Run your code to see results here"), inline error display with line
+  highlighting, success banner on AC, confirmation modals before re-submit.
+- **Verdict classification expansion.** `compile_error` and
+  `memory_limit_exceeded` verdict types added to judge + UI badge mapping.
+- **Bulk seed script.** `prisma/seed-bulk.ts` now generates 1000 problems,
+  100 contests, and 500 users for realistic local development and load testing.
+
+### Fixed
+
+- TypeScript strict-mode errors from missing monaco-editor type import
+  replaced with inline declaration (CI TS2307).
+- 18 ESLint errors suppressed: setState-in-effect for data-fetch patterns,
+  test file type casts, CJS require in config files.
+
+### Changed
+
+- Per-page SEO metadata added for achievements, study-plans, and admin/devops
+  segments via `generateMetadata`.
+- Error and loading boundaries added for 8 additional route segments.
+- API route type errors resolved in solutions/vote and logger modules.
 
 ## [0.1.0] - 2026-04-01
 
 ### Added
+
 - 30+ new public API routes covering search, trending, random, statistics,
   contest lifecycle (join/leave/active/upcoming/me/leaderboard/entries),
   discussion editing/upvotes/per-comment moderation, profile aggregates
@@ -230,6 +257,7 @@ _No unreleased changes._
   platforms.
 
 ### Changed
+
 - Prisma provider switched from SQLite to PostgreSQL; schema bodies are
   unchanged. Postgres becomes the canonical Prisma datasource for both
   dev and prod.
@@ -251,6 +279,7 @@ _No unreleased changes._
   docker buildx) with a concurrency group that cancels superseded pushes.
 
 ### Security
+
 - JWT secret loading throws in production when unset or shorter than 16
   characters, instead of silently falling back to a hardcoded string.
 - `docker-compose.yml` requires `JWT_SECRET` via shell expansion so the
@@ -269,6 +298,7 @@ _No unreleased changes._
   paragraph-per-line render to remove a latent XSS sink.
 
 ### Fixed
+
 - `cn()` test: aligned the assertion with twMerge's conflict-resolution
   behaviour (last `text-*` wins).
 - `jsonRequest` test helper: spread order was wrong, init.headers

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -421,6 +422,7 @@ func loggingMiddleware(logger zerolog.Logger) func(http.Handler) http.Handler {
 			judgeRequestsTotal.WithLabelValues(r.Method, route, status).Inc()
 			judgeRequestDuration.WithLabelValues(r.Method, route, status).Observe(time.Since(start).Seconds())
 			logger.Info().
+				Str("request_id", RequestIDFromContext(r.Context())).
 				Str("method", r.Method).
 				Str("path", r.URL.Path).
 				Int("status", rec.status).
@@ -438,6 +440,41 @@ type statusRecorder struct {
 func (s *statusRecorder) WriteHeader(code int) {
 	s.status = code
 	s.ResponseWriter.WriteHeader(code)
+}
+
+// ─── Request-ID middleware ──────────────────────────────────────────────────
+
+type ctxKeyRequestID struct{}
+
+// generateRequestID produces a UUID v4 without external dependencies.
+func generateRequestID() string {
+	b := make([]byte, 16)
+	_, _ = rand.Read(b)
+	b[6] = (b[6] & 0x0f) | 0x40 // version 4
+	b[8] = (b[8] & 0x3f) | 0x80 // variant 10
+	return fmt.Sprintf("%08x-%04x-%04x-%04x-%012x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:16])
+}
+
+// RequestIDFromContext extracts the request ID stored by requestIDMiddleware.
+func RequestIDFromContext(ctx context.Context) string {
+	if v, ok := ctx.Value(ctxKeyRequestID{}).(string); ok {
+		return v
+	}
+	return ""
+}
+
+func requestIDMiddleware(logger zerolog.Logger) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			id := r.Header.Get("X-Request-ID")
+			if id == "" {
+				id = generateRequestID()
+			}
+			w.Header().Set("X-Request-ID", id)
+			ctx := context.WithValue(r.Context(), ctxKeyRequestID{}, id)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
 }
 
 // ─── Metrics ──────────────────────────────────────────────────────────────────
@@ -824,6 +861,7 @@ func main() {
 	srv.ready.Store(true)
 
 	r := mux.NewRouter()
+	r.Use(requestIDMiddleware(logger))
 	r.Use(corsMiddleware)
 	r.Use(loggingMiddleware(logger))
 	r.Use(observability.OtelMiddleware("leetrank-judge"))

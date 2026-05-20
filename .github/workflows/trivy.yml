@@ -6,7 +6,7 @@ on:
   pull_request:
     branches: [main]
   schedule:
-    - cron: '23 3 * * 2'
+    - cron: "23 3 * * 2"
 
 permissions:
   contents: read
@@ -26,18 +26,18 @@ jobs:
       - name: Run Trivy on filesystem
         uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
         with:
-          scan-type: 'fs'
+          scan-type: "fs"
           ignore-unfixed: true
-          format: 'sarif'
-          output: 'trivy-fs.sarif'
-          severity: 'CRITICAL,HIGH'
+          format: "sarif"
+          output: "trivy-fs.sarif"
+          severity: "CRITICAL,HIGH"
 
       - name: Upload SARIF
         if: always()
         uses: github/codeql-action/upload-sarif@6825d5659bf007b85a0866e2d0f434aacf50de94 # v3.27.5
         with:
           sarif_file: trivy-fs.sarif
-          category: 'trivy-fs'
+          category: "trivy-fs"
 
   images:
     name: Trivy image scan — ${{ matrix.image }}
@@ -52,6 +52,10 @@ jobs:
           - nguyenson1710/leetrank-judge:latest
           - nguyenson1710/leetrank-submissions-go:latest
           - nguyenson1710/leetrank-problems-go:latest
+          - nguyenson1710/leetrank-leaderboard:latest
+          - nguyenson1710/leetrank-notifications:latest
+          - nguyenson1710/leetrank-analytics:latest
+          - nguyenson1710/leetrank-realtime:latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
@@ -60,13 +64,13 @@ jobs:
         with:
           image-ref: ${{ matrix.image }}
           ignore-unfixed: true
-          format: 'sarif'
-          output: 'trivy-image.sarif'
-          severity: 'CRITICAL,HIGH'
+          format: "sarif"
+          output: "trivy-image.sarif"
+          severity: "CRITICAL,HIGH"
 
       - name: Upload SARIF
         if: always()
         uses: github/codeql-action/upload-sarif@6825d5659bf007b85a0866e2d0f434aacf50de94 # v3.27.5
         with:
           sarif_file: trivy-image.sarif
-          category: 'trivy-${{ matrix.image }}'
+          category: "trivy-${{ matrix.image }}"

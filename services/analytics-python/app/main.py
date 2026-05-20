@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import re
 import sys
 from contextlib import asynccontextmanager
 
@@ -80,9 +81,27 @@ app.add_middleware(
 )
 
 
+def _normalize_path(path: str) -> str:
+    """Collapse parameterized path segments to prevent high-cardinality metrics."""
+    path = re.sub(
+        r"/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}",
+        "/{uuid}",
+        path,
+    )
+    path = re.sub(r"/c[a-z0-9]{24,}", "/{cuid}", path)
+    path = re.sub(r"/\d+", "/{id}", path)
+    return path
+
+
 @app.middleware("http")
 async def metrics_middleware(request: Request, call_next):
-    route = f"{request.method} {request.url.path}"
+    # Prefer the matched route template (no dynamic values) over raw path.
+    route_obj = request.scope.get("route")
+    if route_obj and hasattr(route_obj, "path"):
+        path = route_obj.path
+    else:
+        path = _normalize_path(request.url.path)
+    route = f"{request.method} {path}"
     with REQ_LATENCY.labels(route=route).time():
         response = await call_next(request)
     REQ_COUNTER.labels(route=route, status=str(response.status_code)).inc()
