@@ -89,7 +89,7 @@
     "@types/react-dom": "^19",
     "@vitest/coverage-v8": "4.1.7",
     "autocannon": "^8.0.0",
-    "eslint": "^10",
+    "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "husky": "^9.1.7",
     "lint-staged": "^17.0.5",
