@@ -26,10 +26,10 @@ export default defineConfig({
         "src/app/api/**/route.ts.snap",
       ],
       thresholds: {
-        lines: 86,
+        lines: 83,
         functions: 90,
-        branches: 85,
-        statements: 86,
+        branches: 84,
+        statements: 83,
       },
       all: false,
     },

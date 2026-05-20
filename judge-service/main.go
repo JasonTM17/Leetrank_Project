@@ -66,6 +66,8 @@ var dangerousPatterns = map[string][]string{
 		"import socket", "import ctypes", "import importlib",
 		"__import__", "__builtins__", "eval(",
 		"compile(", "globals(", "locals(", "vars(",
+		"open('/etc", "open(\"/etc", "open('/proc", "open(\"/proc",
+		"open('/sys", "open(\"/sys", "open('/root", "open(\"/root",
 	},
 	"javascript": {
 		"require('child_process')", `require("child_process")`,
