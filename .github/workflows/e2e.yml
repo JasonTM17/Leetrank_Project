@@ -83,7 +83,16 @@ jobs:
           PORT: 3000
 
       - name: Wait for app
-        run: pnpm exec wait-on http://localhost:3000 --timeout 120000
+        run: |
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:3000 > /dev/null 2>&1; then
+              echo "app is ready"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "app failed to become ready"
+          exit 1
 
       - name: Run Playwright tests
         run: pnpm exec playwright test ${{ github.event.inputs.project != 'all' && format('--project={0}', github.event.inputs.project) || '' }}
