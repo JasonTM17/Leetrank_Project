@@ -18,11 +18,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { prismaMock } from "../../src/__tests__/setup";
-import {
-  jsonRequest,
-  asNextRequest,
-  loginAs,
-} from "../../src/__tests__/helpers";
+import { jsonRequest, asNextRequest, loginAs } from "../../src/__tests__/helpers";
 
 vi.mock("@/services/judge", () => {
   class JudgeUnavailableError extends Error {
@@ -72,23 +68,26 @@ describe("QA bug-1 / bug-16: Two Sum verdict pipeline", () => {
 
     // Simulate the judge running the canonical solution against the
     // seeded inputs — every test passes with `actual` matching `expected`.
-    (executeCode as ReturnType<typeof vi.fn>).mockResolvedValue(
-      TWO_SUM_TESTCASES.map((tc) => ({
+    (executeCode as ReturnType<typeof vi.fn>).mockResolvedValue({
+      results: TWO_SUM_TESTCASES.map((tc) => ({
         passed: true,
         input: tc.input,
         expected: tc.expected,
         actual: tc.expected,
         runtime: 12,
         error: undefined,
-      }))
-    );
+      })),
+      status: "accepted",
+    });
 
-    prismaMock.submission.create.mockImplementation(
-      (async ({ data }: { data: Record<string, unknown> }) => ({
-        id: "sub-ok",
-        ...data,
-      })) as never
-    );
+    prismaMock.submission.create.mockImplementation((async ({
+      data,
+    }: {
+      data: Record<string, unknown>;
+    }) => ({
+      id: "sub-ok",
+      ...data,
+    })) as never);
 
     const res = await POST(
       asNextRequest(
@@ -125,29 +124,34 @@ describe("QA bug-1 / bug-16: Two Sum verdict pipeline", () => {
 
     // First test fails with stdout "[1,0]" instead of "[0,1]" — the row
     // MUST capture that stdout under `output` (bug-16 regression).
-    (executeCode as ReturnType<typeof vi.fn>).mockResolvedValue([
-      {
-        passed: false,
-        input: TWO_SUM_TESTCASES[0].input,
-        expected: TWO_SUM_TESTCASES[0].expected,
-        actual: "[1,0]",
-        runtime: 8,
-      },
-      {
-        passed: true,
-        input: TWO_SUM_TESTCASES[1].input,
-        expected: TWO_SUM_TESTCASES[1].expected,
-        actual: TWO_SUM_TESTCASES[1].expected,
-        runtime: 9,
-      },
-    ]);
+    (executeCode as ReturnType<typeof vi.fn>).mockResolvedValue({
+      results: [
+        {
+          passed: false,
+          input: TWO_SUM_TESTCASES[0].input,
+          expected: TWO_SUM_TESTCASES[0].expected,
+          actual: "[1,0]",
+          runtime: 8,
+        },
+        {
+          passed: true,
+          input: TWO_SUM_TESTCASES[1].input,
+          expected: TWO_SUM_TESTCASES[1].expected,
+          actual: TWO_SUM_TESTCASES[1].expected,
+          runtime: 9,
+        },
+      ],
+      status: "wrong_answer",
+    });
 
-    prismaMock.submission.create.mockImplementation(
-      (async ({ data }: { data: Record<string, unknown> }) => ({
-        id: "sub-wa",
-        ...data,
-      })) as never
-    );
+    prismaMock.submission.create.mockImplementation((async ({
+      data,
+    }: {
+      data: Record<string, unknown>;
+    }) => ({
+      id: "sub-wa",
+      ...data,
+    })) as never);
 
     const res = await POST(
       asNextRequest(
