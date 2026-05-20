@@ -112,6 +112,9 @@ export default function ProblemDetailPage({ params }: { params: Promise<{ slug: 
   const editorRef = useRef<IStandaloneCodeEditor | null>(null);
   const vimStatusRef = useRef<HTMLDivElement | null>(null);
   const vimDisposeRef = useRef<(() => void) | null>(null);
+  // Stable ref so the Monaco Ctrl+Enter binding always calls the latest
+  // handleSubmit closure (the editor command is registered once on mount).
+  const handleSubmitRef = useRef<(() => void) | null>(null);
 
   // Keep parsed starter codes so reset can restore them without re-fetching.
   const startersRef = useRef<Record<string, string>>({});
@@ -315,6 +318,19 @@ export default function ProblemDetailPage({ params }: { params: Promise<{ slug: 
                   t("toastAccepted") || "Accepted!",
                   t("toastAcceptedBody") || `Solved in ${sub.runtime ?? 0}ms`
                 );
+                // Celebrate with a confetti burst — three angles for delight.
+                import("canvas-confetti").then((mod) => {
+                  const fire = mod.default;
+                  fire({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+                  setTimeout(
+                    () => fire({ particleCount: 50, angle: 60, spread: 55, origin: { x: 0 } }),
+                    250
+                  );
+                  setTimeout(
+                    () => fire({ particleCount: 50, angle: 120, spread: 55, origin: { x: 1 } }),
+                    400
+                  );
+                });
               } else if (sub.status === "compile_error") {
                 toast.error(
                   t("toastCompileError") || "Compilation Error",
@@ -499,6 +515,11 @@ export default function ProblemDetailPage({ params }: { params: Promise<{ slug: 
           onChange={(value) => setCode(value ?? "")}
           onMount={(ed) => {
             editorRef.current = ed;
+            // Ctrl/Cmd+Enter submits. Use a ref to dodge the stale closure
+            // problem — onMount fires once per editor instance but
+            // handleSubmit closes over current state on every render.
+            // Numeric literals = monaco.KeyMod.CtrlCmd (2048) | monaco.KeyCode.Enter (3).
+            ed.addCommand(2048 | 3, () => handleSubmitRef.current?.());
           }}
           options={{
             minimap: { enabled: false },

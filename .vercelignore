@@ -1,0 +1,44 @@
+# Vercel only deploys the Next.js web app from the repo root.
+# Everything below is for backend services, infra, or local-only tooling
+# that has no business living in the Vercel build context.
+
+# ── Backend services (deployed separately on Fly.io / Render / k8s) ──
+apps/api
+services/
+judge-service/
+
+# ── Infrastructure manifests + container orchestration ───────────────
+infra/
+docker-compose*.yml
+Dockerfile*
+.dockerignore
+
+# ── Repo-level docs + meta (not needed at runtime) ───────────────────
+docs/
+*.md
+!README.md
+.github/
+
+# ── Local-only / private (defence in depth; .gitignore already covers) ──
+.claude/
+.omc/
+.claude-private/
+PLAN*.md
+NOTES*.md
+TODO*.md
+DRAFT*.md
+*.private.md
+*.local.md
+
+# ── Test + load tooling (run in CI, not on Vercel) ───────────────────
+playwright-report/
+test-results/
+coverage/
+e2e/
+scripts/load-test.mjs
+
+# ── Editor / OS noise ────────────────────────────────────────────────
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
