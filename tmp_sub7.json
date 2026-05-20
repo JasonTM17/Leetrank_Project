@@ -1,0 +1,5 @@
+{
+  "code": "let d=\"\";process.stdin.on(\"data\",c=\u003ed+=c);process.stdin.on(\"end\",()=\u003econsole.log(d.trim().split(/\\s+/).filter(Boolean).map(Number).reduce((a,b)=\u003ea+b,0)));",
+  "language": "javascript",
+  "problemId": "cmpdi8892001dpe8jotu64ovs"
+}

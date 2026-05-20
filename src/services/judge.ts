@@ -30,7 +30,13 @@ export class JudgeUnavailableError extends Error {
   }
 }
 
-export async function executeCode(request: JudgeRequest): Promise<RunResult[]> {
+export interface JudgeResult {
+  results: RunResult[];
+  /** Top-level verdict from the judge (e.g. compile_error, time_limit_exceeded) */
+  status: string;
+}
+
+export async function executeCode(request: JudgeRequest): Promise<JudgeResult> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
@@ -53,7 +59,7 @@ export async function executeCode(request: JudgeRequest): Promise<RunResult[]> {
     }
 
     const data = (await res.json()) as GoJudgeResponse;
-    return (data.results ?? []).map((r) => ({
+    const results = (data.results ?? []).map((r) => ({
       passed: r.passed,
       input: r.input,
       expected: r.expected,
@@ -61,6 +67,7 @@ export async function executeCode(request: JudgeRequest): Promise<RunResult[]> {
       runtime: r.runtime,
       error: r.error,
     }));
+    return { results, status: data.status ?? "" };
   } catch (err) {
     if (isAbortOrNetworkError(err)) {
       throw new JudgeUnavailableError(err);

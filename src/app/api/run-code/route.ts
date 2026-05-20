@@ -54,18 +54,18 @@ export async function POST(request: NextRequest) {
     // When the caller omits testCases (e.g. the editor "Run" button) we still
     // want to exercise the code at least once. Fall back to a single empty
     // stdin/expected pair — the runner will return stdout under `actual`.
-    const cases =
-      testCases && testCases.length > 0
-        ? testCases
-        : [{ input: "", expected: "" }];
-    const results = await executeCode({ code, language, testCases: cases });
+    const cases = testCases && testCases.length > 0 ? testCases : [{ input: "", expected: "" }];
+    const { results } = await executeCode({ code, language, testCases: cases });
 
     return Response.json({ results });
   } catch (err) {
     if (err instanceof JudgeUnavailableError) {
       return Response.json({ error: err.message }, { status: 503 });
     }
-    logger.error("run-code POST failed", { scope: "api/run-code", err: err instanceof Error ? err.message : String(err) });
+    logger.error("run-code POST failed", {
+      scope: "api/run-code",
+      err: err instanceof Error ? err.message : String(err),
+    });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

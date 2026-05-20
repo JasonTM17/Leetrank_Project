@@ -101,7 +101,10 @@ beforeEach(async () => {
 describe("submission-jobs handler", () => {
   it("marks the submission accepted when every test case passes", async () => {
     submission.findUnique.mockResolvedValue(makeRow());
-    executeMock.mockResolvedValue([pass("1", "1", 8), pass("2", "2", 12)]);
+    executeMock.mockResolvedValue({
+      results: [pass("1", "1", 8), pass("2", "2", 12)],
+      status: "accepted",
+    });
 
     enqueueJudgeSubmission("sub-1");
     await queue.drain();
@@ -115,7 +118,10 @@ describe("submission-jobs handler", () => {
 
   it("marks wrong_answer when any case fails without a runtime error", async () => {
     submission.findUnique.mockResolvedValue(makeRow());
-    executeMock.mockResolvedValue([pass("1", "1"), failCase("2", "2", "3")]);
+    executeMock.mockResolvedValue({
+      results: [pass("1", "1"), failCase("2", "2", "3")],
+      status: "wrong_answer",
+    });
 
     enqueueJudgeSubmission("sub-1");
     await queue.drain();
@@ -126,25 +132,47 @@ describe("submission-jobs handler", () => {
 
   it("marks runtime_error when a case carries an error and not all pass", async () => {
     submission.findUnique.mockResolvedValue(makeRow());
-    executeMock.mockResolvedValue([
-      pass("1", "1"),
-      { passed: false, input: "2", expected: "2", actual: "", runtime: 0, error: "ZeroDivisionError" },
-    ]);
+    executeMock.mockResolvedValue({
+      results: [
+        pass("1", "1"),
+        {
+          passed: false,
+          input: "2",
+          expected: "2",
+          actual: "",
+          runtime: 0,
+          error: "ZeroDivisionError",
+        },
+      ],
+      status: "runtime_error",
+    });
 
     enqueueJudgeSubmission("sub-1");
     await queue.drain();
 
-    const data = (submission.update.mock.calls.at(-1)?.[0] as { data: { status: string; error: string | null } }).data;
+    const data = (
+      submission.update.mock.calls.at(-1)?.[0] as { data: { status: string; error: string | null } }
+    ).data;
     expect(data.status).toBe("runtime_error");
     expect(data.error).toBe("ZeroDivisionError");
   });
 
   it("marks time_limit_exceeded when any case reports the TLE marker", async () => {
     submission.findUnique.mockResolvedValue(makeRow());
-    executeMock.mockResolvedValue([
-      pass("1", "1"),
-      { passed: false, input: "2", expected: "2", actual: "", runtime: 5000, error: "Time Limit Exceeded" },
-    ]);
+    executeMock.mockResolvedValue({
+      results: [
+        pass("1", "1"),
+        {
+          passed: false,
+          input: "2",
+          expected: "2",
+          actual: "",
+          runtime: 5000,
+          error: "Time Limit Exceeded",
+        },
+      ],
+      status: "time_limit_exceeded",
+    });
 
     enqueueJudgeSubmission("sub-1");
     await queue.drain();
@@ -157,7 +185,7 @@ describe("submission-jobs handler", () => {
     submission.findUnique.mockResolvedValue(makeRow());
     executeMock
       .mockRejectedValueOnce(new JudgeUnavailableError("ECONNREFUSED"))
-      .mockResolvedValue([pass("1", "1"), pass("2", "2")]);
+      .mockResolvedValue({ results: [pass("1", "1"), pass("2", "2")], status: "accepted" });
 
     enqueueJudgeSubmission("sub-1");
     await queue.drain();
@@ -180,7 +208,9 @@ describe("submission-jobs handler", () => {
     enqueueJudgeSubmission("sub-1");
     await queue.drain();
 
-    const data = (submission.update.mock.calls.at(-1)?.[0] as { data: { status: string; error: string | null } }).data;
+    const data = (
+      submission.update.mock.calls.at(-1)?.[0] as { data: { status: string; error: string | null } }
+    ).data;
     expect(data.status).toBe("runtime_error");
     expect(data.error).toContain("HTTP 500: schema mismatch");
   });
@@ -226,7 +256,9 @@ describe("submission-jobs handler", () => {
     enqueueJudgeSubmission("sub-1");
     await queue.drain();
 
-    const data = (submission.update.mock.calls.at(-1)?.[0] as { data: { status: string; error: string | null } }).data;
+    const data = (
+      submission.update.mock.calls.at(-1)?.[0] as { data: { status: string; error: string | null } }
+    ).data;
     expect(data.status).toBe("runtime_error");
     expect(data.error).toBe("Internal judging error");
   });

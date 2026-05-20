@@ -576,7 +576,28 @@ func (s *server) executeHandler(w http.ResponseWriter, r *http.Request) {
 			if res.Error == "Time Limit Exceeded" {
 				status = "time_limit_exceeded"
 			} else if res.Error != "" {
-				status = "runtime_error"
+				errMsg := res.Error
+				// Compile/syntax errors
+				if strings.Contains(errMsg, "SyntaxError") ||
+					strings.Contains(errMsg, "syntax error") ||
+					strings.Contains(errMsg, "Unexpected identifier") ||
+					strings.Contains(errMsg, "Unexpected token") ||
+					strings.Contains(errMsg, "IndentationError") ||
+					strings.Contains(errMsg, "compile error") ||
+					strings.Contains(errMsg, "compilation failed") ||
+					strings.Contains(errMsg, "cannot find") ||
+					strings.Contains(errMsg, "expected") ||
+					strings.Contains(errMsg, "undefined:") ||
+					strings.HasPrefix(strings.TrimSpace(errMsg), "error[") {
+					status = "compile_error"
+				} else if strings.Contains(errMsg, "MemoryError") ||
+					strings.Contains(errMsg, "out of memory") ||
+					strings.Contains(errMsg, "OOM") ||
+					strings.Contains(errMsg, "Cannot allocate") {
+					status = "memory_limit_exceeded"
+				} else {
+					status = "runtime_error"
+				}
 			} else {
 				status = "wrong_answer"
 			}

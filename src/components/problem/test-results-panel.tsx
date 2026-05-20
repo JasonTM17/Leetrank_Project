@@ -30,18 +30,42 @@ export function TestResultsPanel({ results, submitStatus }: TestResultsPanelProp
         return t("runtimeError");
       case "time_limit_exceeded":
         return t("timeLimitExceeded");
+      case "compile_error":
+        return "Compilation Error";
+      case "memory_limit_exceeded":
+        return "Memory Limit Exceeded";
+      case "security_error":
+        return "Security Violation";
       default:
         return t("submissionError");
+    }
+  };
+
+  const statusColor = (status: string): string => {
+    switch (status) {
+      case "accepted":
+        return "bg-green-500/10 text-green-500";
+      case "wrong_answer":
+        return "bg-red-500/10 text-red-500";
+      case "compile_error":
+        return "bg-purple-500/10 text-purple-500";
+      case "runtime_error":
+        return "bg-red-500/10 text-red-500";
+      case "time_limit_exceeded":
+        return "bg-orange-500/10 text-orange-500";
+      case "memory_limit_exceeded":
+        return "bg-orange-500/10 text-orange-600";
+      case "security_error":
+        return "bg-red-700/10 text-red-700";
+      default:
+        return "bg-muted/30 text-muted-foreground";
     }
   };
 
   return (
     <div className="border-t max-h-64 overflow-y-auto">
       {submitStatus && (
-        <div className={`px-4 py-3 text-sm font-medium ${
-          submitStatus === "accepted" ? "bg-green-500/10 text-green-500" :
-          "bg-red-500/10 text-red-500"
-        }`}>
+        <div className={`px-4 py-3 text-sm font-medium ${statusColor(submitStatus)}`}>
           {statusLabel(submitStatus)}
         </div>
       )}
@@ -57,12 +81,20 @@ export function TestResultsPanel({ results, submitStatus }: TestResultsPanelProp
                   ) : (
                     <XCircle className="h-4 w-4 text-red-500" />
                   )}
-                  <span className="text-sm font-medium">{t("testCase")} {i + 1}</span>
-                  {r.runtime && <span className="text-xs text-muted-foreground ml-auto">{r.runtime}ms</span>}
+                  <span className="text-sm font-medium">
+                    {t("testCase")} {i + 1}
+                  </span>
+                  {r.runtime && (
+                    <span className="text-xs text-muted-foreground ml-auto">{r.runtime}ms</span>
+                  )}
                 </div>
                 <div className="font-mono text-xs space-y-0.5 text-muted-foreground">
-                  <div>{t("inputLabel")}: {r.input}</div>
-                  <div>{t("expectedLabel")}: {r.expected}</div>
+                  <div>
+                    {t("inputLabel")}: {r.input}
+                  </div>
+                  <div>
+                    {t("expectedLabel")}: {r.expected}
+                  </div>
                   <div className={r.passed ? "text-green-500" : "text-red-500"}>
                     {t("outputLabel")}: {r.actual || r.error || t("emptyOutput")}
                   </div>
@@ -73,9 +105,7 @@ export function TestResultsPanel({ results, submitStatus }: TestResultsPanelProp
         </div>
       )}
       {results.length === 0 && !submitStatus && (
-        <div className="p-4 text-center text-sm text-muted-foreground">
-          {t("runHint")}
-        </div>
+        <div className="p-4 text-center text-sm text-muted-foreground">{t("runHint")}</div>
       )}
     </div>
   );

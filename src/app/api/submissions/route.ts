@@ -18,10 +18,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = request.nextUrl;
     const problemId = searchParams.get("problemId");
     const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10) || 1);
-    const limit = Math.min(
-      100,
-      Math.max(1, parseInt(searchParams.get("limit") ?? "20", 10) || 20)
-    );
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") ?? "20", 10) || 20));
 
     const where: Record<string, unknown> = { userId: session.userId };
     if (problemId) where.problemId = problemId;
@@ -55,7 +52,10 @@ export async function GET(request: NextRequest) {
       { headers: { "Cache-Control": "private, no-store" } }
     );
   } catch (err) {
-    logger.error("submissions GET failed", { scope: "api/submissions", err: err instanceof Error ? err.message : String(err) });
+    logger.error("submissions GET failed", {
+      scope: "api/submissions",
+      err: err instanceof Error ? err.message : String(err),
+    });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }
@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
         input: tc.input,
         expected: tc.expected,
       }));
-      const results = await executeCode({ code, language, testCases });
+      const { results } = await executeCode({ code, language, testCases });
 
       const allPassed = results.every((r) => r.passed);
       const hasError = results.some((r) => r.error);
@@ -146,17 +146,13 @@ export async function POST(request: NextRequest) {
       }
 
       const avgRuntime =
-        results.reduce((sum, r) => sum + (r.runtime ?? 0), 0) /
-        Math.max(1, results.length);
+        results.reduce((sum, r) => sum + (r.runtime ?? 0), 0) / Math.max(1, results.length);
       const errorMsg = results.find((r) => r.error)?.error;
       // bug-16: pin the first failing test's stdout to `output` so the
       // verdict page can show what the user printed. Accepted rows skip
       // it to keep the column small.
       const firstFail = results.find((r) => !r.passed);
-      const outputStr =
-        status === "accepted"
-          ? undefined
-          : firstFail?.actual?.trim() || undefined;
+      const outputStr = status === "accepted" ? undefined : firstFail?.actual?.trim() || undefined;
 
       const submission = await prisma.submission.create({
         data: {
@@ -230,7 +226,10 @@ export async function POST(request: NextRequest) {
     if (err instanceof JudgeUnavailableError) {
       return Response.json({ error: err.message }, { status: 503 });
     }
-    logger.error("submissions POST failed", { scope: "api/submissions", err: err instanceof Error ? err.message : String(err) });
+    logger.error("submissions POST failed", {
+      scope: "api/submissions",
+      err: err instanceof Error ? err.message : String(err),
+    });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

@@ -32,9 +32,10 @@ describe("POST /api/run-code", () => {
 
   it("returns judged results on the happy path", async () => {
     await loginAs({ userId: "u1" });
-    (executeCode as ReturnType<typeof vi.fn>).mockResolvedValue([
-      { passed: true, input: "", expected: "hi", actual: "hi", runtime: 12 },
-    ]);
+    (executeCode as ReturnType<typeof vi.fn>).mockResolvedValue({
+      results: [{ passed: true, input: "", expected: "hi", actual: "hi", runtime: 12 }],
+      status: "accepted",
+    });
 
     const res = await POST(asNextRequest(jsonRequest("http://x/api/run-code", validBody)));
     expect(res.status).toBe(200);
@@ -45,32 +46,38 @@ describe("POST /api/run-code", () => {
 
   it("returns 400 on malformed JSON", async () => {
     await loginAs({ userId: "u1" });
-    const req = asNextRequest(new Request("http://x/api/run-code", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: "{",
-    }));
+    const req = asNextRequest(
+      new Request("http://x/api/run-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{",
+      })
+    );
     const res = await POST(req);
     expect(res.status).toBe(400);
   });
 
   it("returns 400 on unsupported language", async () => {
     await loginAs({ userId: "u1" });
-    const res = await POST(asNextRequest(jsonRequest("http://x/api/run-code", {
-      ...validBody, language: "cobol",
-    })));
+    const res = await POST(
+      asNextRequest(
+        jsonRequest("http://x/api/run-code", {
+          ...validBody,
+          language: "cobol",
+        })
+      )
+    );
     expect(res.status).toBe(400);
   });
 
   it("accepts a missing testCases array (defaults to stdin-only run)", async () => {
     await loginAs({ userId: "u1" });
-    (executeCode as ReturnType<typeof vi.fn>).mockResolvedValue([
-      { passed: false, input: "", expected: "", actual: "hello", runtime: 3 },
-    ]);
+    (executeCode as ReturnType<typeof vi.fn>).mockResolvedValue({
+      results: [{ passed: false, input: "", expected: "", actual: "hello", runtime: 3 }],
+      status: "",
+    });
     const res = await POST(
-      asNextRequest(
-        jsonRequest("http://x/api/run-code", { code: "x", language: "python" })
-      )
+      asNextRequest(jsonRequest("http://x/api/run-code", { code: "x", language: "python" }))
     );
     expect(res.status).toBe(200);
     // Confirm the runner was invoked with a single empty test case as a fallback.
@@ -81,9 +88,7 @@ describe("POST /api/run-code", () => {
   it("includes the missing field name in the 400 message", async () => {
     await loginAs({ userId: "u1" });
     const res = await POST(
-      asNextRequest(
-        jsonRequest("http://x/api/run-code", { language: "python" })
-      )
+      asNextRequest(jsonRequest("http://x/api/run-code", { language: "python" }))
     );
     expect(res.status).toBe(400);
     const data = await res.json();
@@ -111,7 +116,7 @@ describe("POST /api/run-code", () => {
 
   it("rate-limits after 10 calls within the window", async () => {
     await loginAs({ userId: "rate-victim" });
-    (executeCode as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (executeCode as ReturnType<typeof vi.fn>).mockResolvedValue({ results: [], status: "" });
 
     for (let i = 0; i < 10; i++) {
       const ok = await POST(asNextRequest(jsonRequest("http://x/api/run-code", validBody)));

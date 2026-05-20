@@ -20,6 +20,34 @@ import { logger } from "./logger";
 
 const log = logger.with({ scope: "submission-jobs" });
 
+/**
+ * Trust the judge's top-level status for these verdicts — they carry
+ * classification info (compile vs memory vs security) that we cannot
+ * reliably re-derive from the per-test-case results alone.
+ */
+const TRUSTED_JUDGE_STATUSES = new Set([
+  "compile_error",
+  "memory_limit_exceeded",
+  "time_limit_exceeded",
+  "security_error",
+]);
+
+/** Defense-in-depth: detect compile errors from the error string even if
+ *  the judge didn't classify properly at the top level. */
+function isCompileError(errorMsg: string): boolean {
+  if (!errorMsg) return false;
+  const patterns = [
+    /SyntaxError/i,
+    /syntax error/i,
+    /Unexpected identifier/i,
+    /Unexpected token/i,
+    /IndentationError/i,
+    /compile error/i,
+    /compilation failed/i,
+  ];
+  return patterns.some((p) => p.test(errorMsg));
+}
+
 interface JudgeSubmissionPayload {
   submissionId: string;
 }
@@ -80,7 +108,7 @@ queue.on<JudgeSubmissionPayload>("judge-submission", async ({ submissionId }) =>
 
   let update: TerminalUpdate;
   try {
-    const results = await executeCode({
+    const { results, status: judgeStatus } = await executeCode({
       code: submission.code,
       language: submission.language,
       testCases,
@@ -88,11 +116,22 @@ queue.on<JudgeSubmissionPayload>("judge-submission", async ({ submissionId }) =>
 
     const allPassed = results.every((r) => r.passed);
     const hasError = results.some((r) => r.error);
+    const firstError = results.find((r) => r.error)?.error ?? "";
+
+    // Trust the judge's top-level status for verdicts that carry
+    // classification info we cannot reliably re-derive locally.
     let status: string;
-    if (results.some((r) => r.error === "Time Limit Exceeded")) {
-      status = "time_limit_exceeded";
+    if (TRUSTED_JUDGE_STATUSES.has(judgeStatus)) {
+      status = judgeStatus;
     } else if (hasError && !allPassed) {
-      status = "runtime_error";
+      // Defense-in-depth: detect compile/memory errors from the string
+      if (isCompileError(firstError)) {
+        status = "compile_error";
+      } else if (firstError.includes("MemoryError") || firstError.includes("out of memory")) {
+        status = "memory_limit_exceeded";
+      } else {
+        status = "runtime_error";
+      }
     } else if (allPassed) {
       status = "accepted";
     } else {
@@ -100,8 +139,7 @@ queue.on<JudgeSubmissionPayload>("judge-submission", async ({ submissionId }) =>
     }
 
     const avgRuntime =
-      results.reduce((sum, r) => sum + (r.runtime ?? 0), 0) /
-      Math.max(1, results.length);
+      results.reduce((sum, r) => sum + (r.runtime ?? 0), 0) / Math.max(1, results.length);
     // bug-16: persist BOTH stdout (`actual`) and the error string on the
     // submission row. Without this, /api/submissions/{id} shows null/null
     // and the user can't self-diagnose. Accepted rows keep both null to
@@ -109,8 +147,7 @@ queue.on<JudgeSubmissionPayload>("judge-submission", async ({ submissionId }) =>
     // test's stdout under `output`.
     const firstFail = results.find((r) => !r.passed);
     const errorMsg = results.find((r) => r.error)?.error ?? null;
-    const outputStr =
-      status === "accepted" ? null : firstFail?.actual?.trim() || null;
+    const outputStr = status === "accepted" ? null : firstFail?.actual?.trim() || null;
     update = {
       status,
       runtime: Math.round(avgRuntime),

@@ -21,17 +21,28 @@ interface SubmissionDetail {
   language: string;
   code: string;
   runtime: number | null;
+  memory: number | null;
+  output: string | null;
   error: string | null;
   createdAt: string;
   problem: { id: string; title: string; slug: string; difficulty: string };
   user: { id: string; username: string; avatar: string | null };
 }
 
-const STATUS_LABEL: Record<string, { label: string; tone: string }> = {
-  accepted: { label: "Accepted", tone: "text-success" },
-  wrong_answer: { label: "Wrong Answer", tone: "text-destructive" },
-  runtime_error: { label: "Runtime Error", tone: "text-destructive" },
-  time_limit_exceeded: { label: "Time Limit Exceeded", tone: "text-warning" },
+const STATUS_LABEL: Record<string, { label: string; tone: string; bg: string }> = {
+  accepted: { label: "Accepted", tone: "text-success", bg: "bg-success/10" },
+  wrong_answer: { label: "Wrong Answer", tone: "text-destructive", bg: "bg-destructive/10" },
+  runtime_error: { label: "Runtime Error", tone: "text-destructive", bg: "bg-destructive/10" },
+  time_limit_exceeded: { label: "Time Limit Exceeded", tone: "text-warning", bg: "bg-warning/10" },
+  compile_error: { label: "Compilation Error", tone: "text-purple-500", bg: "bg-purple-500/10" },
+  memory_limit_exceeded: {
+    label: "Memory Limit Exceeded",
+    tone: "text-orange-600",
+    bg: "bg-orange-600/10",
+  },
+  security_error: { label: "Security Violation", tone: "text-red-700", bg: "bg-red-700/10" },
+  queued: { label: "Queued", tone: "text-muted-foreground", bg: "bg-muted/30" },
+  judging: { label: "Judging", tone: "text-blue-500", bg: "bg-blue-500/10" },
 };
 
 export default function SubmissionDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -43,15 +54,25 @@ export default function SubmissionDetailPage({ params }: { params: Promise<{ id:
   useEffect(() => {
     fetch(`/api/submissions/${encodeURIComponent(id)}`)
       .then(async (r) => {
-        if (r.status === 401) { setError("unauthorized"); return null; }
-        if (r.status === 403) { setError("forbidden"); return null; }
-        if (r.status === 404) { setError("not_found"); return null; }
+        if (r.status === 401) {
+          setError("unauthorized");
+          return null;
+        }
+        if (r.status === 403) {
+          setError("forbidden");
+          return null;
+        }
+        if (r.status === 404) {
+          setError("not_found");
+          return null;
+        }
         return r.ok ? r.json() : null;
       })
-      .then((data) => { if (data) setSubmission(data.submission); })
+      .then((data) => {
+        if (data) setSubmission(data.submission);
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
-     
   }, [id]);
 
   if (loading) {
@@ -76,8 +97,16 @@ export default function SubmissionDetailPage({ params }: { params: Promise<{ id:
           <EmptyState
             icon={AlertTriangle}
             title="Submission is private"
-            description={error === "unauthorized" ? "Sign in to view your submissions." : "Submission code is only visible to its author and admins."}
-            action={<Link href="/dashboard" className="text-sm text-primary hover:underline">Back to dashboard</Link>}
+            description={
+              error === "unauthorized"
+                ? "Sign in to view your submissions."
+                : "Submission code is only visible to its author and admins."
+            }
+            action={
+              <Link href="/dashboard" className="text-sm text-primary hover:underline">
+                Back to dashboard
+              </Link>
+            }
           />
         </main>
         <Footer />
@@ -94,7 +123,11 @@ export default function SubmissionDetailPage({ params }: { params: Promise<{ id:
             icon={FileCode}
             title="Submission not found"
             description="This submission may have been deleted."
-            action={<Link href="/dashboard" className="text-sm text-primary hover:underline">Back to dashboard</Link>}
+            action={
+              <Link href="/dashboard" className="text-sm text-primary hover:underline">
+                Back to dashboard
+              </Link>
+            }
           />
         </main>
         <Footer />
@@ -102,7 +135,10 @@ export default function SubmissionDetailPage({ params }: { params: Promise<{ id:
     );
   }
 
-  const status = STATUS_LABEL[submission.status] ?? { label: submission.status, tone: "text-muted-foreground" };
+  const status = STATUS_LABEL[submission.status] ?? {
+    label: submission.status,
+    tone: "text-muted-foreground",
+  };
 
   return (
     <>
@@ -136,24 +172,46 @@ export default function SubmissionDetailPage({ params }: { params: Promise<{ id:
               {submission.runtime !== null && (
                 <>
                   <span>·</span>
-                  <span>{submission.runtime}ms</span>
+                  <span>
+                    {submission.runtime}ms
+                    {submission.memory !== null
+                      ? ` · ${(submission.memory / 1024).toFixed(1)} MB`
+                      : ""}
+                  </span>
                 </>
               )}
               <span>·</span>
-              <span title={formatDate(submission.createdAt)}>{formatRelativeTime(submission.createdAt)}</span>
+              <span title={formatDate(submission.createdAt)}>
+                {formatRelativeTime(submission.createdAt)}
+              </span>
             </div>
           </div>
 
           {submission.error && (
-            <Card className="border-destructive/30 bg-destructive/5">
+            <Card className={`border-destructive/30 ${status.bg}`}>
               <CardHeader className="pb-2">
-                <CardTitle className="text-base text-destructive flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4" /> Runtime error
+                <CardTitle className={`text-base ${status.tone} flex items-center gap-2`}>
+                  <AlertTriangle className="h-4 w-4" /> {status.label}
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <pre className="text-xs font-mono whitespace-pre-wrap break-words text-destructive">
+                <pre className={`text-xs font-mono whitespace-pre-wrap break-words ${status.tone}`}>
                   {submission.error}
+                </pre>
+              </CardContent>
+            </Card>
+          )}
+
+          {submission.status === "wrong_answer" && submission.output && (
+            <Card className="border-warning/30 bg-warning/5">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base text-warning flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4" /> Your Output
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <pre className="text-xs font-mono whitespace-pre-wrap break-words text-foreground">
+                  {submission.output}
                 </pre>
               </CardContent>
             </Card>

@@ -37,7 +37,12 @@ describe("GET /api/submissions", () => {
   it("returns submissions for the authenticated user", async () => {
     await loginAs({ userId: "u1" });
     prismaMock.submission.findMany.mockResolvedValue([
-      { id: "s1", userId: "u1", status: "accepted", problem: { id: "p1", title: "Two Sum", slug: "two-sum", difficulty: "easy" } },
+      {
+        id: "s1",
+        userId: "u1",
+        status: "accepted",
+        problem: { id: "p1", title: "Two Sum", slug: "two-sum", difficulty: "easy" },
+      },
     ] as never);
 
     const res = await GET(asNextRequest(new Request("http://x/api/submissions")));
@@ -73,9 +78,10 @@ describe("POST /api/submissions", () => {
       id: "p1",
       testCases: [{ input: "", expected: "6" }],
     } as never);
-    (executeCode as ReturnType<typeof vi.fn>).mockResolvedValue([
-      { passed: true, input: "", expected: "6", actual: "6", runtime: 5 },
-    ]);
+    (executeCode as ReturnType<typeof vi.fn>).mockResolvedValue({
+      results: [{ passed: true, input: "", expected: "6", actual: "6", runtime: 5 }],
+      status: "accepted",
+    });
     prismaMock.submission.create.mockResolvedValue({ id: "s1", status: "accepted" } as never);
 
     const res = await POST(asNextRequest(jsonRequest("http://x/api/submissions", validBody)));
@@ -93,9 +99,10 @@ describe("POST /api/submissions", () => {
       id: "p1",
       testCases: [{ input: "", expected: "6" }],
     } as never);
-    (executeCode as ReturnType<typeof vi.fn>).mockResolvedValue([
-      { passed: false, input: "", expected: "6", actual: "5", runtime: 5 },
-    ]);
+    (executeCode as ReturnType<typeof vi.fn>).mockResolvedValue({
+      results: [{ passed: false, input: "", expected: "6", actual: "5", runtime: 5 }],
+      status: "wrong_answer",
+    });
     prismaMock.submission.create.mockResolvedValue({ id: "s1", status: "wrong_answer" } as never);
 
     const res = await POST(asNextRequest(jsonRequest("http://x/api/submissions", validBody)));
@@ -110,9 +117,12 @@ describe("POST /api/submissions", () => {
       id: "p1",
       testCases: [{ input: "", expected: "6" }],
     } as never);
-    (executeCode as ReturnType<typeof vi.fn>).mockResolvedValue([
-      { passed: false, input: "", expected: "6", actual: "", error: "ZeroDivisionError" },
-    ]);
+    (executeCode as ReturnType<typeof vi.fn>).mockResolvedValue({
+      results: [
+        { passed: false, input: "", expected: "6", actual: "", error: "ZeroDivisionError" },
+      ],
+      status: "runtime_error",
+    });
     prismaMock.submission.create.mockResolvedValue({ id: "s1", status: "runtime_error" } as never);
 
     const res = await POST(asNextRequest(jsonRequest("http://x/api/submissions", validBody)));

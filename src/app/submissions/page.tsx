@@ -31,33 +31,45 @@ interface StatusMeta {
 }
 
 const STATUS_META: Record<string, StatusMeta> = {
-  accepted:            { label: "AC",      dot: "bg-success",              text: "text-success" },
-  wrong_answer:        { label: "WA",      dot: "bg-destructive",          text: "text-destructive" },
-  runtime_error:       { label: "RE",      dot: "bg-destructive",          text: "text-destructive" },
-  time_limit_exceeded: { label: "TLE",     dot: "bg-warning",              text: "text-warning" },
-  queued:              { label: "Queued",  dot: "bg-muted-foreground/60",  text: "text-muted-foreground" },
-  judging:             { label: "Judging", dot: "bg-primary animate-pulse-soft", text: "text-primary" },
+  accepted: { label: "AC", dot: "bg-success", text: "text-success" },
+  wrong_answer: { label: "WA", dot: "bg-destructive", text: "text-destructive" },
+  runtime_error: { label: "RE", dot: "bg-destructive", text: "text-destructive" },
+  time_limit_exceeded: { label: "TLE", dot: "bg-warning", text: "text-warning" },
+  compile_error: { label: "CE", dot: "bg-purple-500", text: "text-purple-500" },
+  memory_limit_exceeded: { label: "MLE", dot: "bg-orange-600", text: "text-orange-600" },
+  security_error: { label: "SE", dot: "bg-red-700", text: "text-red-700" },
+  queued: { label: "Queued", dot: "bg-muted-foreground/60", text: "text-muted-foreground" },
+  judging: { label: "Judging", dot: "bg-primary animate-pulse-soft", text: "text-primary" },
 };
 
 const LEGEND_ITEMS: { key: string; label: string }[] = [
-  { key: "accepted",            label: "Accepted" },
-  { key: "wrong_answer",        label: "Wrong Answer" },
+  { key: "accepted", label: "Accepted" },
+  { key: "wrong_answer", label: "Wrong Answer" },
   { key: "time_limit_exceeded", label: "Time Limit" },
-  { key: "runtime_error",       label: "Runtime Error" },
-  { key: "queued",              label: "Queued" },
-  { key: "judging",             label: "Judging" },
+  { key: "runtime_error", label: "Runtime Error" },
+  { key: "compile_error", label: "Compile Error" },
+  { key: "memory_limit_exceeded", label: "Memory Limit" },
+  { key: "security_error", label: "Security Violation" },
+  { key: "queued", label: "Queued" },
+  { key: "judging", label: "Judging" },
 ];
 
 const STATUS_FILTERS = [
-  { id: "",                    label: "All" },
-  { id: "accepted",            label: "Accepted" },
-  { id: "wrong_answer",        label: "Wrong Answer" },
-  { id: "runtime_error",       label: "Runtime Error" },
+  { id: "", label: "All" },
+  { id: "accepted", label: "Accepted" },
+  { id: "wrong_answer", label: "Wrong Answer" },
+  { id: "runtime_error", label: "Runtime Error" },
   { id: "time_limit_exceeded", label: "TLE" },
 ];
 
 function statusMeta(status: string): StatusMeta {
-  return STATUS_META[status] ?? { label: status, dot: "bg-muted-foreground/60", text: "text-muted-foreground" };
+  return (
+    STATUS_META[status] ?? {
+      label: status,
+      dot: "bg-muted-foreground/60",
+      text: "text-muted-foreground",
+    }
+  );
 }
 
 // ── Expandable row ────────────────────────────────────────────────────────────
@@ -76,9 +88,7 @@ function SubmissionRow({ s }: { s: SubmissionRow }) {
           className="w-full flex items-center justify-between gap-4 px-4 py-3 hover:bg-muted/30 transition-colors text-left"
         >
           <div className="min-w-0 flex-1">
-            <span className="font-medium hover:text-primary truncate block">
-              {s.problem.title}
-            </span>
+            <span className="font-medium hover:text-primary truncate block">{s.problem.title}</span>
             <div className="text-xs text-muted-foreground mt-0.5 flex items-center gap-2">
               <span>{languageLabel(s.language)}</span>
               {s.runtime !== null && <span>· {s.runtime}ms</span>}
@@ -88,7 +98,10 @@ function SubmissionRow({ s }: { s: SubmissionRow }) {
           <div className="flex items-center gap-2 shrink-0">
             {/* Dot-prefix status */}
             <span className="inline-flex items-center gap-1.5">
-              <span aria-hidden="true" className={`inline-block h-2 w-2 rounded-full ${meta.dot}`} />
+              <span
+                aria-hidden="true"
+                className={`inline-block h-2 w-2 rounded-full ${meta.dot}`}
+              />
               <span className={`${meta.text} text-xs font-medium tabular-nums`}>{meta.label}</span>
             </span>
             <Badge className={getDifficultyBg(s.problem.difficulty) + " text-xs"}>
@@ -157,9 +170,7 @@ export default function SubmissionsPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const visible = filter
-    ? submissions.filter((s) => s.status === filter)
-    : submissions;
+  const visible = filter ? submissions.filter((s) => s.status === filter) : submissions;
 
   return (
     <>
@@ -185,8 +196,14 @@ export default function SubmissionsPage() {
             {LEGEND_ITEMS.map(({ key, label }) => {
               const m = statusMeta(key);
               return (
-                <span key={key} className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <span aria-hidden="true" className={`inline-block h-2 w-2 rounded-full ${m.dot}`} />
+                <span
+                  key={key}
+                  className="inline-flex items-center gap-1.5 text-xs text-muted-foreground"
+                >
+                  <span
+                    aria-hidden="true"
+                    className={`inline-block h-2 w-2 rounded-full ${m.dot}`}
+                  />
                   <span className="font-medium">{m.label}</span>
                   <span className="opacity-60">— {label}</span>
                 </span>
