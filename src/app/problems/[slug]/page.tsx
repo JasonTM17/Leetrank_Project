@@ -11,7 +11,9 @@ import { BookmarkButton } from "@/components/problem/bookmark-button";
 import { EditorSettingsPopover } from "@/components/problem/editor-settings";
 import { useEditorPrefs } from "@/hooks/useEditorPrefs";
 // eslint-disable-next-line @typescript-eslint/no-namespace, @typescript-eslint/no-explicit-any
-declare namespace MonacoEditor { type IStandaloneCodeEditor = any; }
+declare namespace MonacoEditor {
+  type IStandaloneCodeEditor = any;
+}
 type IStandaloneCodeEditor = MonacoEditor.IStandaloneCodeEditor;
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -74,11 +76,7 @@ const CATEGORY_ORDER: LanguageDef["category"][] = [
 
 // ── Page ───────────────────────────────────────────────────────────────────────
 
-export default function ProblemDetailPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
+export default function ProblemDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const t = useTranslations("problems");
   const { slug } = use(params);
   const { user, isAuthenticated, isLoading: authLoading, setUser } = useAuth();
@@ -212,7 +210,8 @@ export default function ProblemDetailPage({
       return;
     }
     setSubmitting(true);
-    setSubmitStatus(null);
+    setSubmitStatus("submitting");
+    setResults([]);
     try {
       const res = await fetch("/api/submissions", {
         method: "POST",
@@ -239,43 +238,120 @@ export default function ProblemDetailPage({
           return;
         }
         if (res.status === 403) {
-          toast.error(
-            t("toastPermissionDenied"),
-            t("toastPermissionDeniedBody")
-          );
+          toast.error(t("toastPermissionDenied"), t("toastPermissionDeniedBody"));
           setSubmitStatus("error");
           return;
         }
         if (res.status === 429) {
-          toast.warning(
-            t("toastTooMany"),
-            t("toastTooManyBody")
-          );
+          toast.warning(t("toastTooMany"), t("toastTooManyBody"));
           setSubmitStatus("error");
           return;
         }
         if (res.status >= 500) {
-          toast.error(
-            t("toastJudgeUnavailable"),
-            t("toastJudgeUnavailableBody")
-          );
+          toast.error(t("toastJudgeUnavailable"), t("toastJudgeUnavailableBody"));
           setSubmitStatus("error");
           return;
         }
-        toast.error(t("toastSubmitFailed"), errMsg || t("toastRequestFailed", { status: res.status }));
+        toast.error(
+          t("toastSubmitFailed"),
+          errMsg || t("toastRequestFailed", { status: res.status })
+        );
         setSubmitStatus("error");
         return;
       }
       const data = await res.json();
+      const submissionId = data.submission?.id as string | undefined;
       setSubmitStatus((data.submission?.status as string) || "queued");
       if (data.results) setResults(data.results as TestResult[]);
+
+      // Async path: poll for the terminal verdict. The API returns 202 with
+      // status "queued" when the judge is processing; results arrive via the
+      // worker. Poll every 1s up to 60s. Once status is terminal, fetch the
+      // submission detail (which carries error/output/runtime) and surface it.
+      if (
+        submissionId &&
+        (!data.results ||
+          data.submission?.status === "queued" ||
+          data.submission?.status === "judging")
+      ) {
+        const TERMINAL = new Set([
+          "accepted",
+          "wrong_answer",
+          "runtime_error",
+          "compile_error",
+          "memory_limit_exceeded",
+          "time_limit_exceeded",
+          "security_error",
+        ]);
+        const start = Date.now();
+        while (Date.now() - start < 60_000) {
+          await new Promise((r) => setTimeout(r, 1000));
+          try {
+            const detailRes = await fetch(`/api/submissions/${submissionId}`, {
+              cache: "no-store",
+            });
+            if (!detailRes.ok) continue;
+            const detailJson = await detailRes.json();
+            const sub = detailJson.submission;
+            if (!sub) continue;
+            setSubmitStatus(sub.status);
+            if (TERMINAL.has(sub.status)) {
+              // Synthesize a single TestResult so TestResultsPanel renders
+              // the terminal verdict + error/output without needing per-test
+              // breakdown (the async path doesn't preserve that today).
+              setResults([
+                {
+                  passed: sub.status === "accepted",
+                  input: "",
+                  expected: "",
+                  actual: sub.output ?? "",
+                  runtime: sub.runtime ?? 0,
+                  error: sub.error ?? undefined,
+                },
+              ]);
+              if (sub.status === "accepted") {
+                toast.success(
+                  t("toastAccepted") || "Accepted!",
+                  t("toastAcceptedBody") || `Solved in ${sub.runtime ?? 0}ms`
+                );
+              } else if (sub.status === "compile_error") {
+                toast.error(
+                  t("toastCompileError") || "Compilation Error",
+                  t("toastCompileErrorBody") ||
+                    "Your code has a syntax error. Check the editor for details."
+                );
+              } else if (sub.status === "wrong_answer") {
+                toast.warning(
+                  t("toastWrongAnswer") || "Wrong Answer",
+                  t("toastWrongAnswerBody") || "Output doesn't match expected. Re-check edge cases."
+                );
+              } else if (sub.status === "time_limit_exceeded") {
+                toast.warning(
+                  t("toastTLE") || "Time Limit Exceeded",
+                  t("toastTLEBody") || "Your solution is too slow. Try a more efficient algorithm."
+                );
+              } else if (sub.status === "memory_limit_exceeded") {
+                toast.warning(
+                  t("toastMLE") || "Memory Limit Exceeded",
+                  t("toastMLEBody") || "Your solution uses too much memory."
+                );
+              } else if (sub.status === "runtime_error") {
+                toast.error(
+                  t("toastRuntimeError") || "Runtime Error",
+                  t("toastRuntimeErrorBody") || "Your code crashed during execution."
+                );
+              }
+              break;
+            }
+          } catch {
+            // Transient fetch failure — keep polling until timeout.
+          }
+        }
+      }
     } catch {
       // Network-level failure (DNS, offline, CORS) — distinct from any
       // HTTP status the server returned.
-      toast.error(
-        t("toastJudgeUnavailable"),
-        t("toastNetworkBody")
-      );
+      toast.error(t("toastJudgeUnavailable"), t("toastNetworkBody"));
       setSubmitStatus("error");
     } finally {
       setSubmitting(false);
@@ -348,10 +424,7 @@ export default function ProblemDetailPage({
               {catIdx > 0 && <DropdownMenuSeparator />}
               <DropdownMenuLabel>{CATEGORY_LABELS[cat]}</DropdownMenuLabel>
               {langs.map((lang) => (
-                <DropdownMenuItem
-                  key={lang.id}
-                  onSelect={() => handleLanguageChange(lang.id)}
-                >
+                <DropdownMenuItem key={lang.id} onSelect={() => handleLanguageChange(lang.id)}>
                   {lang.label}
                 </DropdownMenuItem>
               ))}
@@ -367,12 +440,7 @@ export default function ProblemDetailPage({
         <EditorSettingsPopover prefs={prefs} setPrefs={setPrefs} />
 
         <Tooltip content={t("resetTooltip")} side="top">
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={handleReset}
-            aria-label={t("resetAria")}
-          >
+          <Button size="sm" variant="ghost" onClick={handleReset} aria-label={t("resetAria")}>
             <RotateCcw className="h-4 w-4" />
           </Button>
         </Tooltip>
@@ -395,22 +463,14 @@ export default function ProblemDetailPage({
         </Tooltip>
 
         <Tooltip
-          content={
-            !authLoading && !isAuthenticated
-              ? t("signInTooltip")
-              : t("submitTooltip")
-          }
+          content={!authLoading && !isAuthenticated ? t("signInTooltip") : t("submitTooltip")}
           side="top"
         >
           <Button
             size="sm"
             onClick={handleSubmit}
             disabled={submitting}
-            aria-label={
-              !authLoading && !isAuthenticated
-                ? t("signInSubmitAria")
-                : t("submitAria")
-            }
+            aria-label={!authLoading && !isAuthenticated ? t("signInSubmitAria") : t("submitAria")}
           >
             {submitting ? (
               <Loader2 className="h-4 w-4 animate-spin mr-1" />
@@ -497,12 +557,8 @@ export default function ProblemDetailPage({
 
       {/* ── Desktop: split pane (md+) ── */}
       <div className="hidden md:flex flex-1 flex-row min-h-[calc(100vh-4rem)]">
-        <div className="w-1/2 border-r overflow-y-auto scrollbar-thin">
-          {problemPanel}
-        </div>
-        <div className="w-1/2 flex flex-col">
-          {editorPanel}
-        </div>
+        <div className="w-1/2 border-r overflow-y-auto scrollbar-thin">{problemPanel}</div>
+        <div className="w-1/2 flex flex-col">{editorPanel}</div>
       </div>
 
       <ChatBot userId={user?.id ?? null} problemId={problem.id} />
@@ -517,16 +573,8 @@ export default function ProblemDetailPage({
       <Dialog
         open={authPromptOpen}
         onClose={() => setAuthPromptOpen(false)}
-        title={
-          authPromptExpired
-            ? t("modalExpiredTitle")
-            : t("modalSignInTitle")
-        }
-        description={
-          authPromptExpired
-            ? t("modalExpiredBody")
-            : t("modalSignInBody")
-        }
+        title={authPromptExpired ? t("modalExpiredTitle") : t("modalSignInTitle")}
+        description={authPromptExpired ? t("modalExpiredBody") : t("modalSignInBody")}
         size="sm"
       >
         <div className="flex flex-col gap-2 mt-2">
