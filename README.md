@@ -13,6 +13,9 @@ Solve, judge, rank — across 30+ languages, with real-time leaderboards and con
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Contributors](https://img.shields.io/github/contributors/JasonTM17/Leetrank_Project?logo=github)](https://github.com/JasonTM17/Leetrank_Project/graphs/contributors)
 [![Last Commit](https://img.shields.io/github/last-commit/JasonTM17/Leetrank_Project?logo=git)](https://github.com/JasonTM17/Leetrank_Project/commits/main)
+[![Coverage](https://codecov.io/gh/JasonTM17/Leetrank_Project/branch/main/graph/badge.svg)](https://codecov.io/gh/JasonTM17/Leetrank_Project)
+[![Release](https://img.shields.io/github/v/release/JasonTM17/Leetrank_Project?include_prereleases&sort=semver)](https://github.com/JasonTM17/Leetrank_Project/releases)
+[![Lighthouse](https://img.shields.io/github/actions/workflow/status/JasonTM17/Leetrank_Project/lighthouse.yml?label=lighthouse)](https://github.com/JasonTM17/Leetrank_Project/actions/workflows/lighthouse.yml)
 
 [Run locally](#run-locally) · [Architecture](#architecture) · [Services](#service-map) · [API](#api-reference) · [ADRs](docs/adr/) · [Contribute](CONTRIBUTING.md)
 

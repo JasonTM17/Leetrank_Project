@@ -4,9 +4,13 @@
 
 ## Supported Versions
 
-LeetRank is in active development on the `main` branch. Security fixes target
-the latest commit on `main`; tagged releases will inherit fixes back-ported
-from `main` while still in their support window. Older tags are not patched.
+| Version | Supported          | Notes                          |
+| ------- | ------------------ | ------------------------------ |
+| 0.2.x   | :white_check_mark: | Active development on `main`   |
+| 0.1.x   | :warning:          | Critical fixes only            |
+| < 0.1   | :x:                | End of life                    |
+
+We support the latest minor release on `main` plus the immediately previous minor for critical security patches only.
 
 ## Reporting a Vulnerability
 
