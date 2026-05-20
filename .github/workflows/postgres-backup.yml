@@ -75,6 +75,10 @@ jobs:
       - name: Apply schema (prisma migrate deploy when applicable)
         env:
           DATABASE_URL: "postgresql://leetrank:leetrank-ci@127.0.0.1:5432/leetrank?schema=public"
+          # pnpm 10's supply-chain "minimum release age" check is for
+          # publish hygiene, not CI ergonomics — disable it here so the
+          # backup smoke isn't blocked by recent dep bumps.
+          PNPM_CONFIG_MIN_RELEASE_AGE: "0"
         run: |
           if [ -f package.json ] && [ -d prisma ]; then
             corepack enable
