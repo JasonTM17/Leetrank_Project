@@ -112,9 +112,9 @@ Distroless has no `wget`. The compose `healthcheck` invokes the in-image binary 
 
 Stateless. The rate limiter is in-process — for multi-replica deployments, replace it with the Redis-backed limiter described in [ADR 0007](../../docs/adr/0007-redis-for-cache-and-queue.md). Tracked under Phase 4.
 
-### Cutover from `apps/auth`
+### Cutover history (apps/auth → identity)
 
-Same sequence as the TS service: 1% canary → 7-day burn-in → ramp 10/50/100. Caddy splits via `reverse_proxy auth-go:4011 auth:4001 { lb_policy ... }`.
+The TypeScript `apps/auth` service was retired in [ADR 0027](../../docs/adr/0027-retire-apps-auth.md). The original cutover used Caddy load-balancing (1% canary → 7-day burn-in → 10/50/100 ramp); Caddy now routes 100% of auth traffic to identity. This section is kept as historical reference.
 
 ## On-call playbook
 
