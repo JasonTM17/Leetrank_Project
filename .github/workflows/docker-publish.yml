@@ -3,7 +3,7 @@ name: Container publish (Docker Hub + GHCR)
 on:
   push:
     branches: [main]
-    tags: ['v*']
+    tags: ["v*"]
   workflow_dispatch:
 
 concurrency:
@@ -20,9 +20,11 @@ jobs:
     name: Build & push ${{ matrix.service }}
     runs-on: ubuntu-latest
     if: github.event_name != 'pull_request'
+    continue-on-error: true
 
     strategy:
       fail-fast: false
+      max-parallel: 3
       matrix:
         include:
           - service: web
