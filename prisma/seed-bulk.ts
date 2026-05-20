@@ -23,22 +23,16 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 // CLI args win over env vars; both fall back to 1000.
-const PROBLEM_COUNT = parseInt(
-  process.argv[2] ?? process.env.SEED_PROBLEMS ?? "1000",
-  10
-);
-const CONTEST_COUNT = parseInt(
-  process.argv[3] ?? process.env.SEED_CONTESTS ?? "1000",
-  10
-);
+const PROBLEM_COUNT = parseInt(process.argv[2] ?? process.env.SEED_PROBLEMS ?? "1000", 10);
+const CONTEST_COUNT = parseInt(process.argv[3] ?? process.env.SEED_CONTESTS ?? "1000", 10);
 const CHUNK = 500;
-const RNG_SEED = 0xC0DEC0DE;
+const RNG_SEED = 0xc0dec0de;
 
 // Mulberry32 — deterministic PRNG so identical seed produces identical data.
 function makeRng(seed: number) {
   let s = seed >>> 0;
   return () => {
-    s = (s + 0x6D2B79F5) >>> 0;
+    s = (s + 0x6d2b79f5) >>> 0;
     let t = s;
     t = Math.imul(t ^ (t >>> 15), t | 1);
     t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
@@ -47,15 +41,47 @@ function makeRng(seed: number) {
 }
 
 const TOPICS = [
-  "array", "string", "hash-table", "dynamic-programming", "math", "sorting",
-  "greedy", "depth-first-search", "binary-search", "tree", "breadth-first-search",
-  "two-pointers", "bit-manipulation", "stack", "design", "graph", "linked-list",
-  "heap", "recursion", "sliding-window", "union-find", "trie", "backtracking",
-  "divide-and-conquer", "segment-tree", "queue", "geometry", "topological-sort",
-  "shortest-path", "minimum-spanning-tree",
+  "array",
+  "string",
+  "hash-table",
+  "dynamic-programming",
+  "math",
+  "sorting",
+  "greedy",
+  "depth-first-search",
+  "binary-search",
+  "tree",
+  "breadth-first-search",
+  "two-pointers",
+  "bit-manipulation",
+  "stack",
+  "design",
+  "graph",
+  "linked-list",
+  "heap",
+  "recursion",
+  "sliding-window",
+  "union-find",
+  "trie",
+  "backtracking",
+  "divide-and-conquer",
+  "segment-tree",
+  "queue",
+  "geometry",
+  "topological-sort",
+  "shortest-path",
+  "minimum-spanning-tree",
   // ── Extra realistic tags (added in scale-up pass) ─────────────────────
-  "matrix", "simulation", "bit-mask", "memoization", "monotonic-stack",
-  "rolling-hash", "ordered-set", "prefix-sum", "suffix-array", "knapsack",
+  "matrix",
+  "simulation",
+  "bit-mask",
+  "memoization",
+  "monotonic-stack",
+  "rolling-hash",
+  "ordered-set",
+  "prefix-sum",
+  "suffix-array",
+  "knapsack",
 ];
 
 const DIFFICULTIES = ["easy", "medium", "hard"] as const;
@@ -95,11 +121,7 @@ interface Template {
 const TEMPLATES: readonly Template[] = [
   {
     slug: "max-subarray-sum",
-    titles: [
-      "Maximum Subarray Sum",
-      "Largest Contiguous Sum",
-      "Best Window of Numbers",
-    ],
+    titles: ["Maximum Subarray Sum", "Largest Contiguous Sum", "Best Window of Numbers"],
     description: `Given an array of integers \`nums\`, find the contiguous subarray with the **largest sum**. Return the sum.
 
 A subarray is a contiguous, non-empty slice of the array.
@@ -118,9 +140,10 @@ Explanation: The subarray [4, -1, 2, 1] has sum 6.
       "Kadane's algorithm runs in O(n) and one pass.",
     ],
     starterCode: {
-      python: "def solve(nums):\n    # Read 'nums' as a list of ints.\n    # Return the maximum subarray sum.\n    pass\n",
+      python:
+        "def solve(nums):\n    # Read 'nums' as a list of ints.\n    # Return the maximum subarray sum.\n    pass\n",
       javascript: "function solve(nums) {\n  // Return the maximum subarray sum.\n}\n",
-      go: "package main\n\nimport \"fmt\"\n\nfunc main() {\n  // Read nums and print the max subarray sum.\n}\n",
+      go: 'package main\n\nimport "fmt"\n\nfunc main() {\n  // Read nums and print the max subarray sum.\n}\n',
       java: "public class Main {\n  public static void main(String[] args) {\n    // Read nums; print max subarray sum.\n  }\n}\n",
     },
     generate(rng) {
@@ -232,19 +255,19 @@ Output: 8
 
 Hidden tests check up to n = 30. Iterative DP is sufficient; naive recursion will time out.`,
     constraints: "0 <= n <= 30",
-    hints: [
-      "Iterate; don't recurse.",
-      "Two variables tracking F(i-1) and F(i-2) is enough.",
-    ],
+    hints: ["Iterate; don't recurse.", "Two variables tracking F(i-1) and F(i-2) is enough."],
     starterCode: {
-      python: "def solve(n):\n    a, b = 0, 1\n    for _ in range(n):\n        a, b = b, a + b\n    return a\n",
-      javascript: "function solve(n) {\n  let a = 0, b = 1;\n  for (let i = 0; i < n; i++) [a, b] = [b, a + b];\n  return a;\n}\n",
+      python:
+        "def solve(n):\n    a, b = 0, 1\n    for _ in range(n):\n        a, b = b, a + b\n    return a\n",
+      javascript:
+        "function solve(n) {\n  let a = 0, b = 1;\n  for (let i = 0; i < n; i++) [a, b] = [b, a + b];\n  return a;\n}\n",
       go: "package main\n\nfunc main() {\n  // Read n; print Fib(n).\n}\n",
       java: "public class Main {\n  public static void main(String[] args) {\n    // Read n; print Fib(n).\n  }\n}\n",
     },
     generate(rng) {
       const n = randInt(rng, 0, 20);
-      let a = 0, b = 1;
+      let a = 0,
+        b = 1;
       for (let i = 0; i < n; i++) [a, b] = [b, a + b];
       return { input: String(n), expected: String(a) };
     },
@@ -258,7 +281,10 @@ async function seedTags(): Promise<Map<string, string>> {
       where: { slug },
       update: {},
       create: {
-        name: slug.split("-").map((w) => w[0]!.toUpperCase() + w.slice(1)).join(" "),
+        name: slug
+          .split("-")
+          .map((w) => w[0]!.toUpperCase() + w.slice(1))
+          .join(" "),
         slug,
       },
     });
@@ -306,8 +332,10 @@ async function seedProblems(rng: () => number, tagBySlug: Map<string, string>): 
               create: [...visibleTests, ...hiddenTests],
             },
             tags: {
-              create: Array.from({ length: 1 + Math.floor(rng() * 3) }, () => ({
-                tag: { connect: { id: tagBySlug.get(pick(rng, TOPICS))! } },
+              create: Array.from(
+                new Set(Array.from({ length: 1 + Math.floor(rng() * 3) }, () => pick(rng, TOPICS)))
+              ).map((slug) => ({
+                tag: { connect: { id: tagBySlug.get(slug)! } },
               })),
             },
           },
@@ -359,11 +387,11 @@ async function seedContests(rng: () => number, problemIds: string[]): Promise<vo
         let status: "ended" | "active" | "upcoming";
         let start: number;
         let durationMs: number;
-        if (roll < 0.10) {
+        if (roll < 0.1) {
           status = "active";
           start = now - randInt(rng, 0, 60) * 60 * 1000;
           durationMs = ONE_HOUR_MS * 2;
-        } else if (roll < 0.30) {
+        } else if (roll < 0.3) {
           status = "upcoming";
           start = now + randInt(rng, 60, THIRTY_DAYS_MS / 60_000) * 60_000;
           durationMs = pick(rng, CONTEST_DURATIONS_MIN) * 60_000;
