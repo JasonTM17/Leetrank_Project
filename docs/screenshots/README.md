@@ -1,69 +1,48 @@
-# Screenshots and demo assets
+# Screenshots
 
-Hero assets used by the root `README.md`. Captured against the local stack
-(`docker compose -f docker-compose.yml -f docker-compose.local.yml up -d`)
-on `http://localhost:13000` using Playwright.
+Project screenshots used in the root README and documentation. All captures show populated, success-state UI with realistic seeded data.
 
-## Files
+## Naming convention
 
-| File | Viewport | Notes |
-|------|----------|-------|
-| `home.png` | 1920x1080 | Landing page |
-| `problems.png` | 1920x1080 | Problem catalogue with filters |
-| `problem-detail.png` | 1920x1080 | Two Sum, Monaco editor, run/submit panel |
-| `contests.png` | 1920x1080 | Contests index |
-| `leaderboard.png` | 1920x1080 | All-time ranking |
-| `api-docs.png` | 1920x1080 | OpenAPI docs page |
-| `status.png` | 1920x1080 | Public `/status` health board |
-| `mobile/home.png` | 375x667 | Responsive home |
-| `mobile/problems.png` | 375x667 | Responsive problems |
-| `mobile/contests.png` | 375x667 | Responsive contests |
-| `dark/home.png` | 1920x1080 | Home in dark mode |
-| `dark/problems.png` | 1920x1080 | Problems in dark mode |
-| `demo.gif` | 900px wide, ~17s | End-to-end flow: home -> problems -> editor -> submit -> leaderboard -> contests |
-| `demo.webm` | 1280x720, VP9 | Same flow, higher fidelity |
-| `demo/frame-*.png` | 1280x720 | Source frames the gif/webm are assembled from |
+`<page-name>.png` — lowercase, hyphen-separated. Matches the `name` field in the capture scripts.
 
-## Reproducing
+## Capture workflow
 
-1. Boot the stack:
+1. `pnpm docker:up` — start the full stack (DB, Redis, services).
+2. `pnpm db:seed` — populate with realistic data (3-5 rows on lists, full markdown on detail pages).
+3. `pnpm dev` — start the Next.js dev server in another terminal.
+4. `node scripts/take-screenshots.mjs` — capture public pages (landing, problems, leaderboard, contests, discussions).
+5. `node scripts/take-screenshots-auth.mjs` — capture logged-in pages (dashboard, admin panel, code editor). Uses the seeded admin test user.
 
-   ```bash
-   docker compose -f docker-compose.yml -f docker-compose.local.yml up -d
-   curl -fsS http://localhost:13000/api/health   # expect 200
-   ```
+Both scripts output to this directory (`docs/screenshots/`).
 
-2. Capture frames with Playwright (the agent harness uses the Playwright MCP
-   tools; equivalent CLI commands below):
+## Rules
 
-   ```bash
-   npx playwright screenshot --viewport-size=1920,1080 --full-page \
-     http://localhost:13000/ docs/screenshots/home.png
-   npx playwright screenshot --viewport-size=1920,1080 --full-page \
-     http://localhost:13000/problems docs/screenshots/problems.png
-   # ...repeat for each route
-   ```
+- Never capture 404, empty list, loading skeleton, or auth redirect screens.
+- Never capture login or register pages (they violate the "populated success state" rule).
+- Always seed the database before capturing — empty UI looks broken.
+- Wait for full hydration before capture (scripts use `waitForContent` checks).
+- Re-run the full workflow after any major UI sweep.
 
-3. Re-encode the demo from the frame sequence:
+## Current screenshots
 
-   ```bash
-   # GIF (small, README-friendly)
-   ffmpeg -y -f concat -safe 0 -i docs/screenshots/demo/concat.txt \
-     -vf "fps=12,scale=900:-1:flags=lanczos,split[s0][s1];[s0]palettegen=max_colors=128[p];[s1][p]paletteuse=dither=bayer:bayer_scale=5" \
-     -loop 0 docs/screenshots/demo.gif
+| File | Source script | Description |
+|------|--------------|-------------|
+| `landing-page.png` | `take-screenshots.mjs` | Home page with hero, feature highlights, problem stats |
+| `problems-list.png` | `take-screenshots.mjs` | Problem catalog with difficulty badges and acceptance rates |
+| `leaderboard.png` | `take-screenshots.mjs` | Global ranking table with user stats |
+| `contests.png` | `take-screenshots.mjs` | Contest listing with upcoming/active/past tabs |
+| `discussions.png` | `take-screenshots.mjs` | Community discussions feed |
+| `dashboard.png` | `take-screenshots-auth.mjs` | User dashboard with progress charts and recent activity |
+| `admin-panel.png` | `take-screenshots-auth.mjs` | Admin overview with user/problem management |
+| `code-editor.png` | `take-screenshots-auth.mjs` | Problem detail with Monaco editor and test results |
 
-   # WebM (higher quality, smaller than GIF for long clips)
-   ffmpeg -y -f concat -safe 0 -i docs/screenshots/demo/concat.txt \
-     -vf "scale=1280:720:flags=lanczos,format=yuv420p" -r 24 \
-     -c:v libvpx-vp9 -b:v 1M -row-mt 1 docs/screenshots/demo.webm
-   ```
+## Legacy assets
 
-The `concat.txt` manifest controls per-frame durations. Update it if you
-add or reorder frames.
+Previous captures (different naming/viewport) may still exist:
+- `home.png`, `problems.png`, `problem-detail.png` — old 1920x1080 captures
+- `mobile/` — responsive captures (375x667)
+- `dark/` — dark mode variants
+- `demo.gif`, `demo.webm` — end-to-end flow recordings
 
-## Conventions
-
-- Light mode by default. Dark mode shots live in `dark/`.
-- Mobile shots use iPhone SE viewport (375x667) and live in `mobile/`.
-- Filenames are kebab-case and match the route they capture.
-- Keep PNGs under ~1 MB each. Re-export at lower scale if a capture grows.
+These are retained for reference but the canonical set is the table above.

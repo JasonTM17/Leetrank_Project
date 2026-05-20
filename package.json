@@ -35,7 +35,17 @@
     "load:smoke": "node scripts/load-test.mjs --scenario smoke",
     "load:stress": "node scripts/load-test.mjs --scenario stress",
     "load:contest": "node scripts/load-test.mjs --scenario contest-storm",
-    "openapi:lint": "redocly lint apps/api/openapi.yaml services/auth-go/openapi.yaml docs/openapi.yaml"
+    "openapi:lint": "redocly lint apps/api/openapi.yaml services/auth-go/openapi.yaml docs/openapi.yaml",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": [
+      "eslint --fix --max-warnings=0",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml,css}": [
+      "prettier --write"
+    ]
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
@@ -78,9 +88,23 @@
     "autocannon": "^7.15.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.5",
+    "prettier": "^3.8.3",
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",
     "typescript": "^5",
     "vitest": "^2.1.8"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@parcel/watcher",
+      "@swc/core",
+      "esbuild",
+      "@prisma/client",
+      "@prisma/engines",
+      "prisma",
+      "sharp"
+    ]
   }
 }
