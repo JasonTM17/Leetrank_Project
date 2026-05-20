@@ -52,6 +52,8 @@ services:
   judge:
     ports: !override
       - "19090:9090"
+    environment:
+      JUDGE_SANDBOX_MODE: "off"
 
   submissions:
     ports: !override
