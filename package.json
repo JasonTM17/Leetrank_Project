@@ -51,7 +51,7 @@
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
     "@prisma/client": "^5.22.0",
-    "@types/bcryptjs": "^2.4.6",
+    "@types/bcryptjs": "^3.0.0",
     "@types/react-syntax-highlighter": "^15.5.13",
     "bcryptjs": "^3.0.3",
     "canvas-confetti": "^1.9.4",
