@@ -3,9 +3,11 @@
 # that has no business living in the Vercel build context.
 
 # ── Backend services (deployed separately on Fly.io / Render / k8s) ──
-apps/api
-services/
-judge-service/
+# Use leading slash to anchor at repo root — without it, the glob also
+# matches src/services/ which the Next.js app needs to import.
+/apps/api/
+/services/
+/judge-service/
 
 # ── Infrastructure manifests + container orchestration ───────────────
 infra/
