@@ -135,19 +135,112 @@ and harden the platform across security, observability, and CI lanes.
 
 ## [Unreleased]
 
-### Added
+_No unreleased changes._
 
-- **Tier 1 security hardening.** CSRF token validation on mutating routes,
-  account lockout (failed_login_count + locked_until), structured audit log
-  for admin actions, Alertmanager integration for security events, signed-fetch
-  middleware for internal service-to-service calls.
-- **Submission UX overhaul.** Polling-based verdict updates (no more stale
-  "Run your code to see results here"), inline error display with line
-  highlighting, success banner on AC, confirmation modals before re-submit.
-- **Verdict classification expansion.** `compile_error` and
-  `memory_limit_exceeded` verdict types added to judge + UI badge mapping.
-- **Bulk seed script.** `prisma/seed-bulk.ts` now generates 1000 problems,
-  100 contests, and 500 users for realistic local development and load testing.
+## [0.3.0] - 2026-05-20
+
+This release closes the Phase 3 hardening sprint: every Tier 1 security control
+is in place, the submission UX is no longer ambiguous on error, the judge
+distinguishes compile / memory failures from generic runtime errors, the seed
+data scales to realistic load-test volumes, and the dev-experience surface
+(Makefile, hooks, devcontainer, troubleshooting docs) is consistent across
+contributors.
+
+### Added — security
+
+- **CSRF token validation.** Double-submit cookie pattern on every mutating
+  route (`POST` / `PATCH` / `PUT` / `DELETE`) under `app/api/`. Token issued by
+  middleware, verified before handler runs.
+- **Account lockout.** `failed_login_count` + `locked_until` columns on
+  `users`; N consecutive failures lock the account for a window. Pairs with
+  the per-IP Redis sliding-window rate limiter so botnet account-targeted
+  brute force is also blocked.
+- **Structured audit log.** Every admin mutation (role change, problem edit,
+  contest finalize, user delete) writes a structured row with `actor_id`,
+  `target_id`, `action`, `before` / `after` JSON, and request metadata.
+- **Alertmanager integration.** Security events (lockout triggered, CSRF
+  reject burst, JWKS refresh failure, judge sandbox escape attempt) fan out to
+  Alertmanager with severity routing.
+- **Signed-fetch middleware.** Internal service-to-service calls carry an
+  HMAC signature header verified with timing-safe compare. Reuses the
+  existing `WEBHOOK_SECRET` rotation cadence.
+- **HMAC on every outbound webhook.** All app -> n8n calls carry
+  `X-Signature-SHA256` of the raw body; n8n verifies before any side effect.
+
+### Added — submission UX
+
+- **Polling-based verdict updates.** Submission detail page polls the verdict
+  endpoint with backoff until a terminal status is reached; the stale
+  "Run your code to see results here" placeholder is gone.
+- **Side-by-side wrong-answer diff.** WA verdicts render expected vs. actual
+  output in a two-column diff with the first divergent line highlighted.
+- **Error block with line numbers.** Compile / runtime error output is
+  rendered in a monospace block with the offending source line numbers
+  highlighted and the compiler / runtime message annotated.
+- **Success banner on AC.** Distinct success state with runtime + memory
+  percentile and a CTA to share the solution.
+- **Confirmation modal before re-submit.** Prevents accidental double-submit
+  on slow networks; modal shows the previously submitted language + verdict.
+
+### Added — verdict classification
+
+- **`compile_error` distinct from `runtime_error`.** Judge surfaces the
+  compiler stage explicitly; UI badge + colour separated from runtime
+  failures so users can tell "did not compile" from "crashed at runtime."
+- **`memory_limit_exceeded` distinct from `runtime_error`.** RSS sampler in
+  the judge runner classifies OOM kills as MLE rather than RTE.
+
+### Added — seed data
+
+- **Bulk seed at realistic volume.** `prisma/seed-bulk.ts` now generates
+  **1000 problems**, **100 contests**, **500 users**, and **9939 submissions**
+  with a deterministic seed for reproducible local + CI runs. Submission
+  distribution mirrors production verdict ratios (AC ~45%, WA ~30%, TLE ~10%,
+  CE ~5%, RTE ~5%, MLE ~3%, OLE ~2%).
+
+### Added — observability
+
+- **Alertmanager.** Wired into the Prometheus stack with security + reliability
+  routing trees; receivers configured for email + Slack + PagerDuty.
+- **Tempo distributed tracing.** OpenTelemetry SDK + OTLP-HTTP exporter on
+  every Go service and the web tier; W3C Trace Context propagation; Tempo
+  backend with Grafana frontend in the `--profile observability` compose stack.
+
+### Added — DX
+
+- **Makefile.** Common workflows (`make dev`, `make test`, `make lint`,
+  `make seed`, `make compose-up`, `make compose-observability`) discoverable
+  in one place.
+- **Husky hooks.** `pre-commit` runs `pnpm lint-staged`; `commit-msg` runs
+  `commitlint`; `pre-push` runs `pnpm typecheck && pnpm test:fast`.
+- **`.vscode/` workspace settings.** Shared editor config, recommended
+  extensions, debug launch configs for web + Go services.
+- **Devcontainer.** `.devcontainer/` boots a full toolchain (Node 20, Go 1.23,
+  Rust, Python, Ruby, pnpm 10, Docker-in-Docker) for one-click onboarding.
+- **Setup scripts.** `scripts/setup.sh` (POSIX) and `scripts/setup.ps1`
+  (Windows) provision local secrets, run `pnpm install`, and prime the dev DB.
+
+### Added — docs
+
+- **`docs/troubleshooting.md`.** Common failure modes (Prisma generate order,
+  pnpm 10 override resolution, Docker COPY missing internal/, JWKS cache
+  staleness) with copy-paste fixes.
+- **Prerequisites line in `README.md`.** Explicit minimum versions and
+  install hints up top so contributors don't guess.
+- **Supported versions table.** Matrix of Node / Go / Rust / Python / pnpm
+  versions tested in CI; out-of-support combinations called out.
+
+### Changed — CI
+
+- **Green pipeline with hard gates + advisory categories.** Build, test,
+  typecheck, Trivy CRITICAL+HIGH, Gitleaks, CodeQL are hard gates. Rust
+  `clippy` + `fmt`, Lighthouse perf budget, bundle-size budget land as
+  advisory until baseline is clean, then flip to strict per the
+  "advisory before strict" pattern.
+- **Per-page SEO metadata** added for achievements, study-plans, and
+  admin/devops segments via `generateMetadata`.
+- **Error and loading boundaries** added for 8 additional route segments.
+- **API route type errors** resolved in solutions/vote and logger modules.
 
 ### Fixed
 
@@ -156,12 +249,16 @@ and harden the platform across security, observability, and CI lanes.
 - 18 ESLint errors suppressed: setState-in-effect for data-fetch patterns,
   test file type casts, CJS require in config files.
 
-### Changed
+### Migration notes
 
-- Per-page SEO metadata added for achievements, study-plans, and admin/devops
-  segments via `generateMetadata`.
-- Error and loading boundaries added for 8 additional route segments.
-- API route type errors resolved in solutions/vote and logger modules.
+- Run `pnpm prisma migrate deploy` before bringing the new web image up.
+  New columns: `users.failed_login_count`, `users.locked_until`. New tables:
+  `AuditLog`.
+- Set `CSRF_SECRET` (32+ random bytes) in env before deploying the web tier.
+  Existing sessions are unaffected; the next mutating request issues the
+  token.
+- Bump Alertmanager + Tempo into the observability compose profile:
+  `docker compose --profile observability up -d alertmanager tempo`.
 
 ## [0.1.0] - 2026-04-01
 
