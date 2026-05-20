@@ -1,6 +1,14 @@
 # Alertmanager
 
-Routes Prometheus alerts to webhook receivers (n8n workflows by default).
+Routes Prometheus alerts to webhook receivers (n8n workflows by default). Prometheus is wired to push firing alerts to `alertmanager:9093` via the `alerting:` block in `infra/prometheus/prometheus.yml`.
+
+## Start
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.observability.yml up -d alertmanager
+```
+
+Web UI: http://localhost:9093
 
 ## Environment variables
 
