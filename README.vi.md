@@ -75,9 +75,18 @@ docker compose logs -f app
 Stack mở các port:
 
 - `http://localhost:3000` — web app
-- `http://localhost:4011` — auth-go API
-- `http://localhost:9090` — Prometheus
-- `http://localhost:3001` — Grafana (admin / admin)
+- `http://localhost:4000` — read API (`apps/api`)
+- `http://localhost:4011` — identity (`services/auth-go`)
+- `http://localhost:4012` — submissions (`services/submissions-go`)
+- `http://localhost:4013` — problems (`services/problems-go`)
+- `http://localhost:4014` — leaderboard (`services/leaderboard-rust`)
+- `http://localhost:4015` — notifications (`services/notifications-ruby`)
+- `http://localhost:4016` — analytics (`services/analytics-python`)
+- `http://localhost:4017` — realtime (`services/realtime-go`)
+- `http://localhost:9090` — judge service
+- `postgresql://localhost:5432` — Postgres
+- `redis://localhost:6379` — Redis
+- `http://localhost:3001` — Grafana (overlay observability, admin/admin)
 
 Lần đầu chạy seed:
 
