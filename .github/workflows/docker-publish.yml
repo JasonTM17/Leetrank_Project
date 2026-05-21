@@ -102,6 +102,27 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build & push (Docker Hub + GHCR)
+        id: build-push
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            COMMIT_SHA=${{ github.sha }}
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+          provenance: true
+          sbom: true
+
+      # Retry the build once on transient registry failures (Docker Hub
+      # 429 toomanyrequests is the most common cause of false-red on this
+      # workflow — see ADR 0026).
+      - name: Build & push retry (after transient failure)
+        if: failure() && steps.build-push.outcome == 'failure'
         uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
         with:
           context: ${{ matrix.context }}
