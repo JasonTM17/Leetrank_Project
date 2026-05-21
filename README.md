@@ -117,7 +117,7 @@ Roughly 500+ commits since `v0.1.0`. The full breakdown is in [CHANGELOG.md](CHA
 ## Highlights
 
 - **30+ languages judged in isolation.** Python, Go, Rust, C/C++, Java, Kotlin, Scala, JS/TS, Ruby, PHP, C#, Lua, R, SQL — every submission runs in a per-process [nsjail](https://github.com/google/nsjail) (Linux namespaces + cgroups + seccomp + capability drop) with strict CPU/memory/process/file-descriptor caps. Pattern blocklists are pre-flight defence-in-depth, not the boundary. See [ADR 0020](docs/adr/0020-judge-sandbox-model.md).
-- **Polyglot microservices.** Frontend (Next.js 16) and ten backend services in five languages: Hono/TypeScript (`apps/api`), Go (`auth-go`, `problems-go`, `submissions-go`, `realtime-go`, `judge-service`), Rust (`leaderboard-rust`), Ruby (`notifications-ruby`), and Python (`analytics-python`). Each ships its own Dockerfile, port, runbook, and CI lane.
+- **Polyglot microservices.** Frontend (Next.js 16) and nine backend services in five languages: Hono/TypeScript (`apps/api`), Go (`auth-go`, `problems-go`, `submissions-go`, `realtime-go`, `judge-service`), Rust (`leaderboard-rust`), Ruby (`notifications-ruby`), and Python (`analytics-python`). Each ships its own Dockerfile, port, runbook, and CI lane.
 - **Real-time leaderboards.** Redis sorted sets for `O(log N)` rank-by-score lookups; Postgres remains the source of truth. Served by `leaderboard-rust`. See [ADR 0022](docs/adr/0022-leaderboard-caching-strategy.md).
 - **Glicko-2 rating.** Per-user skill rating with confidence intervals — picked over plain Elo because contests are sparse and bursty. See [ADR 0021](docs/adr/0021-rating-algorithm.md).
 - **Production-grade observability.** zerolog structured JSON logs, Prometheus metrics, OpenTelemetry tracing, Grafana dashboards. See [ADR 0024](docs/adr/0024-observability-stack.md).
@@ -241,7 +241,7 @@ flowchart TB
 
 The architecture splits into 5 tiers:
 
-- **Edge** — Caddy terminates TLS and routes to web + 8 backend services.
+- **Edge** — Caddy terminates TLS and routes to web + 9 backend services.
 - **Frontend** — Next.js SSR app (root `src/`).
 - **Backend APIs** — 9 polyglot services (TS Hono, Go ×4, Rust, Python, Ruby, Go judge).
 - **Data** — Postgres 16 (primary), Redis 7 (cache + queue + rate-limit), separate Postgres for n8n.
@@ -295,7 +295,7 @@ Demo accounts after seeding: `admin@leetrank.local` / `Admin123!` and `demo@leet
 
 ## Features
 
-- **Problem catalogue.** 100+ seed problems across easy/medium/hard, tagged by topic, with full Markdown statements, sample I/O, and visible test cases.
+- **Problem catalogue.** Seed scripts populate easy / medium / hard problems across topic tags, with full Markdown statements, sample I/O, and visible test cases. `pnpm run seed:1k` pushes the catalogue to 1 000 problems for load-testing.
 - **Online judge.** Submit code in any of 30+ languages; per-submission nsjail sandbox enforces CPU/wall-clock/memory/process limits and isolates the process via fresh PID, mount, and network namespaces. Pattern blocklists run as pre-flight defence-in-depth.
 - **Contests.** Time-boxed events with their own problem set, frozen leaderboard, and post-event rating recompute.
 - **Leaderboards.** All-time, weekly, contest-scoped — backed by Redis sorted sets with Postgres as source of truth.

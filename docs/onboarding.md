@@ -50,7 +50,7 @@ Open `.env` and fill in at minimum:
 pnpm install --frozen-lockfile
 ```
 
-This installs workspace dependencies for `apps/web`, `apps/api`, and all packages in one pass.
+This installs workspace dependencies for the root web app, `apps/api`, and all packages in one pass.
 
 ### 4. Push the database schema
 
@@ -99,11 +99,10 @@ Navigate to http://localhost:3000. You should see the LeetRank landing page.
 
 The seed creates these accounts:
 
-| Username | Password      | Role  |
-| -------- | ------------- | ----- |
-| `admin`  | `password123` | Admin |
-| `user1`  | `password123` | User  |
-| `user2`  | `password123` | User  |
+| Email                  | Password    | Role  |
+| ---------------------- | ----------- | ----- |
+| `admin@leetrank.local` | `Admin123!` | Admin |
+| `demo@leetrank.local`  | `Demo123!`  | User  |
 
 Log in as `user1` to explore the platform as a regular user. Log in as `admin` to access the admin panel at `/admin`.
 
@@ -124,7 +123,7 @@ Log in as `user1` to explore the platform as a regular user. Log in as `admin` t
 
 ### Rules and conventions
 
-Project rules live in `RULES.md` (user-private, not committed). The public-facing contribution guide is `CONTRIBUTING.md` at the repo root.
+Project rules live in [`AGENTS.md`](../AGENTS.md) and [`CONTRIBUTING.md`](../CONTRIBUTING.md).
 
 ### ADR catalog
 
