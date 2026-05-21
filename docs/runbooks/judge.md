@@ -71,7 +71,7 @@ docker compose up -d judge
 docker compose logs judge | grep -i "error\|fatal\|loadLanguageRegistry"
 ```
 
-Escalate to Nguyễn Sơn (jasonbmt06@gmail.com) if the service does not recover within 10 minutes.
+Escalate to Nguyễn Tiến Sơn (jasonbmt06@gmail.com) if the service does not recover within 10 minutes.
 
 ---
 

@@ -61,7 +61,7 @@ docker compose up -d api
 docker compose logs api | grep -i "error\|fatal\|ECONNREFUSED"
 ```
 
-Escalate to Nguyễn Sơn (jasonbmt06@gmail.com) if the service does not recover within 10 minutes.
+Escalate to Nguyễn Tiến Sơn (jasonbmt06@gmail.com) if the service does not recover within 10 minutes.
 
 ---
 

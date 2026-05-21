@@ -69,7 +69,7 @@ docker compose logs identity | grep -i "error\|fatal\|missing\|required"
 
 The identity service validates required env vars at startup (`DATABASE_URL`, JWT keystore paths, optional `LEGACY_HS256_FALLBACK`). A missing or malformed env var causes an immediate process exit. Verify `.env` contains expected values.
 
-Escalate to Nguyễn Sơn (jasonbmt06@gmail.com) if the service does not recover within 10 minutes.
+Escalate to Nguyễn Tiến Sơn (jasonbmt06@gmail.com) if the service does not recover within 10 minutes.
 
 ---
 
