@@ -1,7 +1,7 @@
 import { test, expect, type Page, type ConsoleMessage } from "@playwright/test";
 
 /**
- * Manual UX QA against the live Vercel deploy:
+ * Manual UX QA against the local dev server:
  *   1. Mixed EN/VI strings on the same page (i18n leaks).
  *   2. PWA install prompt dismissal — does "Maybe later" actually
  *      suppress the popup on subsequent loads?
