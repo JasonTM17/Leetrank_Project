@@ -4,9 +4,12 @@
 FROM rust:1.90-bookworm AS builder
 WORKDIR /src
 
-# Cache dependencies
-COPY Cargo.toml ./
-RUN mkdir -p src && echo "fn main(){}" > src/main.rs && \
+# Cache dependencies — Cargo.toml declares both [lib] and [[bin]],
+# so the prefetch stub needs both src/main.rs AND src/lib.rs.
+COPY Cargo.toml Cargo.lock* ./
+RUN mkdir -p src && \
+    echo "fn main(){}" > src/main.rs && \
+    echo "" > src/lib.rs && \
     cargo build --release && \
     rm -rf src target/release/deps/leaderboard_rust*
 
