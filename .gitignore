@@ -95,6 +95,8 @@ DOCUMENTATION_MASTER.md
 .tmp-go/
 .kilo/
 load-test-results/
+test-results/
+playwright-report/
 tests/ux/screenshots/
 /scripts/*
 # Project artifacts under /scripts/ that ARE tracked
