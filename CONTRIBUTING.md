@@ -83,18 +83,18 @@ We use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/). C
 
 `<type>` must be one of:
 
-| Type | Use for |
-|------|---------|
-| `feat` | New user-visible behaviour |
-| `fix` | Bug fix |
-| `docs` | Documentation only |
-| `style` | Formatting; no behavioural change |
+| Type       | Use for                                    |
+| ---------- | ------------------------------------------ |
+| `feat`     | New user-visible behaviour                 |
+| `fix`      | Bug fix                                    |
+| `docs`     | Documentation only                         |
+| `style`    | Formatting; no behavioural change          |
 | `refactor` | Code change that's neither feature nor fix |
-| `perf` | Performance-only change |
-| `test` | Adding or fixing tests |
-| `build` | Build system, tooling, dependencies |
-| `ci` | CI configuration |
-| `chore` | Maintenance that doesn't fit elsewhere |
+| `perf`     | Performance-only change                    |
+| `test`     | Adding or fixing tests                     |
+| `build`    | Build system, tooling, dependencies        |
+| `ci`       | CI configuration                           |
+| `chore`    | Maintenance that doesn't fit elsewhere     |
 
 `<scope>` is the area touched: `api`, `auth`, `auth-go`, `web`, `judge`, `submissions-go`, `problems-go`, `prisma`, `ci`, `docs`, etc.
 
@@ -107,11 +107,12 @@ docs(adr): add 0021 rating algorithm (Glicko-2)
 ```
 
 Subject rules:
+
 - Imperative mood (`add` not `added`).
 - No trailing period.
 - 72 characters or fewer.
 
-The body explains *why*, not *what* — the diff already tells you what.
+The body explains _why_, not _what_ — the diff already tells you what.
 
 ### Commit authorship
 
@@ -140,14 +141,14 @@ The repo is single-contributor today. Commits are signed off by `Nguyen Tien Son
 
 ## Tests
 
-| Layer | Command |
-|-------|---------|
-| Web unit + component | `pnpm test` |
-| Web e2e (Playwright) | `pnpm test:e2e` |
-| API workspace | `pnpm --filter apps/api test` |
-| Auth (Go identity) | `cd services/auth-go && go test ./...` |
-| Go services | `cd services/<svc> && go test ./...` |
-| Judge | `cd judge-service && go test ./...` |
+| Layer                | Command                                |
+| -------------------- | -------------------------------------- |
+| Web unit + component | `pnpm test`                            |
+| Web e2e (Playwright) | `pnpm test:e2e`                        |
+| API workspace        | `pnpm --filter apps/api test`          |
+| Auth (Go identity)   | `cd services/auth-go && go test ./...` |
+| Go services          | `cd services/<svc> && go test ./...`   |
+| Judge                | `cd judge-service && go test ./...`    |
 
 Add a test for every behavioural change. If the test framework doesn't exist yet for your area, set one up — don't ship the change without coverage.
 
@@ -166,7 +167,7 @@ Lint with `pnpm openapi:lint` (Redocly). Specs must lint clean before a PR is me
 1. Branch off `main`. Keep one feature or fix per PR.
 2. Run locally: `pnpm typecheck && pnpm lint && pnpm test` (TS) and `go test ./... && go vet ./...` (Go).
 3. Push and open a PR against `main`. Use the template; fill in every section.
-4. CI runs `web`, `api`, `judge`, `audit`, and `docker` jobs. All must be green.
+4. CI runs the full polyglot matrix (`web`, `api`, `judge`, Go services, `python-tests`, `ruby-tests`, `rust-tests`, plus security scans `codeql`, `trivy`, `gitleaks`, `sbom`). See [`docs/release.md`](docs/release.md) for the full required-checks list. All must be green before merge.
 5. Address review comments via new commits — we squash on merge, so don't worry about commit hygiene during review.
 
 PR title follows the same Conventional Commits format as a single commit; the merge commit will use it verbatim.
@@ -198,6 +199,7 @@ ADRs, issues, prior PRs.
 Releases follow [Semantic Versioning](https://semver.org/). The full policy — version bumps, release checklist, hotfix workflow, and version history — lives in [`docs/release.md`](docs/release.md).
 
 Quick reference:
+
 - `feat` commit → minor bump (0.x.0)
 - `fix` commit → patch bump (0.0.x)
 - Breaking change (`!` suffix or `BREAKING CHANGE:` footer) → major bump (x.0.0)

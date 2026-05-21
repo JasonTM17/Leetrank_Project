@@ -4,11 +4,11 @@
 
 ## Supported Versions
 
-| Version | Supported          | Notes                          |
-| ------- | ------------------ | ------------------------------ |
-| 0.2.x   | :white_check_mark: | Active development on `main`   |
-| 0.1.x   | :warning:          | Critical fixes only            |
-| < 0.1   | :x:                | End of life                    |
+| Version | Supported          | Notes                        |
+| ------- | ------------------ | ---------------------------- |
+| 0.2.x   | :white_check_mark: | Active development on `main` |
+| 0.1.x   | :warning:          | Critical fixes only          |
+| < 0.1   | :x:                | End of life                  |
 
 We support the latest minor release on `main` plus the immediately previous minor for critical security patches only.
 
@@ -62,7 +62,7 @@ Out of scope:
 - JWT_SECRET fail-fast in production (`src/lib/auth.ts`)
 - httpOnly cookies for session tokens, SameSite=lax
 - bcrypt password hashing (cost 10)
-- Per-IP rate limiting on `/api/auth/login` and the judge `/execute` endpoint
+- Per-IP rate limiting on `/api/v1/auth/*` (identity service) and the judge `/execute` endpoint
 - Per-language sandbox blocklists in the judge runners
 - Global + per-IP concurrency caps on the judge to absorb burst load
 - Zod validation on every request body that touches the database
