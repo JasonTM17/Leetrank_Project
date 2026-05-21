@@ -5,6 +5,11 @@ on:
     branches: [main]
     tags: ["v*"]
   workflow_dispatch:
+    inputs:
+      push_dockerhub:
+        description: "Also push to Docker Hub (rate-limited; default off)"
+        type: boolean
+        default: false
 
 concurrency:
   group: docker-publish-${{ github.ref }}
@@ -86,6 +91,7 @@ jobs:
               mirrors = ["mirror.gcr.io"]
 
       - name: Login to Docker Hub
+        if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') || (github.event_name == 'workflow_dispatch' && inputs.push_dockerhub) }}
         uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -98,13 +104,15 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Compute tags (dual registry)
+      - name: Compute tags (GHCR; tags also push to Docker Hub)
         id: meta
+        env:
+          PUSH_DH: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') || (github.event_name == 'workflow_dispatch' && inputs.push_dockerhub) }}
         uses: docker/metadata-action@369eb591f429131d6889c46b94e711f089e6ca96 # v5.6.1
         with:
           images: |
-            nguyenson1710/leetrank-${{ matrix.slug }}
             ghcr.io/jasontm17/leetrank-${{ matrix.slug }}
+            nguyenson1710/leetrank-${{ matrix.slug }},enable=${{ env.PUSH_DH == 'true' }}
           tags: |
             type=ref,event=branch
             type=ref,event=tag
@@ -155,6 +163,7 @@ jobs:
           sbom: true
 
       - name: Verify image tag landed on Docker Hub
+        if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') || (github.event_name == 'workflow_dispatch' && inputs.push_dockerhub) }}
         run: docker manifest inspect nguyenson1710/leetrank-${{ matrix.slug }}:latest
 
       - name: Verify image tag landed on GHCR
