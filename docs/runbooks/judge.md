@@ -12,8 +12,8 @@ Quick reference for operating the LeetRank code-execution judge in production.
 
 ## Health endpoint
 
-| Endpoint | Purpose | Expected response |
-|---|---|---|
+| Endpoint      | Purpose                       | Expected response                                                  |
+| ------------- | ----------------------------- | ------------------------------------------------------------------ |
 | `GET /health` | Liveness + scheduler snapshot | `200 {"status":"ok","service":"leetrank-judge","scheduler":{...}}` |
 
 ```bash
@@ -30,13 +30,13 @@ The scheduler snapshot includes current in-flight count and per-IP slot usage. U
 
 ## Environment variables
 
-| Variable | Default | Purpose |
-|---|---|---|
-| `RUNNER_TIMEOUT` | `5` | Per-test-case timeout in seconds |
-| `JUDGE_GLOBAL_MAX` | `16` | Max concurrent executions across all IPs |
-| `JUDGE_PER_IP_MAX` | `4` | Max concurrent executions per IP |
+| Variable              | Default | Purpose                                             |
+| --------------------- | ------- | --------------------------------------------------- |
+| `RUNNER_TIMEOUT`      | `5`     | Per-test-case timeout in seconds                    |
+| `JUDGE_GLOBAL_MAX`    | `16`    | Max concurrent executions across all IPs            |
+| `JUDGE_PER_IP_MAX`    | `4`     | Max concurrent executions per IP                    |
 | `JUDGE_QUEUE_WAIT_MS` | `10000` | Max time (ms) a request waits for a slot before 503 |
-| `JUDGE_PORT` | `9090` | Listening port |
+| `JUDGE_PORT`          | `9090`  | Listening port                                      |
 
 ---
 
@@ -126,6 +126,7 @@ Fix: Adjust `RUNNER_TIMEOUT` in `.env`. Restart the judge after changing it.
 Signs: `JudgeRejectionRate` fires, `/execute` returns `503 {"status":"busy"}`.
 
 The scheduler enforces two caps:
+
 - `JUDGE_GLOBAL_MAX` (default 16) — total slots across all IPs.
 - `JUDGE_PER_IP_MAX` (default 4) — slots per source IP.
 
@@ -175,7 +176,7 @@ docker compose logs --tail=200 judge | grep "security_error"
 docker compose logs --tail=200 caddy | grep "429\|POST.*execute"
 ```
 
-> **Note:** The current `isSafe()` implementation is string-matching only (F-085 in prod-readiness audit). It can be bypassed with encoding tricks. A proper sandbox (nsjail/firejail/seccomp) is planned for Phase 3.2.
+> **Note:** The string-matching `isSafe()` is one of two defenses; the primary sandbox is the nsjail jail (per [ADR 0020](../adr/0020-judge-sandbox-model.md)) which enforces seccomp, namespace isolation, and resource caps regardless of the source bytes.
 
 ---
 

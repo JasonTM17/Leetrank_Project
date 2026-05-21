@@ -1,7 +1,9 @@
 <!-- BEGIN:nextjs-agent-rules -->
+
 # This is NOT the Next.js you know
 
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
+
 <!-- END:nextjs-agent-rules -->
 
 ## Hard-won rules (LeetRank-specific)
@@ -72,7 +74,7 @@ These are project-specific lessons paid for in time wasted. Universal rules live
 ### ADR discipline
 
 - One decision per file under `docs/adr/`. Append-only — supersede with a new ADR rather than editing accepted ones. Reference [ADR template](docs/adr/template.md) when adding.
-- Every architecturally significant change in this repo gets an ADR before merge — that's how `0001`–`0031+` accumulated.
+- Every architecturally significant change in this repo gets an ADR before merge — that's how `0001`–`0032+` accumulated.
 
 ### Containers — Docker Hub
 

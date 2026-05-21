@@ -371,7 +371,7 @@ Per-service runbooks ship in each service README (local dev, production deploy, 
 | [0017](docs/adr/0017-auth-go-rewrite.md)                | Auth-go rewrite                                            |
 | [0018](docs/adr/0018-go-services-buildout.md)           | Go services buildout                                       |
 | [0019](docs/adr/0019-n8n-integration.md)                | n8n integration for chatbot/automation                     |
-| [0020](docs/adr/0020-judge-sandbox-model.md)            | Judge sandbox model (Docker-per-submission)                |
+| [0020](docs/adr/0020-judge-sandbox-model.md)            | Judge sandbox model (nsjail)                               |
 | [0021](docs/adr/0021-rating-algorithm.md)               | Rating algorithm (Glicko-2)                                |
 | [0022](docs/adr/0022-leaderboard-caching-strategy.md)   | Leaderboard caching strategy                               |
 | [0023](docs/adr/0023-multi-region-readiness.md)         | Multi-region readiness plan                                |
