@@ -120,9 +120,14 @@ jobs:
 
       # Retry the build once on transient registry failures (Docker Hub
       # 429 toomanyrequests is the most common cause of false-red on this
-      # workflow — see ADR 0026).
+      # workflow — see ADR 0026). Sleep 90s first so the rate-limit window
+      # has time to drain.
+      - name: Sleep before retry
+        if: ${{ always() && steps.build-push.outcome == 'failure' }}
+        run: sleep 90
+
       - name: Build & push retry (after transient failure)
-        if: failure() && steps.build-push.outcome == 'failure'
+        if: ${{ always() && steps.build-push.outcome == 'failure' }}
         uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
         with:
           context: ${{ matrix.context }}
