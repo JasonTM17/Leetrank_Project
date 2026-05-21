@@ -399,6 +399,17 @@
     "errorTitle": "Couldn't load achievements",
     "errorBody": "We hit a snag fetching your achievements. Try again in a moment.",
     "emptyTitle": "No achievements yet",
-    "emptyBody": "Solve problems and join contests to start earning achievements."
+    "emptyBody": "Solve problems and join contests to start earning achievements.",
+    "category": {
+      "all": "All",
+      "solving": "Solving",
+      "difficulty": "Difficulty",
+      "skill": "Skill",
+      "streak": "Streak",
+      "rating": "Rating",
+      "contest": "Contest",
+      "leaderboard": "Leaderboard",
+      "community": "Community"
+    }
   }
 }

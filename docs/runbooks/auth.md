@@ -97,17 +97,21 @@ docker compose logs --tail=50 identity
 
 ---
 
-## Current endpoint status (Phase 3.1)
+## Current endpoint status
 
-| Endpoint                     | Status   | Notes                       |
-| ---------------------------- | -------- | --------------------------- |
-| `GET /healthz`               | Live     | Liveness probe              |
-| `GET /readyz`                | Live     | DB probe                    |
-| `GET /metrics`               | Live     | Prometheus scrape           |
-| `GET /jwks`                  | Live     | Returns empty `{"keys":[]}` |
-| `GET /.well-known/jwks.json` | Live     | Same as `/jwks`             |
-| `GET /login`                 | 501 stub | Phase 3.1.5                 |
-| `POST /login`                | 501 stub | Phase 3.1.5                 |
+| Endpoint                        | Status | Notes                                      |
+| ------------------------------- | ------ | ------------------------------------------ |
+| `GET /healthz`                  | Live   | Liveness probe                             |
+| `GET /readyz`                   | Live   | DB probe                                   |
+| `GET /metrics`                  | Live   | Prometheus scrape                          |
+| `GET /jwks`                     | Live   | Ed25519 JWKS (per ADR 0030)                |
+| `GET /.well-known/jwks.json`    | Live   | JWKS alias (RFC 7517)                      |
+| `POST /v1/auth/register`        | Live   | bcrypt cost 12, dummy-hash mitigation      |
+| `POST /v1/auth/login`           | Live   | Issues session cookie + JWT                |
+| `POST /v1/auth/logout`          | Live   | Clears session cookie                      |
+| `GET /v1/auth/me`               | Live   | Cookie-authenticated profile               |
+| `POST /v1/auth/change-password` | Live   | Requires session cookie                    |
+| `GET /v1/auth/sessions`         | 501    | Session model not yet in schema (ADR-0032) |
 
 ---
 
@@ -166,15 +170,13 @@ docker compose build identity && docker compose up -d identity
 
 ---
 
-## Open gaps (Phase 3.1)
+## Known follow-ups
 
-The following are known gaps tracked in the prod-readiness audit:
+Tracked in the prod-readiness audit:
 
-- **F-081** — Auth service ships 501 stubs; complete Phase 3.1.5 before cutover.
-- **F-082** — JWKS is empty; generate Ed25519 keypair and expose real keys (Phase 3.1.1).
-- **F-066** — No login rate limit at auth service; add per-IP + per-account lockout.
-- **F-067** — Shared `JWT_SECRET` with `apps/web`; migrate to per-service keys in Phase 3.1.1.
-- **F-084** — No refresh-token rotation.
+- **F-066** — Per-IP login rate limit lives in-process; replace with Redis sliding-window when scaling beyond a single replica.
+- **F-084** — Refresh-token rotation not yet implemented (current sessions rely on cookie expiry).
+- **ADR 0030 phase 3** — `LEGACY_HS256_FALLBACK` env flag still allowed; remove once every consumer reads JWKS only.
 
 ---
 

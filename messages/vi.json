@@ -399,6 +399,17 @@
     "errorTitle": "Không tải được thành tựu",
     "errorBody": "Có lỗi khi lấy danh sách thành tựu. Vui lòng thử lại sau.",
     "emptyTitle": "Chưa có thành tựu nào",
-    "emptyBody": "Hãy giải bài và tham gia giải đấu để bắt đầu nhận thành tựu."
+    "emptyBody": "Hãy giải bài và tham gia giải đấu để bắt đầu nhận thành tựu.",
+    "category": {
+      "all": "Tất cả",
+      "solving": "Giải bài",
+      "difficulty": "Độ khó",
+      "skill": "Kỹ năng",
+      "streak": "Chuỗi ngày",
+      "rating": "Xếp hạng",
+      "contest": "Giải đấu",
+      "leaderboard": "Bảng xếp hạng",
+      "community": "Cộng đồng"
+    }
   }
 }
