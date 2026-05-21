@@ -142,7 +142,7 @@ To exercise any of these rights, email jasonbmt06@gmail.com with the subject lin
 
 ## Security
 
-- Passwords are hashed with **bcrypt** (cost factor 10).
+- Passwords are hashed with **bcrypt** (cost factor 12).
 - Session tokens are **JWT** signed with a secret that must be at least 16 characters; the server refuses to start in production without it.
 - All traffic in production is served over **HTTPS** via Caddy with Let's Encrypt certificates and HSTS headers.
 - The judge sandbox has no network access and runs with per-language blocklists for dangerous system calls and imports.

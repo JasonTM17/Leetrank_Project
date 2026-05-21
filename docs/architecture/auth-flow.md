@@ -17,7 +17,7 @@ sequenceDiagram
     U->>W: POST /login {email, password}
     W->>I: POST /v1/auth/login {email, password}
     I->>DB: SELECT user WHERE email
-    I->>I: argon2id verify password
+    I->>I: bcrypt verify password (cost 12)
     I->>I: sign access JWT (Ed25519, 15 min)
     I->>I: sign refresh JWT (Ed25519, 30 days)
     I->>DB: INSERT RefreshToken (jti, userId, expiresAt)
@@ -29,7 +29,7 @@ sequenceDiagram
 
 Key points:
 
-- **Password hash:** argon2id with parameters owned by `services/auth-go`. Pepper is the `AUTH_PEPPER` env var; rotation is documented in [auth.md](../runbooks/auth.md).
+- **Password hash:** bcrypt cost 12 (`golang.org/x/crypto/bcrypt`), implemented in `services/auth-go/internal/auth/handler.go`. Migration to argon2id is tracked but not yet shipped.
 - **Access TTL:** 15 minutes (cut down from the legacy 7-day default — see [ADR 0030](../adr/0030-web-tier-jwt-cutover.md)).
 - **Refresh TTL:** 30 days. Stored in the `RefreshToken` table by `jti` (JWT ID) so revocation is a single-row update.
 - **Cookie scoping:** the refresh cookie uses `Path=/api/auth/refresh` so browsers only send it to the rotation endpoint. The access cookie is sent on every request to the same origin.
@@ -142,16 +142,16 @@ Full procedure is in [auth.md](../runbooks/auth.md).
 
 ## Headers and cookies cheat sheet
 
-| Cookie | Path | TTL | HttpOnly | SameSite |
-|---|---|---|---|---|
-| `access` | `/` | 15 min | yes | lax |
-| `refresh` | `/api/auth/refresh` | 30 days | yes | lax |
-| `csrf` | `/` | session | no (readable for double-submit) | lax |
+| Cookie    | Path                | TTL     | HttpOnly                        | SameSite |
+| --------- | ------------------- | ------- | ------------------------------- | -------- |
+| `access`  | `/`                 | 15 min  | yes                             | lax      |
+| `refresh` | `/api/auth/refresh` | 30 days | yes                             | lax      |
+| `csrf`    | `/`                 | session | no (readable for double-submit) | lax      |
 
-| Header | Where | Purpose |
-|---|---|---|
+| Header                        | Where                    | Purpose                                              |
+| ----------------------------- | ------------------------ | ---------------------------------------------------- |
 | `Authorization: Bearer <jwt>` | `app` → backend services | Forwarded server-to-server; never set by the browser |
-| `X-Request-Id` | every hop | Correlation id propagated via middleware |
+| `X-Request-Id`                | every hop                | Correlation id propagated via middleware             |
 
 ## See also
 
