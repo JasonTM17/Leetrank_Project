@@ -4,8 +4,7 @@ Date: 2026-05-18
 
 ## Status
 
-Proposed. Required by Phase 3.0 in
-`.claude-private/microservices-plan/04-migration-sequencing.md`.
+Proposed. Required by Phase 3.0 in the microservices migration plan.
 
 ## Context
 
@@ -75,6 +74,7 @@ Concretely:
 ## Consequences
 
 **Positive**
+
 - Each service can verify tokens without a network call.
 - Symmetric JWT_SECRET retired; no more shared-key blast radius.
 - Token audience claim makes "this token was minted for service X"
@@ -82,6 +82,7 @@ Concretely:
 - Rotation is mechanical, not panicked.
 
 **Negative**
+
 - One more piece of state for `auth` to manage (the signing key + JWKS
   endpoint + key rotation script).
 - Initial migration window: services must accept BOTH HS256 (legacy
@@ -89,6 +90,7 @@ Concretely:
   sessions expire.
 
 **Neutral**
+
 - Cookie-vs-header auth surface unchanged for users. The new token
   format only affects service↔service traffic.
 

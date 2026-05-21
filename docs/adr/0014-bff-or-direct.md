@@ -4,8 +4,8 @@ Date: 2026-05-18
 
 ## Status
 
-Proposed. Decision required before Phase 4 (drop /api/* from apps/web)
-in `.claude-private/microservices-plan/04-migration-sequencing.md`.
+Proposed. Decision required before Phase 4 (drop /api/\* from apps/web)
+in the microservices migration plan.
 
 ## Context
 
@@ -39,20 +39,22 @@ Reasoning:
   multiple service calls in parallel is what `Promise.all` is for.
   No service is required to do that for us.
 - Edge caching is Caddy's job, or a CDN's. Plan 03 §1 prefers Caddy
-  + Compose locally and ALB + CloudFront in prod; neither needs an
-  extra service.
+  - Compose locally and ALB + CloudFront in prod; neither needs an
+    extra service.
 - Each new service ships its own routes. Routing them through `api`
   is a hop tax (latency + JSON parse + JSON re-emit) for no gain.
 
 ## Consequences
 
 **Positive**
+
 - One fewer service to deploy, scale, and patch.
 - One less hop on the SSR critical path.
 - `apps/api`'s `Dockerfile`, `package.json`, CI job, and Docker Hub
   image (`leetrank-api`) all retire — image registry stays clean.
 
 **Negative**
+
 - If a future feature needs server-side aggregation we have to add it
   back. The cost of doing so is small (fork from the retired
   `apps/api/` git history; new service name).
@@ -60,6 +62,7 @@ Reasoning:
   becomes a deprecated key.
 
 **Neutral**
+
 - The work that landed in `apps/api/` (env validation pattern,
   middleware, /metrics, /health split, structured logger) is reusable
   as the per-service skeleton. Phase 4 cleanup commit moves the

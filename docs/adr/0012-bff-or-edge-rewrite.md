@@ -5,7 +5,7 @@ Date: 2026-05-18
 ## Status
 
 Proposed. Decision required before Phase 2d (cutover read traffic to apps/api)
-in `.claude-private/microservices-plan/04-migration-sequencing.md`.
+in the microservices migration plan.
 
 ## Context
 
@@ -39,7 +39,7 @@ Reasoning:
   we said we would avoid.
 - Caddy already terminates TLS and does path routing; it owns the
   `/api/auth/*` rate-limit zone. Adding a `reverse_proxy /api/leaderboard/*
-  api:4000` line is one config change, applies to every consumer
+api:4000` line is one config change, applies to every consumer
   (browser + curl + future external clients) at once, and is reversible
   by reverting the line.
 - A BFF helper requires `apps/web` to ship a release every time we
@@ -52,12 +52,14 @@ Reasoning:
 ## Consequences
 
 **Positive**
+
 - Zero `apps/web` changes required for cutover.
 - One commit per cutover wave; rollback is `git revert` on the Caddyfile.
 - External clients (mobile app, future API consumers) automatically
   hit the new origin.
 
 **Negative**
+
 - We lose the ability to run dual-traffic shadow tests by chance — to
   shadow we have to mirror the request explicitly in Caddy (it supports
   this) or do it in Cloudflare Workers / a sidecar. Plan accordingly
@@ -67,6 +69,7 @@ Reasoning:
   per Plan 03 §2 absorbs this naturally.
 
 **Neutral**
+
 - SSR fetches inside `apps/web` still hit the Next.js process for
   unported routes. That's fine. SSR for ported routes can either keep
   going through Caddy (one extra hop) or be promoted to a direct
