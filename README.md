@@ -267,16 +267,20 @@ docker compose logs -f app
 
 Once the stack is healthy:
 
-| URL                   | Service                        |
-| --------------------- | ------------------------------ |
-| http://localhost:3000 | Web frontend (`app` container) |
-| http://localhost:4000 | Read API (`apps/api`)          |
-| http://localhost:4011 | Identity (`services/auth-go`)  |
-| http://localhost:4012 | Submissions (Go)               |
-| http://localhost:4013 | Problems (Go)                  |
-| http://localhost:9090 | Judge service                  |
-| http://localhost:5432 | PostgreSQL                     |
-| http://localhost:6379 | Redis                          |
+| URL / Endpoint              | Service                                       |
+| --------------------------- | --------------------------------------------- |
+| http://localhost:3000       | Web frontend (`app` container)                |
+| http://localhost:4000       | Read API (`apps/api`)                         |
+| http://localhost:4011       | Identity (`services/auth-go`)                 |
+| http://localhost:4012       | Submissions (`services/submissions-go`)       |
+| http://localhost:4013       | Problems (`services/problems-go`)             |
+| http://localhost:4014       | Leaderboard (`services/leaderboard-rust`)     |
+| http://localhost:4015       | Notifications (`services/notifications-ruby`) |
+| http://localhost:4016       | Analytics (`services/analytics-python`)       |
+| http://localhost:4017       | Realtime (`services/realtime-go`)             |
+| http://localhost:9090       | Judge service                                 |
+| postgresql://localhost:5432 | PostgreSQL                                    |
+| redis://localhost:6379      | Redis                                         |
 
 Tear down with `docker compose down -v` (the `-v` clears volumes).
 
