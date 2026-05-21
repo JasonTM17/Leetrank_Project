@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 
 # Stage 1: build the static binary
-FROM rust:1.86-bookworm AS builder
+FROM rust:1.90-bookworm AS builder
 WORKDIR /src
 
 # Cache dependencies
