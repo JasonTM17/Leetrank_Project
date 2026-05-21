@@ -24,7 +24,10 @@ jobs:
 
     strategy:
       fail-fast: false
-      max-parallel: 3
+      # Serialize image builds (max-parallel: 1) to stay under Docker Hub's
+      # per-IP rate limit. Multi-arch builds pull base images for both
+      # amd64 and arm64; running 3+ jobs in parallel reliably tripped 429.
+      max-parallel: 1
       matrix:
         include:
           - service: web
