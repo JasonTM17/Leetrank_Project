@@ -12,12 +12,12 @@ Quick reference for operating the LeetRank API service in production.
 
 ## Health endpoints
 
-| Endpoint | Purpose | Expected response |
-|---|---|---|
-| `GET /healthz` | Cheap liveness — no DB call | `200 {"status":"ok"}` |
-| `GET /readyz` | Readiness — includes DB probe | `200` if DB reachable; `503` if not |
-| `GET /health` | Alias for `/readyz` | Same as above |
-| `GET /metrics` | Prometheus metrics | `200` text/plain exposition format |
+| Endpoint       | Purpose                       | Expected response                   |
+| -------------- | ----------------------------- | ----------------------------------- |
+| `GET /healthz` | Cheap liveness — no DB call   | `200 {"status":"ok"}`               |
+| `GET /readyz`  | Readiness — includes DB probe | `200` if DB reachable; `503` if not |
+| `GET /health`  | Alias for `/readyz`           | Same as above                       |
+| `GET /metrics` | Prometheus metrics            | `200` text/plain exposition format  |
 
 ```bash
 # Liveness
@@ -225,4 +225,4 @@ docker compose run --rm api npx prisma migrate deploy
 
 ---
 
-_Author: Nguyễn Sơn — jasonbmt06@gmail.com — [@JasonTM17](https://github.com/JasonTM17)_
+_Author: Nguyễn Tiến Sơn — jasonbmt06@gmail.com — [@JasonTM17](https://github.com/JasonTM17)_

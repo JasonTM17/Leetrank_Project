@@ -219,4 +219,4 @@ echo | openssl s_client -connect <hostname>:443 -servername <hostname> 2>/dev/nu
 
 ---
 
-_Author: Nguyễn Sơn — jasonbmt06@gmail.com — [@JasonTM17](https://github.com/JasonTM17)_
+_Author: Nguyễn Tiến Sơn — jasonbmt06@gmail.com — [@JasonTM17](https://github.com/JasonTM17)_

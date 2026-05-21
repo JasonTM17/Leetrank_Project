@@ -410,9 +410,13 @@ Lint specs locally with `pnpm openapi:lint` (uses Redocly).
 ├── apps/
 │   └── api/              # Hono read API (port 4000)
 ├── services/
-│   ├── auth-go/          # Identity service — sole canonical JWT issuer (port 4011)
-│   ├── problems-go/      # Go problems read API (port 4013)
-│   └── submissions-go/   # Go submissions read/write (port 4012)
+│   ├── auth-go/             # Identity service — sole canonical JWT issuer (port 4011)
+│   ├── problems-go/         # Go problems read API (port 4013)
+│   ├── submissions-go/      # Go submissions read/write (port 4012)
+│   ├── realtime-go/         # Go WebSocket fan-out for live submissions
+│   ├── leaderboard-rust/    # Rust leaderboard cache + Redis sorted-set
+│   ├── analytics-python/    # Python FastAPI analytics ingest
+│   └── notifications-ruby/  # Ruby Sinatra notifications fan-out
 ├── judge-service/        # Go sandbox runner (port 9090)
 ├── src/                  # Next.js 16 web app
 ├── prisma/               # Schema, migrations, seed scripts
