@@ -76,14 +76,14 @@ docker compose up postgres redis app api identity judge
 
 This starts:
 
-| Service    | URL                   | Role                  |
-| ---------- | --------------------- | --------------------- |
-| `app`      | http://localhost:3000 | Next.js frontend      |
-| `api`      | http://localhost:4000 | Hono read-only API    |
-| `auth`     | http://localhost:4001 | Auth service scaffold |
-| `judge`    | http://localhost:9090 | Go code execution     |
-| `postgres` | localhost:5432        | Database              |
-| `redis`    | localhost:6379        | Cache                 |
+| Service    | URL                   | Role                                |
+| ---------- | --------------------- | ----------------------------------- |
+| `app`      | http://localhost:3000 | Next.js frontend                    |
+| `api`      | http://localhost:4000 | Hono read-only API                  |
+| `identity` | http://localhost:4011 | Identity service (services/auth-go) |
+| `judge`    | http://localhost:9090 | Go code execution                   |
+| `postgres` | localhost:5432        | Database                            |
+| `redis`    | localhost:6379        | Cache                               |
 
 For hot-reload during development:
 

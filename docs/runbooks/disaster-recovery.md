@@ -19,13 +19,13 @@ These are the operational targets after ADR 0029. They assume a single-host Dock
 
 ## Backup inventory
 
-| Asset            | Location                              | Cadence                 | Status                                                |
-| ---------------- | ------------------------------------- | ----------------------- | ----------------------------------------------------- |
-| Postgres data    | `postgres_data` Docker volume (local) | Manual only             | **Gap: F-008 — automated backup not yet implemented** |
-| Redis AOF        | `redis_data` Docker volume (local)    | Continuous (AOF)        | Local only; no off-site copy (F-010)                  |
-| Container images | Docker Hub (`jasontm17/leetrank-*`)   | On every push to `main` | `latest` + SHA tag                                    |
-| Application code | GitHub (`JasonTM17/Leetrank_Project`) | On every push           | Primary source of truth                               |
-| Caddy TLS certs  | `caddy_data` Docker volume (local)    | Auto-renewed by Caddy   | Regenerated automatically if lost                     |
+| Asset            | Location                                | Cadence                 | Status                                                |
+| ---------------- | --------------------------------------- | ----------------------- | ----------------------------------------------------- |
+| Postgres data    | `postgres_data` Docker volume (local)   | Manual only             | **Gap: F-008 — automated backup not yet implemented** |
+| Redis AOF        | `redis_data` Docker volume (local)      | Continuous (AOF)        | Local only; no off-site copy (F-010)                  |
+| Container images | Docker Hub (`nguyenson1710/leetrank-*`) | On every push to `main` | `latest` + SHA tag                                    |
+| Application code | GitHub (`JasonTM17/Leetrank_Project`)   | On every push           | Primary source of truth                               |
+| Caddy TLS certs  | `caddy_data` Docker volume (local)      | Auto-renewed by Caddy   | Regenerated automatically if lost                     |
 
 > **Critical gap:** Postgres has no automated off-site backup. Until F-008 is resolved, run a manual `pg_dump` before any risky operation and store the dump off-host.
 
@@ -39,7 +39,7 @@ These are the operational targets after ADR 0029. They assume a single-host Dock
 
 ```bash
 # 1. Stop all services that use Postgres
-docker compose stop app api auth
+docker compose stop app api identity
 
 # 2. Remove the corrupted volume
 docker compose down
@@ -61,7 +61,7 @@ docker compose up -d
 
 # 7. Verify health
 curl http://localhost:4000/readyz | jq
-curl http://localhost:4001/readyz | jq
+curl http://localhost:4011/readyz | jq
 curl http://localhost:3000/api/health
 ```
 
@@ -85,10 +85,10 @@ docker compose rm -f api
 
 # 3. Pull the last known-good image by SHA
 # Find the SHA from the GitHub Actions run that preceded the incident
-docker pull jasontm17/leetrank-api:<sha>
+docker pull nguyenson1710/leetrank-api:<sha>
 
 # 4. Update docker-compose.yml to pin the image to the known-good SHA
-# (temporarily override the build: block with image: jasontm17/leetrank-api:<sha>)
+# (temporarily override the build: block with image: nguyenson1710/leetrank-api:<sha>)
 
 # 5. Start the service from the pinned image
 docker compose up -d api
@@ -172,7 +172,7 @@ git push --mirror origin
 # Option B: Restore from Docker Hub images
 # The images on Docker Hub contain the compiled application.
 # Source code can be extracted from the image layers (partial recovery):
-docker create --name tmp jasontm17/leetrank-api:latest
+docker create --name tmp nguyenson1710/leetrank-api:latest
 docker cp tmp:/app ./recovered-api
 docker rm tmp
 

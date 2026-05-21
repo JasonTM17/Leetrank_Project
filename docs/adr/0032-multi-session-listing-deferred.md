@@ -1,4 +1,4 @@
-# 31. Multi-session listing deferred until Session model lands
+# 32. Multi-session listing deferred until Session model lands
 
 Date: 2026-05-19
 
@@ -27,20 +27,23 @@ When the identity service ships persistent sessions, the route becomes a thin pr
 ## Consequences
 
 **Positive:**
+
 - Avoids a throwaway `web_session` table in the Postgres owned by the web tier.
 - Keeps multi-session as a single-source-of-truth concern in identity, consistent with ADR-0030.
 - Contract surface is unchanged — a future implementation just returns a longer array.
 
 **Negative:**
+
 - Users can't see / revoke other devices today. Mitigation: change-password rotates the per-account login bucket (Bug #2 fix) and we still expire the cookie at 15 min, so blast-radius is bounded.
 
 **Neutral:**
+
 - Tests pin the single-session contract; they'll need an update when the array grows. That's expected churn for a contract change.
 
 ## Alternatives considered
 
-| Alternative | Why rejected |
-|-------------|-------------|
-| Add a `Session` model to web Prisma now | Crosses identity-service boundary; creates migration debt for ADR-0030 cutover. |
-| Best-effort scan of issued-but-not-revoked JWTs | Stateless JWTs by design have no server-side list; impossible without a token table. |
-| Return empty array | Breaks the existing API contract (`sessions[0].current === true`) and tests; hides the current session pointlessly. |
+| Alternative                                     | Why rejected                                                                                                        |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Add a `Session` model to web Prisma now         | Crosses identity-service boundary; creates migration debt for ADR-0030 cutover.                                     |
+| Best-effort scan of issued-but-not-revoked JWTs | Stateless JWTs by design have no server-side list; impossible without a token table.                                |
+| Return empty array                              | Breaks the existing API contract (`sessions[0].current === true`) and tests; hides the current session pointlessly. |

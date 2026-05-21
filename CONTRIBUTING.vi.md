@@ -42,7 +42,7 @@ Stack mở các port:
 
 ### Native
 
-Cần Node 20, pnpm 9, Go 1.22, PostgreSQL 16, Redis 7.
+Cần Node 20, pnpm 10+, Go 1.22, PostgreSQL 16, Redis 7.
 
 ```bash
 pnpm install
@@ -88,18 +88,18 @@ Theo [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/):
 
 `<type>` bắt buộc một trong:
 
-| Type | Dùng cho |
-|------|---------|
-| `feat` | Hành vi mới user thấy được |
-| `fix` | Sửa bug |
-| `docs` | Chỉ tài liệu |
-| `style` | Format; không đổi hành vi |
-| `refactor` | Không phải feature/fix |
-| `perf` | Cải thiện hiệu năng |
-| `test` | Thêm/sửa test |
-| `build` | Build system, tooling, dependencies |
-| `ci` | Cấu hình CI |
-| `chore` | Công việc phụ trợ |
+| Type       | Dùng cho                            |
+| ---------- | ----------------------------------- |
+| `feat`     | Hành vi mới user thấy được          |
+| `fix`      | Sửa bug                             |
+| `docs`     | Chỉ tài liệu                        |
+| `style`    | Format; không đổi hành vi           |
+| `refactor` | Không phải feature/fix              |
+| `perf`     | Cải thiện hiệu năng                 |
+| `test`     | Thêm/sửa test                       |
+| `build`    | Build system, tooling, dependencies |
+| `ci`       | Cấu hình CI                         |
+| `chore`    | Công việc phụ trợ                   |
 
 `<scope>` là khu vực chạm tới: `api`, `auth`, `auth-go`, `web`, `judge`,
 `submissions-go`, `problems-go`, `prisma`, `ci`, `docs`, v.v.
@@ -113,6 +113,7 @@ docs(adr): add 0021 rating algorithm (Glicko-2)
 ```
 
 Quy tắc subject:
+
 - Mệnh lệnh (`add` không phải `added`).
 - Không có dấu chấm cuối câu.
 - 72 ký tự trở xuống.
@@ -150,14 +151,14 @@ PR, authorship của bạn được Git capture bình thường.
 
 ## Test
 
-| Layer | Lệnh |
-|-------|------|
-| Web unit + component | `pnpm test` |
-| Web e2e (Playwright) | `pnpm test:e2e` |
-| API workspace | `pnpm --filter apps/api test` |
-| Auth (Go) | `cd services/auth-go && go test ./...` |
-| Go services | `cd services/<svc> && go test ./...` |
-| Judge | `cd judge-service && go test ./...` |
+| Layer                | Lệnh                                   |
+| -------------------- | -------------------------------------- |
+| Web unit + component | `pnpm test`                            |
+| Web e2e (Playwright) | `pnpm test:e2e`                        |
+| API workspace        | `pnpm --filter apps/api test`          |
+| Auth (Go)            | `cd services/auth-go && go test ./...` |
+| Go services          | `cd services/<svc> && go test ./...`   |
+| Judge                | `cd judge-service && go test ./...`    |
 
 Thêm test cho mỗi thay đổi hành vi. Nếu khu vực bạn làm chưa có framework
 test, dựng nó lên — không ship code không có coverage.

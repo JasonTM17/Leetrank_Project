@@ -14,13 +14,13 @@ Quick reference for operating the LeetRank identity service in production.
 
 ## Health endpoints
 
-| Endpoint | Purpose | Expected response |
-|---|---|---|
-| `GET /healthz` | Cheap liveness — no DB call | `200 {"status":"ok"}` |
-| `GET /readyz` | Readiness — includes DB probe | `200` if DB reachable; `503` if not |
-| `GET /metrics` | Prometheus metrics | `200` text/plain exposition format |
-| `GET /jwks` | JWKS key set | `200 {"keys":[...]}` (Ed25519, served from keystore) |
-| `GET /.well-known/jwks.json` | JWKS alias (RFC 7517) | Same as above |
+| Endpoint                     | Purpose                       | Expected response                                    |
+| ---------------------------- | ----------------------------- | ---------------------------------------------------- |
+| `GET /healthz`               | Cheap liveness — no DB call   | `200 {"status":"ok"}`                                |
+| `GET /readyz`                | Readiness — includes DB probe | `200` if DB reachable; `503` if not                  |
+| `GET /metrics`               | Prometheus metrics            | `200` text/plain exposition format                   |
+| `GET /jwks`                  | JWKS key set                  | `200 {"keys":[...]}` (Ed25519, served from keystore) |
+| `GET /.well-known/jwks.json` | JWKS alias (RFC 7517)         | Same as above                                        |
 
 ```bash
 # Liveness
@@ -99,15 +99,15 @@ docker compose logs --tail=50 identity
 
 ## Current endpoint status (Phase 3.1)
 
-| Endpoint | Status | Notes |
-|---|---|---|
-| `GET /healthz` | Live | Liveness probe |
-| `GET /readyz` | Live | DB probe |
-| `GET /metrics` | Live | Prometheus scrape |
-| `GET /jwks` | Live | Returns empty `{"keys":[]}` |
-| `GET /.well-known/jwks.json` | Live | Same as `/jwks` |
-| `GET /login` | 501 stub | Phase 3.1.5 |
-| `POST /login` | 501 stub | Phase 3.1.5 |
+| Endpoint                     | Status   | Notes                       |
+| ---------------------------- | -------- | --------------------------- |
+| `GET /healthz`               | Live     | Liveness probe              |
+| `GET /readyz`                | Live     | DB probe                    |
+| `GET /metrics`               | Live     | Prometheus scrape           |
+| `GET /jwks`                  | Live     | Returns empty `{"keys":[]}` |
+| `GET /.well-known/jwks.json` | Live     | Same as `/jwks`             |
+| `GET /login`                 | 501 stub | Phase 3.1.5                 |
+| `POST /login`                | 501 stub | Phase 3.1.5                 |
 
 ---
 
@@ -143,25 +143,25 @@ _No incidents recorded yet. File post-mortems under `docs/post-mortems/YYYY-MM-D
 
 ```bash
 # Stream logs
-docker compose logs -f auth
+docker compose logs -f identity
 
 # Last 100 lines
-docker compose logs --tail=100 auth
+docker compose logs --tail=100 identity
 
 # Liveness probe
-curl http://localhost:4001/healthz
+curl http://localhost:4011/healthz
 
 # JWKS check
-curl http://localhost:4001/jwks | jq
+curl http://localhost:4011/jwks | jq
 
 # Prometheus metrics
-curl http://localhost:4001/metrics
+curl http://localhost:4011/metrics
 
 # Restart
-docker compose restart auth
+docker compose restart identity
 
 # Rebuild and restart
-docker compose build auth && docker compose up -d auth
+docker compose build identity && docker compose up -d identity
 ```
 
 ---

@@ -14,12 +14,12 @@ Caddy is the public-facing reverse proxy for LeetRank. It terminates TLS (via AC
 
 All routing is defined in [`infra/caddy/Caddyfile`](../../infra/caddy/Caddyfile).
 
-| Path pattern | Backend | Notes |
-|---|---|---|
-| `/healthz` | Caddy itself | Returns `ok 200` — no backend involved |
+| Path pattern     | Backend         | Notes                                                            |
+| ---------------- | --------------- | ---------------------------------------------------------------- |
+| `/healthz`       | Caddy itself    | Returns `ok 200` — no backend involved                           |
 | `/api/v1/auth/*` | `identity:4011` | Canonical auth (services/auth-go); apps/auth retired in ADR 0027 |
-| `/api/v1/*` | `api:4000` | Ported REST API endpoints |
-| `/*` (catch-all) | `app:3000` | Next.js frontend + legacy API routes |
+| `/api/v1/*`      | `api:4000`      | Ported REST API endpoints                                        |
+| `/*` (catch-all) | `app:3000`      | Next.js frontend + legacy API routes                             |
 
 The `handle_path` directives strip the matched prefix before forwarding. For example, `/api/v1/problems` is forwarded to `api:4000` as `/problems`.
 
@@ -79,8 +79,8 @@ curl https://<hostname>/healthz
 
 Defined in the Caddyfile:
 
-| Zone | Matcher | Limit | Window |
-|---|---|---|---|
+| Zone        | Matcher                         | Limit       | Window          |
+| ----------- | ------------------------------- | ----------- | --------------- |
 | `auth_zone` | `path /api/auth/* /api/admin/*` | 30 requests | 1 minute per IP |
 
 This is a first-line defense. Per-IP rate limiting is also enforced inside `apps/api` and `services/auth-go` (identity).
@@ -128,7 +128,7 @@ docker compose ps app api auth
 # 3. Test the backend directly
 curl http://localhost:3000/api/health   # app
 curl http://localhost:4000/healthz      # api
-curl http://localhost:4001/healthz      # auth
+curl http://localhost:4011/healthz      # identity
 
 # 4. Restart the failing backend
 docker compose restart <service>
@@ -170,14 +170,14 @@ docker compose ps app
 
 Caddy sets the following headers on all responses:
 
-| Header | Value |
-|---|---|
-| `Strict-Transport-Security` | `max-age=31536000; includeSubDomains; preload` |
-| `X-Content-Type-Options` | `nosniff` |
-| `X-Frame-Options` | `DENY` |
-| `Referrer-Policy` | `strict-origin-when-cross-origin` |
-| `Content-Security-Policy` | See Caddyfile (includes `unsafe-inline`, `unsafe-eval` — F-063) |
-| `Server` | Removed |
+| Header                      | Value                                                           |
+| --------------------------- | --------------------------------------------------------------- |
+| `Strict-Transport-Security` | `max-age=31536000; includeSubDomains; preload`                  |
+| `X-Content-Type-Options`    | `nosniff`                                                       |
+| `X-Frame-Options`           | `DENY`                                                          |
+| `Referrer-Policy`           | `strict-origin-when-cross-origin`                               |
+| `Content-Security-Policy`   | See Caddyfile (includes `unsafe-inline`, `unsafe-eval` — F-063) |
+| `Server`                    | Removed                                                         |
 
 > **Gap (F-063):** CSP includes `unsafe-inline` and `unsafe-eval` site-wide. These are required by Next.js hydration and Monaco Editor respectively. Tighten once Next.js ships nonce support.
 

@@ -6,23 +6,23 @@ See [ADR 0003](../docs/adr/0003-go-for-judge-service.md), [ADR 0009](../docs/adr
 
 ## Purpose and responsibilities
 
-| Responsibility | Owned here? |
-|----------------|-------------|
-| Compile + run user code in a sandbox | Yes |
-| Compare output to expected stdout | Yes |
-| Enforce CPU / wall-clock / memory caps | Yes |
-| Per-IP rate limiting on `/execute` | Yes |
-| Pattern blocklist for dangerous syscalls | Yes |
-| Submission persistence | No → `services/submissions-go` |
-| User auth | No → `services/auth-go` |
+| Responsibility                           | Owned here?                    |
+| ---------------------------------------- | ------------------------------ |
+| Compile + run user code in a sandbox     | Yes                            |
+| Compare output to expected stdout        | Yes                            |
+| Enforce CPU / wall-clock / memory caps   | Yes                            |
+| Per-IP rate limiting on `/execute`       | Yes                            |
+| Pattern blocklist for dangerous syscalls | Yes                            |
+| Submission persistence                   | No → `services/submissions-go` |
+| User auth                                | No → `services/auth-go`        |
 
 ## Endpoints
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/healthz` | Liveness — 200 while process is up |
-| GET | `/readyz` | Readiness — confirms language toolchains present |
-| POST | `/execute` | Run code against test cases, return verdict |
+| Method | Path       | Description                                      |
+| ------ | ---------- | ------------------------------------------------ |
+| GET    | `/healthz` | Liveness — 200 while process is up               |
+| GET    | `/readyz`  | Readiness — confirms language toolchains present |
+| POST   | `/execute` | Run code against test cases, return verdict      |
 
 `POST /execute` request body:
 
@@ -42,59 +42,59 @@ Limits: 20 test cases per request, 10 000 ms hard wall-clock per case, 512 MB ma
 
 ### Scripting
 
-| Language | ID | Runtime |
-|---|---|---|
-| Python 3 | `python` | python3 |
+| Language          | ID           | Runtime |
+| ----------------- | ------------ | ------- |
+| Python 3          | `python`     | python3 |
 | JavaScript (Node) | `javascript` | node 20 |
-| TypeScript | `typescript` | tsx |
-| Ruby | `ruby` | ruby |
-| PHP | `php` | php-cli |
-| Bash | `bash` | bash |
-| Lua | `lua` | lua5.4 |
-| Perl | `perl` | perl |
-| Elixir | `elixir` | elixir |
+| TypeScript        | `typescript` | tsx     |
+| Ruby              | `ruby`       | ruby    |
+| PHP               | `php`        | php-cli |
+| Bash              | `bash`       | bash    |
+| Lua               | `lua`        | lua5.4  |
+| Perl              | `perl`       | perl    |
+| Elixir            | `elixir`     | elixir  |
 
 ### Compiled
 
-| Language | ID | Toolchain |
-|---|---|---|
-| Go | `go` | golang-go |
-| Rust | `rust` | rustc |
-| C (gcc) | `c` | gcc |
-| C++ (g++) | `cpp` | g++ |
+| Language  | ID       | Toolchain       |
+| --------- | -------- | --------------- |
+| Go        | `go`     | golang-go       |
+| Rust      | `rust`   | rustc           |
+| C (gcc)   | `c`      | gcc             |
+| C++ (g++) | `cpp`    | g++             |
 | C# (Mono) | `csharp` | mono-mcs / mono |
 
 ### JVM
 
-| Language | ID | Toolchain |
-|---|---|---|
-| Java | `java` | default-jdk (javac) |
-| Kotlin | `kotlin` | kotlinc |
-| Scala | `scala` | scalac |
+| Language | ID       | Toolchain           |
+| -------- | -------- | ------------------- |
+| Java     | `java`   | default-jdk (javac) |
+| Kotlin   | `kotlin` | kotlinc             |
+| Scala    | `scala`  | scalac              |
 
 ### Data
 
-| Language | ID | Runtime |
-|---|---|---|
+| Language     | ID    | Runtime |
+| ------------ | ----- | ------- |
 | SQL (sqlite) | `sql` | sqlite3 |
-| R | `r` | Rscript |
+| R            | `r`   | Rscript |
 
 ### Deferred
 
-| Language | Reason |
-|---|---|
-| Swift | Requires `packages.swift.org` apt key; runtime ~600 MB |
-| Haskell | `ghc` ~700 MB; would push image past 3 GB |
-| Dart | Requires Google apt key (`dl.google.com/linux/dart/deb`) |
+| Language | Reason                                                   |
+| -------- | -------------------------------------------------------- |
+| Swift    | Requires `packages.swift.org` apt key; runtime ~600 MB   |
+| Haskell  | `ghc` ~700 MB; would push image past 3 GB                |
+| Dart     | Requires Google apt key (`dl.google.com/linux/dart/deb`) |
 
 ## Environment variables
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `JUDGE_PORT` | no | `9090` | HTTP listen port |
-| `JUDGE_MAX_CONCURRENT` | no | `8` | Global concurrent submissions |
-| `JUDGE_RATE_LIMIT` | no | `30` | Per-IP requests / 60 s window |
-| `LOG_LEVEL` | no | `info` | Log threshold |
+| Variable               | Required | Default | Description                   |
+| ---------------------- | -------- | ------- | ----------------------------- |
+| `JUDGE_PORT`           | no       | `9090`  | HTTP listen port              |
+| `JUDGE_MAX_CONCURRENT` | no       | `8`     | Global concurrent submissions |
+| `JUDGE_RATE_LIMIT`     | no       | `30`    | Per-IP requests / 60 s window |
+| `LOG_LEVEL`            | no       | `info`  | Log threshold                 |
 
 ## Local dev
 
@@ -121,6 +121,8 @@ Run tests:
 ```bash
 go test ./...
 ```
+
+Coverage threshold: **≥ 70%** (standard Go service — see global rule #5).
 
 ## Production runbook
 
@@ -166,11 +168,11 @@ Each runner container caps at 512 MB RSS. With `JUDGE_MAX_CONCURRENT=8` the uppe
 
 ### Logs
 
-| Source | Where |
-|--------|-------|
-| Judge JSON logs | stdout — `docker compose logs judge` |
+| Source                   | Where                                      |
+| ------------------------ | ------------------------------------------ |
+| Judge JSON logs          | stdout — `docker compose logs judge`       |
 | Per-runner stdout/stderr | captured by exec, returned in the response |
-| Docker daemon logs | host system — `journalctl -u docker` |
+| Docker daemon logs       | host system — `journalctl -u docker`       |
 
 ## Architecture
 

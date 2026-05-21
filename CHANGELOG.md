@@ -32,10 +32,10 @@ and harden the platform across security, observability, and CI lanes.
   next hint), gated until first AC or contest end.
 - **Solution sharing + community votes.** `SharedSolution` + `SolutionVote`
   models + migration, `/api/solutions*` endpoints, vote API, optimistic UI.
-- **Elo rating + divisions.** Glicko-2 engine in pure TS (no deps),
+- **Glicko-2 rating + divisions.** Glicko-2 engine in pure TS (no deps),
   `Rating`, `RatingChange`, `Division` schema, idempotent admin
-  `finalize-rating` endpoint, RD inflation cron, division badge on profiles
-  - delta column on submissions, leaderboard rating display, EN + VI i18n.
+  `finalize-rating` endpoint, RD inflation cron, division badge on profiles,
+  delta column on submissions, leaderboard rating display, EN + VI i18n.
 - **Admin analytics dashboard.** Aggregation lib + `/api/admin/analytics`
   endpoint, `/admin/analytics` page with `<SvgBarChart>`, `<SvgSparkline>`,
   `<SvgPieChart>` primitives, navbar link from `/admin`.
