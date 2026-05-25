@@ -19,7 +19,7 @@ path = "src/main.rs"
 anyhow = "1.0.93"
 axum = { version = "0.8.1", features = ["macros"] }
 chrono = { version = "0.4.38", features = ["serde"] }
-jsonwebtoken = "9.3.0"
+jsonwebtoken = "10.4.0"
 prometheus = { version = "0.14.0", default-features = false }
 redis = { version = "0.27.5", features = ["tokio-comp", "aio", "connection-manager"] }
 serde = { version = "1.0.215", features = ["derive"] }
