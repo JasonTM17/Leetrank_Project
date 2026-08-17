@@ -91,8 +91,8 @@ importers:
         specifier: ^3.23.8
         version: 3.25.76
       zustand:
-        specifier: ^5.0.13
-        version: 5.0.13(@types/react@19.2.14)(react@19.2.4)
+        specifier: ^5.0.15
+        version: 5.0.15(@types/react@19.2.14)(react@19.2.4)
     devDependencies:
       '@playwright/test':
         specifier: ^1.48.0
@@ -2084,8 +2084,8 @@ packages:
     resolution: {integrity: sha512-35mSku4ZXK0vfCuHEDAwt55dg2jNajHZ1odvF+8SSr82EsZY4QmXfuWso8oEd8zRhVObSN18aM0CjSdoBX7zIw==}
     engines: {node: '>=0.10.0'}
 
-  dompurify@3.4.5:
-    resolution: {integrity: sha512-OrwIBKsdNSVEeubdJ1HBv/wNENRM9ytAVCv7YXt//A3vPdVMNuACRqK9mXCGCBW2ln7BT/A4X0jXHo2Gu89miA==}
+  dompurify@3.4.13:
+    resolution: {integrity: sha512-2vmYIoqjze2d+kakP8S/nS5shfsl587kzwEjcGlTdiksUVgFHnFCsLYDVj/JNqJVOQZGSYBTmuycv0PodwmnMQ==}
 
   dunder-proto@1.0.1:
     resolution: {integrity: sha512-KIN/nDJBQRcXw0MLVhZE9iQHmG68qAVIBg9CqmUYjmQIhgij9U5MFvrqkUL5FbtyyzZuOeOt0zdeRe4UY7ct+A==}
@@ -4054,8 +4054,8 @@ packages:
   zod@4.4.3:
     resolution: {integrity: sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==}
 
-  zustand@5.0.13:
-    resolution: {integrity: sha512-efI2tVaVQPqtOh114loML/Z80Y4NP3yc+Ff0fYiZJPauNeWZeIp/bRFD7I9bfmCOYBh/PHxlglQ9+wvlwnPikQ==}
+  zustand@5.0.15:
+    resolution: {integrity: sha512-MpSEjRiBkA9crSYeOUH32rJC7SVqAbm0Fqcqge/bUi2PPoLcBWKOsG+C8mevmpr8TwXHBVkChbbJiyvkE+i/3A==}
     engines: {node: '>=12.20.0'}
     peerDependencies:
       '@types/react': '>=18.0.0'
@@ -5641,7 +5641,7 @@ snapshots:
     dependencies:
       esutils: 2.0.3
 
-  dompurify@3.4.5:
+  dompurify@3.4.13:
     optionalDependencies:
       '@types/trusted-types': 2.0.7
 
@@ -7120,7 +7120,7 @@ snapshots:
 
   monaco-editor@0.55.1:
     dependencies:
-      dompurify: 3.4.5
+      dompurify: 3.4.13
       marked: 14.0.0
 
   monaco-vim@0.4.4(monaco-editor@0.55.1):
@@ -8220,7 +8220,7 @@ snapshots:
 
   zod@4.4.3: {}
 
-  zustand@5.0.13(@types/react@19.2.14)(react@19.2.4):
+  zustand@5.0.15(@types/react@19.2.14)(react@19.2.4):
     optionalDependencies:
       '@types/react': 19.2.14
       react: 19.2.4

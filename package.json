@@ -75,7 +75,7 @@
     "remark-gfm": "^4.0.1",
     "tailwind-merge": "^3.6.0",
     "zod": "^3.23.8",
-    "zustand": "^5.0.13"
+    "zustand": "^5.0.15"
   },
   "prisma": {
     "seed": "npx ts-node --compiler-options {\"module\":\"CommonJS\",\"types\":[\"node\"]} prisma/seed.ts"
