@@ -16,7 +16,7 @@ COPY internal/ ./internal/
 RUN CGO_ENABLED=0 GOOS=linux go build -mod=mod -ldflags="-s -w" -o judge-service .
 
 # ── Stage 2: Runtime image ────────────────────────────────────────────────────
-FROM ubuntu:22.04
+FROM ubuntu:25.10
 
 ARG COMMIT_SHA=unknown
 LABEL org.opencontainers.image.source="https://github.com/JasonTM17/Leetrank_Project"
