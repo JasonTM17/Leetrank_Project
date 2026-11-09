@@ -57,7 +57,7 @@
     "canvas-confetti": "^1.9.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "cookie": "^1.1.1",
+    "cookie": "^2.0.2",
     "ioredis": "^5.4.1",
     "jose": "^6.2.3",
     "jsonwebtoken": "^9.0.3",
