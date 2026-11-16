@@ -81,23 +81,23 @@
     "seed": "npx ts-node --compiler-options {\"module\":\"CommonJS\",\"types\":[\"node\"]} prisma/seed.ts"
   },
   "devDependencies": {
-    "@playwright/test": "^1.48.0",
+    "@playwright/test": "^1.65.0",
     "@tailwindcss/postcss": "^4",
     "@types/canvas-confetti": "^1.9.0",
-    "@types/node": "^25",
+    "@types/node": "^26",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@vitest/coverage-v8": "^2",
-    "autocannon": "^8.0.0",
-    "eslint": "^9",
-    "eslint-config-next": "16.2.6",
+    "@vitest/coverage-v8": "^5",
+    "autocannon": "^9.0.0",
+    "eslint": "^10",
+    "eslint-config-next": "16.4.6",
     "husky": "^9.1.7",
-    "lint-staged": "^17.0.5",
-    "prettier": "^3.8.3",
+    "lint-staged": "^17.6.0",
+    "prettier": "^3.10.1",
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",
-    "typescript": "^6",
-    "vitest": "^2"
+    "typescript": "^7",
+    "vitest": "^5"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
